@@ -1,0 +1,3 @@
+[submodule "worm-whats-new"]
+	path = worm-whats-new
+	url = https://github.com/iarna/worm-whats-new.git

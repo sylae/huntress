@@ -1,0 +1,9 @@
+<#if licenseFirst??>
+${licenseFirst}
+</#if>
+${licensePrefix}Copyright (c) ${date?date?string("yyyy")} Keira Aro <sylae@calref.net>
+${licensePrefix}Use of this source code is governed by the MIT license, which 
+${licensePrefix}can be found in the LICENSE file.
+<#if licenseLast??>
+${licenseLast}
+</#if>
