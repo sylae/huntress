@@ -19,6 +19,10 @@ if (PHP_SAPI != "cli") {
 foreach (glob(__DIR__ . "/src/Command/*.php") as $file) {
     require_once($file);
 }
+foreach (glob(__DIR__ . "/src/Plugin/*.php") as $file) {
+    require_once($file);
+}
+
 $huntress_inhibit_auto_restart = false;
 register_shutdown_function(function() {
     global $huntress_inhibit_auto_restart;
