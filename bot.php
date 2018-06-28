@@ -19,6 +19,15 @@ if (PHP_SAPI != "cli") {
 foreach (glob(__DIR__ . "/src/Command/*.php") as $file) {
     require_once($file);
 }
+$huntress_inhibit_auto_restart = false;
+register_shutdown_function(function() {
+    global $huntress_inhibit_auto_restart;
+    if ($huntress_inhibit_auto_restart) {
+        die(0);
+    } else {
+        die(1);
+    }
+});
 
 $library = new Library();
 $library->loadFanfic();
