@@ -1,0 +1,5 @@
+#!/bin/sh -x
+
+git pull --recurse-submodules
+composer install
+
