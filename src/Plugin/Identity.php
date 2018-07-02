@@ -15,7 +15,6 @@ namespace Huntress\Plugin;
  */
 class Identity implements \Huntress\PluginInterface
 {
-
     use \Huntress\PluginHelperTrait;
 
     public static function register(\Huntress\Bot $bot)
@@ -27,12 +26,12 @@ class Identity implements \Huntress\PluginInterface
     {
         $bot->loop->addPeriodicTimer(60 * 60, function () use ($bot) {
             $bot->log->debug("Updating avatar...");
-            $bot->client->user->setAvatar("https://syl.ae/avatar.jpg")->then(function() use ($bot) {
+            $bot->client->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
                 $bot->log->debug("Avatar update complete!");
             });
         });
         $bot->log->debug("Updating avatar...");
-        $bot->client->user->setAvatar("https://syl.ae/avatar.jpg")->then(function() use ($bot) {
+        $bot->client->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
             $bot->log->debug("Avatar update complete!");
         });
     }

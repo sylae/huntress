@@ -15,7 +15,6 @@ namespace Huntress\Plugin;
  */
 class Evaluate implements \Huntress\PluginInterface
 {
-
     use \Huntress\PluginHelperTrait;
 
     public static function register(\Huntress\Bot $bot)

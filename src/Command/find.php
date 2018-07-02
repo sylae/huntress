@@ -15,7 +15,6 @@ namespace Huntress\Command;
  */
 class find extends \Huntress\Command
 {
-
     public function process(): \React\Promise\ExtendedPromiseInterface
     {
         $args    = $this->_split($this->message->content);
@@ -32,7 +31,6 @@ class find extends \Huntress\Command
 
 
         if (mb_strlen(trim($v->cover)) > 0) {
-
             $embed->setThumbnail($v->cover);
         }
 

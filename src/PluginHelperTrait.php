@@ -14,7 +14,6 @@ namespace Huntress;
  */
 trait PluginHelperTrait
 {
-
     public static function _split(string $string): array
     {
         //$regex = '/(.*?[^\\\\](\\\\\\\\)*?)\\s/';
@@ -68,16 +67,16 @@ trait PluginHelperTrait
         }
         try {
             return $guild->members->first(function (\CharlotteDunois\Yasmin\Models\GuildMember $val, $key) use ($string) {
-                        if ($val->nickname == $string) {
-                            return true;
-                        } elseif ($val->user->username . "#" . $val->user->discriminator == $string) {
-                            return true;
-                        } elseif ($val->user->username == $string) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    });
+                if ($val->nickname == $string) {
+                    return true;
+                } elseif ($val->user->username . "#" . $val->user->discriminator == $string) {
+                    return true;
+                } elseif ($val->user->username == $string) {
+                    return true;
+                } else {
+                    return false;
+                }
+            });
         } catch (\InvalidArgumentException $e) {
             return null;
         }

@@ -15,7 +15,6 @@ namespace Huntress\Command;
  */
 class lookup extends \Huntress\Command
 {
-
     public function process(): \React\Promise\ExtendedPromiseInterface
     {
         $args    = $this->_split($this->message->content);

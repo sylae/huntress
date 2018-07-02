@@ -24,7 +24,7 @@ foreach (glob(__DIR__ . "/src/Plugin/*.php") as $file) {
 }
 
 $huntress_inhibit_auto_restart = false;
-register_shutdown_function(function() {
+register_shutdown_function(function () {
     global $huntress_inhibit_auto_restart;
     if ($huntress_inhibit_auto_restart) {
         die(0);
