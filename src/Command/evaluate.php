@@ -23,7 +23,7 @@ class evaluate extends \Huntress\Command
 
     public function process(): \React\Promise\ExtendedPromiseInterface
     {
-        return new \React\Promise\Promise(function() {
+        return new \React\Promise\Promise(function () {
             if (!in_array($this->message->author->id, $this->config['evalUsers'])) {
                 return $this->unauthorized();
             } else {
@@ -42,7 +42,6 @@ class evaluate extends \Huntress\Command
 
     private function eval(string $commands)
     {
-
         try {
             return eval($commands);
         } catch (\Throwable $e) {

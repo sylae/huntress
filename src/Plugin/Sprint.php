@@ -10,7 +10,7 @@ namespace Huntress\Plugin;
 
 use GetOpt\GetOpt;
 use GetOpt\Operand;
-Use GetOpt\Option;
+use GetOpt\Option;
 use GetOpt\Command;
 use GetOpt\ArgumentException;
 
@@ -21,7 +21,6 @@ use GetOpt\ArgumentException;
  */
 class Sprint implements \Huntress\PluginInterface
 {
-
     use \Huntress\PluginHelperTrait;
     const STATUS_ACTIVE   = 0;
     const STATUS_FINISHED = 1;

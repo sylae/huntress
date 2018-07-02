@@ -15,7 +15,6 @@ namespace Huntress;
  */
 class Library extends \CharlotteDunois\Yasmin\Utils\Collection
 {
-
     public function loadFanfic()
     {
         $x = json_decode("[" . str_replace("}\n{", "},\n{", file_get_contents("worm-whats-new/Fanfic.json") . "]"));

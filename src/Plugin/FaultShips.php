@@ -15,7 +15,6 @@ namespace Huntress\Plugin;
  */
 class FaultShips implements \Huntress\PluginInterface
 {
-
     use \Huntress\PluginHelperTrait;
 
     public static function register(\Huntress\Bot $bot)
