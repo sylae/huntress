@@ -29,7 +29,7 @@ class Management implements \Huntress\PluginInterface
             return self::unauthorized($message);
         } else {
             try {
-                return self::send($message->channel, "```json" . PHP_EOL . self::gitPull() . "```", ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
+                return self::send($message->channel, "```" . PHP_EOL . self::gitPull() . "```", ['split' => ['before' => '```' . PHP_EOL, 'after' => '```']]);
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
