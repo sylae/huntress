@@ -16,12 +16,21 @@ namespace Huntress\Plugin;
 class Management implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
+    /**
+     *
+     * @var \Carbon\Carbon
+     */
+    public static $startupTime;
 
     public static function register(\Huntress\Bot $bot)
     {
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "update", [self::class, "update"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "restart", [self::class, "restart"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "ping", [self::class, "ping"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "huntress", [self::class, "info"]);
+        $bot->client->on(self::PLUGINEVENT_READY, function() {
+            self::$startupTime = \Carbon\Carbon::now();
+        });
     }
 
     public static function update(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
@@ -34,6 +43,34 @@ class Management implements \Huntress\PluginInterface
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
+        }
+    }
+
+    public static function info(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    {
+        try {
+            $embed = self::easyEmbed($message);
+
+            $embed->addField("Memory usage", self::formatBytes(memory_get_usage()), true);
+            $embed->addField("PHP", phpversion(), true);
+            $embed->addField("PID / User", getmypid() . " / " . get_current_user(), true);
+
+            $count = [
+                $message->client->guilds->count(),
+                $message->client->channels->count(),
+                $message->client->users->count(),
+            ];
+            $embed->addField("Guilds / Channels / Users", implode(" / ", $count));
+            $embed->addField("Huntress", self::gitVersion());
+            $embed->addField("System", php_uname());
+            $embed->addField("Uptime", sprintf("%s - *(connected %s)*", self::$startupTime->diffForHumans(null, true, null, 2), self::$startupTime->toAtomString()));
+            $embed->addField("Loaded Plugins", implode("\n", self::getPlugins()));
+            $embed->addField("Composer dependencies", "```json\n" . json_encode(self::composerPackages(), JSON_PRETTY_PRINT) . "\n```");
+            $embed->addField("Events", "```json\n" . json_encode(self::getEventCounts($bot->client), JSON_PRETTY_PRINT) . "\n```");
+
+            return self::send($message->channel, "", ['embed' => $embed]);
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e, true);
         }
     }
 
@@ -94,5 +131,78 @@ class Management implements \Huntress\PluginInterface
         } else {
             throw new \Exception("Could not init script");
         }
+    }
+
+    private static function gitVersion(): string
+    {
+        exec("git diff --quiet HEAD", $null, $rv);
+
+        $commit = trim(`git rev-parse HEAD`);
+        $tag    = $commit . ($rv == 1 ? "-modified" : "");
+        $url    = "https://github.com/sylae/huntress/commit/" . $commit;
+
+        return "[$tag]($url)";
+    }
+
+    private static function composerPackages(): array
+    {
+        $descriptorspec = [
+            0 => ["pipe", "r"],
+            1 => ["pipe", "w"],
+            2 => ["pipe", "w"]
+        ];
+        $pipes          = [];
+        $process        = proc_open('composer show -D -f json', $descriptorspec, $pipes);
+
+        if (is_resource($process)) {
+            fclose($pipes[0]);
+            $stdout = trim(stream_get_contents($pipes[1]));
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
+            $e      = json_decode($stdout, true)['installed'];
+            $r      = [];
+            foreach ($e as $p) {
+                $r[explode("/", $p['name'])[1]] = $p['version'];
+            }
+            return $r;
+        } else {
+            throw new \Exception("Could not init script");
+        }
+    }
+
+    private static function formatBytes(int $b): string
+    {
+        $units = ["bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
+        $c     = 0;
+        foreach ($units as $k => $u) {
+            if (($b / pow(1024, $k)) >= 1) {
+                $r["bytes"] = $b / pow(1024, $k);
+                $r["units"] = $u;
+                $c++;
+            }
+        }
+        return number_format($r["bytes"], 2) . " " . $r["units"];
+    }
+
+    private static function getEventCounts(\CharlotteDunois\Yasmin\Client $client): array
+    {
+        $e = [];
+        foreach ($client->listeners() as $event => $calls) {
+            $e[$event] = count($calls);
+        }
+        ksort($e);
+        return $e;
+    }
+
+    private static function getPlugins(): array
+    {
+        $a = [];
+        foreach (get_declared_classes() as $class) {
+            if ((new \ReflectionClass($class))->implementsInterface("Huntress\PluginInterface")) {
+                $a[] = $class;
+            }
+        }
+        return $a;
     }
 }
