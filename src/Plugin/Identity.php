@@ -30,9 +30,5 @@ class Identity implements \Huntress\PluginInterface
                 $bot->log->debug("Avatar update complete!");
             });
         });
-        $bot->log->debug("Updating avatar...");
-        $bot->client->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
-            $bot->log->debug("Avatar update complete!");
-        });
     }
 }
