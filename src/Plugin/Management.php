@@ -41,7 +41,11 @@ class Management implements \Huntress\PluginInterface
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
         } else {
-            die();
+            return self::send($message->channel, ":joy::gun:")->then(function () {
+                die();
+            }, function () {
+                die();
+            });
         }
     }
 
