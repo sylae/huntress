@@ -1,5 +1,4 @@
 #!/bin/sh -x
 
 git pull --recurse-submodules
-composer install
-
+composer install --no-progress
