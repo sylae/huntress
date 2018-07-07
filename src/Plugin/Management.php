@@ -65,8 +65,12 @@ class Management implements \Huntress\PluginInterface
             $embed->addField("System", php_uname());
             $embed->addField("Uptime", sprintf("%s - *(connected %s)*", self::$startupTime->diffForHumans(null, true, null, 2), self::$startupTime->toAtomString()));
             $embed->addField("Loaded Plugins", implode("\n", self::getPlugins()));
-            $embed->addField("Composer dependencies", "```json\n" . json_encode(self::composerPackages(), JSON_PRETTY_PRINT) . "\n```");
-            $embed->addField("Events", "```json\n" . json_encode(self::getEventCounts($bot->client), JSON_PRETTY_PRINT) . "\n```");
+
+            $deps = "";
+            foreach (self::composerPackages() as $p => $v) {
+                $deps .= "[$p](https://packagist.org/packages/$p) ($v)\n";
+            }
+            $embed->addField("Composer dependencies", $deps);
 
             return self::send($message->channel, "", ['embed' => $embed]);
         } catch (\Throwable $e) {
@@ -163,7 +167,7 @@ class Management implements \Huntress\PluginInterface
             $e      = json_decode($stdout, true)['installed'];
             $r      = [];
             foreach ($e as $p) {
-                $r[explode("/", $p['name'])[1]] = $p['version'];
+                $r[$p['name']] = $p['version'];
             }
             return $r;
         } else {
@@ -183,16 +187,6 @@ class Management implements \Huntress\PluginInterface
             }
         }
         return number_format($r["bytes"], 2) . " " . $r["units"];
-    }
-
-    private static function getEventCounts(\CharlotteDunois\Yasmin\Client $client): array
-    {
-        $e = [];
-        foreach ($client->listeners() as $event => $calls) {
-            $e[$event] = count($calls);
-        }
-        ksort($e);
-        return $e;
     }
 
     private static function getPlugins(): array
