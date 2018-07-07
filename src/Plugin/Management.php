@@ -28,7 +28,7 @@ class Management implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "restart", [self::class, "restart"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "ping", [self::class, "ping"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "huntress", [self::class, "info"]);
-        $bot->client->on(self::PLUGINEVENT_READY, function() {
+        $bot->client->on(self::PLUGINEVENT_READY, function () {
             self::$startupTime = \Carbon\Carbon::now();
         });
     }
