@@ -19,6 +19,10 @@ class DatabaseFactory
      */
     private static $db = null;
 
+    const CHARSET = [
+        'collation' => 'utf8mb4_unicode_ci',
+    ];
+
     /**
      * Get a reference to the db object. :snug:
      * @return \Doctrine\DBAL\Connection
@@ -37,41 +41,21 @@ class DatabaseFactory
      * throw shit.
      * @return void
      */
-    public static function make(array $config): void
+    public static function make(Bot $bot): void
     {
-        self::$db = \Doctrine\DBAL\DriverManager::getConnection(['url' => $config['database']], new \Doctrine\DBAL\Configuration());
-        self::schema();
+        self::$db = \Doctrine\DBAL\DriverManager::getConnection(['url' => $bot->config['database']], new \Doctrine\DBAL\Configuration());
+        self::schema($bot);
     }
 
-    public static function schema(): void
+    public static function schema(Bot $bot): void
     {
         $db         = self::get();
         $sm         = $db->getSchemaManager();
         $fromSchema = $sm->createSchema();
 
         // Initialize existing schema database.
-        $schema  = new \Doctrine\DBAL\Schema\Schema();
-        $tables  = [];
-        $charset = [
-            'collation' => 'utf8mb4_unicode_ci',
-        ];
-
-        $tables['sprint'] = $schema->createTable("sprint");
-        $tables['sprint']->addColumn("sid", "integer", ["unsigned" => true, "autoincrement" => true]);
-        $tables['sprint']->addColumn("user", "bigint", ["unsigned" => true]);
-        $tables['sprint']->addColumn("guild", "bigint", ["unsigned" => true]);
-        $tables['sprint']->addColumn("channel", "bigint", ["unsigned" => true]);
-        $tables['sprint']->addColumn("words", "integer", ["unsigned" => true]);
-        $tables['sprint']->addColumn("current", "integer", ["unsigned" => true, "default" => 0]);
-        $tables['sprint']->addColumn("status", "integer", ["unsigned" => true, "default" => Plugin\Sprint::STATUS_ACTIVE]);
-        $tables['sprint']->addColumn("period", "integer", ["unsigned" => true]);
-        $tables['sprint']->addColumn("startTime", "datetime");
-        $tables['sprint']->addColumn("endTime", "datetime");
-        $tables['sprint']->addColumn("label", "text", ['customSchemaOptions' => $charset]);
-        $tables['sprint']->setPrimaryKey(["sid"]);
-        $tables['sprint']->addIndex(["user"]);
-        $tables['sprint']->addIndex(["endTime"]);
-        $tables['sprint']->addIndex(["guild"]);
+        $schema = new \Doctrine\DBAL\Schema\Schema();
+        $bot->client->emit(PluginInterface::PLUGINEVENT_DB_SCHEMA, $schema);
 
         $comparator    = new \Doctrine\DBAL\Schema\Comparator();
         $schemaDiff    = $comparator->compare($fromSchema, $schema);

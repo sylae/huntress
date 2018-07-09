@@ -29,6 +29,27 @@ class Sprint implements \Huntress\PluginInterface
     public static function register(\Huntress\Bot $bot)
     {
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "sprint", [self::class, "process"]);
+        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+    }
+
+    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
+    {
+        $t = $schema->createTable("sprint");
+        $t->addColumn("sid", "integer", ["unsigned" => true, "autoincrement" => true]);
+        $t->addColumn("user", "bigint", ["unsigned" => true]);
+        $t->addColumn("guild", "bigint", ["unsigned" => true]);
+        $t->addColumn("channel", "bigint", ["unsigned" => true]);
+        $t->addColumn("words", "integer", ["unsigned" => true]);
+        $t->addColumn("current", "integer", ["unsigned" => true, "default" => 0]);
+        $t->addColumn("status", "integer", ["unsigned" => true, "default" => self::STATUS_ACTIVE]);
+        $t->addColumn("period", "integer", ["unsigned" => true]);
+        $t->addColumn("startTime", "datetime");
+        $t->addColumn("endTime", "datetime");
+        $t->addColumn("label", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->setPrimaryKey(["sid"]);
+        $t->addIndex(["user"]);
+        $t->addIndex(["endTime"]);
+        $t->addIndex(["guild"]);
     }
 
     public static function process(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
@@ -41,11 +62,11 @@ class Sprint implements \Huntress\PluginInterface
             $commands = [];
 
             $commands[] = Command::create('set', [self::class, 'setHandler'])->setDescription('Set a deadline')->addOperands([
-                        (new Operand('words', Operand::REQUIRED))->setValidation('is_numeric'),
-                        (new Operand('period', Operand::OPTIONAL))->setValidation('is_string')->setDefaultValue("24h"),
-                    ])->addOptions([
+                (new Operand('words', Operand::REQUIRED))->setValidation('is_numeric'),
+                (new Operand('period', Operand::OPTIONAL))->setValidation('is_string')->setDefaultValue("24h"),
+            ])->addOptions([
                 (new Option('l', 'label', GetOpt::OPTIONAL_ARGUMENT))->setDefaultValue("words")->setDescription('The thing you are tracking (default: words)')
-                    ]
+            ]
             );
 
             $commands[] = Command::create('status', [self::class, 'statusHandler'])->setDescription('Check your sprint status')->addOptions([
@@ -91,24 +112,24 @@ class Sprint implements \Huntress\PluginInterface
         $qb = \Huntress\DatabaseFactory::get()->createQueryBuilder();
 
         $qb->insert("sprint")->values([
-                    'user'      => '?',
-                    'guild'     => '?',
-                    'startTime' => '?',
-                    'endTime'   => '?',
-                    'words'     => '?',
-                    'period'    => '?',
-                    'label'     => '?',
-                    'channel'   => '?',
-                ])
-                ->setParameter(0, $message->author->id, "integer")
-                ->setParameter(1, $message->guild->id, "integer")
-                ->setParameter(2, $now, "datetime")
-                ->setParameter(3, $time, "datetime")
-                ->setParameter(4, $words, "integer")
-                ->setParameter(5, $time->diffInSeconds($now, true), "integer")
-                ->setParameter(6, $label, "text")
-                ->setParameter(7, $message->channel->id, "integer")
-                ->execute();
+            'user'      => '?',
+            'guild'     => '?',
+            'startTime' => '?',
+            'endTime'   => '?',
+            'words'     => '?',
+            'period'    => '?',
+            'label'     => '?',
+            'channel'   => '?',
+        ])
+        ->setParameter(0, $message->author->id, "integer")
+        ->setParameter(1, $message->guild->id, "integer")
+        ->setParameter(2, $now, "datetime")
+        ->setParameter(3, $time, "datetime")
+        ->setParameter(4, $words, "integer")
+        ->setParameter(5, $time->diffInSeconds($now, true), "integer")
+        ->setParameter(6, $label, "text")
+        ->setParameter(7, $message->channel->id, "integer")
+        ->execute();
         $id    = $qb->getConnection()->lastInsertId();
         $line1 = sprintf("%s, you are sprinting towards %s %s over %s. Your deadline is %s.", $message->member, number_format($words), $label, $time->diffForHumans($now, true, false, 2), $time->toAtomString());
         $line2 = sprintf("I will @ you in %s when time is up, and you can use `!sprint update %s current_count` at any time. Good luck!", $message->channel, $id);
@@ -155,8 +176,8 @@ class Sprint implements \Huntress\PluginInterface
 
         $embed = self::easyEmbed($message);
         $embed->setTitle("Sprint updated!")->setThumbnail($message->author->getAvatarURL())
-                ->addField("Count", sprintf("%s / %s %s (%s %s)", number_format($curr), number_format($goal), $label, number_format($pct_goal, 1) . "%", ($curr >= $goal) ? ":cookie:" : ":bell:"), true)
-                ->addField("Status", $status, true)
+        ->addField("Count", sprintf("%s / %s %s (%s %s)", number_format($curr), number_format($goal), $label, number_format($pct_goal, 1) . "%", ($curr >= $goal) ? ":cookie:" : ":bell:"), true)
+        ->addField("Status", $status, true)
         ;
         if ($status == self::STATUS_ACTIVE) {
             $embed->addField("Duration", sprintf("%s\n*%s (%s)*", $end->diffForHumans($begin, true, false, 2), $end->diffForHumans(null, false, false, 2), number_format($pct_time, 1) . "%"));

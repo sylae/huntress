@@ -54,7 +54,7 @@ class Bot
             }
         }
 
-        DatabaseFactory::make($this->config);
+        DatabaseFactory::make($this);
 
 
         $this->client->on('ready', [$this, 'readyHandler']);
