@@ -12,8 +12,13 @@ require_once __DIR__ . "/vendor/autoload.php";
 require_once __DIR__ . "/config.php";
 
 if (PHP_SAPI != "cli") {
-    header("Location: https://cdn.discordapp.com/emojis/393579183160295424.png?v=1");
-    die();
+    die("Only run from the command-line.");
+}
+
+if (!is_writable("temp")) {
+    if (!mkdir("temp", 0770)) {
+        die("Huntress must be able to write to the 'temp' directory. Please make this dir, give permissions, and try again");
+    }
 }
 
 foreach (glob(__DIR__ . "/src/Command/*.php") as $file) {

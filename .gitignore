@@ -2,3 +2,4 @@ composer.phar
 config.php
 /vendor/
 /nbproject/private/
+/temp/
