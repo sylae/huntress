@@ -38,8 +38,5 @@ register_shutdown_function(function () {
     }
 });
 
-$library = new Library();
-$library->loadFanfic();
-
 $bot = new Bot($config);
 $bot->start();
