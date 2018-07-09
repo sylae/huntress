@@ -21,9 +21,6 @@ if (!is_writable("temp")) {
     }
 }
 
-foreach (glob(__DIR__ . "/src/Command/*.php") as $file) {
-    require_once($file);
-}
 foreach (glob(__DIR__ . "/src/Plugin/*.php") as $file) {
     require_once($file);
 }
