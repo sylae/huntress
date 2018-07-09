@@ -148,7 +148,7 @@ class FanficLibrary implements \Huntress\PluginInterface
                 if (mb_strlen(trim($v->status ?? "")) > 0) {
                     $title[] = "*({$v->status})*";
                 }
-                if (count($v->words ?? 0) > 0) {
+                if ($v->words ?? 0 > 0) {
                     $data[] = "*(" . number_format($v->words) . " words)*";
                 }
                 if (mb_strlen(trim($v->comments ?? "")) > 0) {
