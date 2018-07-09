@@ -30,6 +30,7 @@ class Sprint implements \Huntress\PluginInterface
     {
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "sprint", [self::class, "process"]);
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -50,6 +51,32 @@ class Sprint implements \Huntress\PluginInterface
         $t->addIndex(["user"]);
         $t->addIndex(["endTime"]);
         $t->addIndex(["guild"]);
+    }
+
+    public static function poll(\Huntress\Bot $bot)
+    {
+        $bot->loop->addPeriodicTimer(1, function() use ($bot) {
+            foreach ($bot->client->guilds as $guild) {
+                foreach (self::getSprints($guild, null, self::STATUS_ACTIVE) as $id => $sprint) {
+                    if ($sprint['endTime'] < \Carbon\Carbon::now()) {
+                        $args    = [
+                            $sprint['user']->id,
+                            $sprint['words'],
+                            $sprint['label'],
+                            $sprint['endTime']->diffForHumans($sprint['startTime'], true, false, 2),
+                            $id,
+                        ];
+                        $message = vsprintf("<@%s>, your sprint has ended!\n"
+                        . "You were sprinting for %s %s, over %s.\n"
+                        . "Please report your final total using `!sprint update %s final_count`.", $args);
+                        self::send($sprint['channel'], $message)->then(function() use ($id) {
+                            $qb = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+                            $qb->update("sprint")->set("status", self::STATUS_FINISHED)->where($qb->expr()->eq('sid', $id))->execute();
+                        });
+                    }
+                }
+            }
+        });
     }
 
     public static function process(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
@@ -138,10 +165,16 @@ class Sprint implements \Huntress\PluginInterface
 
     public static function statusHandler(GetOpt $getOpt, \CharlotteDunois\Yasmin\Models\Message $message)
     {
-        $sprints = self::getSprints($message->guild);
+        $me      = $getOpt->getOption('me') ? $message->author : null;
+        $time    = $getOpt->getOption('all') ? null : \Carbon\Carbon::now()->subDay();
+        $status  = $getOpt->getOption('all') ? null : self::STATUS_ACTIVE;
+        $sprints = self::getSprints($message->guild, $me, $status, $time);
         $x       = self::formatSprintTable($sprints);
 
-        return self::send($message->channel, "```" . PHP_EOL . $x . PHP_EOL . "```", ['split' => ['before' => '```' . PHP_EOL, 'after' => '```']]);
+        $tag = sprintf("**Sprint status: %s**\n"
+        . "User: %s // Status: `%s` // Time: `%s`\n", $message->guild->name, $me ?? "`All Users`", is_null($status) ? "All" : "Active", ($time instanceof \Carbon\Carbon) ? $time->toAtomString() : "All");
+
+        return self::send($message->channel, $tag . "```" . PHP_EOL . $x . PHP_EOL . "```", ['split' => ['before' => '```' . PHP_EOL, 'after' => '```']]);
     }
 
     public static function updateHandler(GetOpt $getOpt, \CharlotteDunois\Yasmin\Models\Message $message)
@@ -285,12 +318,18 @@ class Sprint implements \Huntress\PluginInterface
         }
     }
 
-    private static function getSprints(\CharlotteDunois\Yasmin\Models\Guild $guild, \CharlotteDunois\Yasmin\Models\User $user = null): array
+    private static function getSprints(\CharlotteDunois\Yasmin\Models\Guild $guild, \CharlotteDunois\Yasmin\Models\User $user = null, int $status = null, \Carbon\Carbon $after = null): array
     {
         $qb = \Huntress\DatabaseFactory::get()->createQueryBuilder();
         $qb->select("*")->from("sprint")->where('guild = ?')->setParameter(0, $guild->id, "integer")->orderBy("endTime", "ASC");
         if (!is_null($user)) {
             $qb->andWhere('user = ?')->setParameter(1, $user->id, "integer");
+        }
+        if (!is_null($status)) {
+            $qb->andWhere('status = ?')->setParameter(2, $status, "integer");
+        }
+        if (!is_null($after)) {
+            $qb->andWhere('endTime >= ?')->setParameter(3, $after, "datetime");
         }
         $res = $qb->execute()->fetchAll();
         $p   = [];
