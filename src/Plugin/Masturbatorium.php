@@ -20,6 +20,7 @@ class Masturbatorium implements \Huntress\PluginInterface
     public static function register(\Huntress\Bot $bot)
     {
         $bot->client->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "modlog", [self::class, "modlog"]);
     }
 
     public static function voiceStateHandler(\CharlotteDunois\Yasmin\Models\GuildMember $new, ?\CharlotteDunois\Yasmin\Models\GuildMember $old)
@@ -30,6 +31,22 @@ class Masturbatorium implements \Huntress\PluginInterface
                 $new->addRole($role)->then(function () use ($new) {
                     self::send($new->guild->channels->get("455013336833327104"), "<@{$new->id}>, I'm going to give you the DJ role, since you're joining a voice chat.");
                 });
+            }
+        }
+    }
+
+    public static function modlog(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    {
+        if (is_null($message->member->roles->get("446317817604603904"))) {
+            return self::unauthorized($message);
+        } else {
+            try {
+                $args = self::_split($message->content);
+                $msg  = str_replace($args[0], "", $message->content);
+
+                return self::send($message->client->channels->get("446320118784589826"), $msg);
+            } catch (\Throwable $e) {
+                return self::exceptionHandler($message, $e, true);
             }
         }
     }
