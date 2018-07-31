@@ -33,7 +33,7 @@ class Evaluate implements \Huntress\PluginInterface
                 $msg      = str_replace(['```php', '```'], "", $msg);
                 $response = eval($msg);
                 if (is_string($response)) {
-                    return self::send($message->channel, $response);
+                    return self::send($message->channel, $response, ['split' => true]);
                 } else {
                     return self::send($message->channel, "```json" . PHP_EOL . json_encode($response, JSON_PRETTY_PRINT) . PHP_EOL . "```", ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
                 }
