@@ -28,8 +28,16 @@ class Management implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "restart", [self::class, "restart"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "ping", [self::class, "ping"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "huntress", [self::class, "info"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "invite", [self::class, "invite"]);
         $bot->client->on(self::PLUGINEVENT_READY, function () {
             self::$startupTime = \Carbon\Carbon::now();
+        });
+    }
+
+    public static function invite(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    {
+        return $bot->client->generateOAuthInvite()->then(function($i) use ($message) {
+            self::send($message->channel, sprintf("Use the following URL to add this Huntress instance to your server!\n<%s>", $i));
         });
     }
 
