@@ -48,6 +48,9 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
 
                 $s[] = sprintf("%s `%s` - Found on %s, %s", (string) $emote, $emote->name, $emote->guild->name, $sim_str);
             }
+            if (count($s) == 0) {
+                $s[] = "No results found matching `$code`";
+            }
             return self::send($message->channel, implode(PHP_EOL, $s), ['split' => true]);
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
