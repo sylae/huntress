@@ -24,7 +24,7 @@ class Identity implements \Huntress\PluginInterface
 
     public static function process(\Huntress\Bot $bot)
     {
-        $bot->loop->addPeriodicTimer(60 * 60, function () use ($bot) {
+        $bot->loop->addPeriodicTimer(60 * 60 * 24, function () use ($bot) {
             $bot->log->debug("Updating avatar...");
             $bot->client->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
                 $bot->log->debug("Avatar update complete!");
