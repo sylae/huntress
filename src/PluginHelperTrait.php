@@ -14,6 +14,7 @@ namespace Huntress;
  */
 trait PluginHelperTrait
 {
+
     public static function _split(string $string): array
     {
         //$regex = '/(.*?[^\\\\](\\\\\\\\)*?)\\s/';
@@ -53,7 +54,7 @@ trait PluginHelperTrait
     {
         $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
         return $embed->setTimestamp(time())
-                        ->setAuthor($message->guild->me->nickname ?? $message->client->user->username, $message->client->user->getDisplayAvatarURL());
+        ->setAuthor($message->guild->me->nickname ?? $message->client->user->username, $message->client->user->getDisplayAvatarURL());
     }
 
     public static function parseGuildUser(\CharlotteDunois\Yasmin\Models\Guild $guild, string $string): ?\CharlotteDunois\Yasmin\Models\GuildMember
@@ -122,5 +123,21 @@ trait PluginHelperTrait
     public static function send(\CharlotteDunois\Yasmin\Interfaces\TextChannelInterface $channel, string $msg = "", array $opts = []): \React\Promise\ExtendedPromiseInterface
     {
         return $channel->send($msg, $opts);
+    }
+
+    public static function getEmotes(string $s): array
+    {
+        $regex   = "/<(a?):(.*?):(\\d+)>/i";
+        $matches = [];
+        $r       = [];
+        preg_match_all($regex, $s, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            $r[] = [
+                'animated' => (bool) $match[1],
+                'name'     => $match[2],
+                'id'       => $match[3],
+            ];
+        }
+        return $r;
     }
 }
