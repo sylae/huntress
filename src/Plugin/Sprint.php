@@ -315,6 +315,8 @@ class Sprint implements \Huntress\PluginInterface
                 }
             }
             return $time;
+        } else {
+            throw new \Exception("Could not parse relative time.");
         }
     }
 

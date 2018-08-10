@@ -61,7 +61,6 @@ class NewHorizon implements \Huntress\PluginInterface
 
     public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): \React\Promise\ExtendedPromiseInterface
     {
-        var_dump($member->user->tag);
         return self::send($member->guild->channels->get("450691718359023616"), self::formatWelcomeMessage($member->user));
     }
 

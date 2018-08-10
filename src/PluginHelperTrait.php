@@ -100,7 +100,7 @@ trait PluginHelperTrait
         foreach ($lines as $line) {
             $len = mb_strlen($line) + 1;
             if ($len >= $payload) {
-                throw new Exception("Single line cannot exceed message limit :v");
+                throw new \Exception("Single line cannot exceed message limit :v");
             }
             if ($len + mb_strlen($pack) <= $payload) {
                 $pack .= $line . "\n";
