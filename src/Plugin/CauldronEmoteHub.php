@@ -20,6 +20,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
     public static function register(\Huntress\Bot $bot)
     {
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "emote", [self::class, "process"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "importEmote", [self::class, "importmoji"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_CEHInternalAddGuildInviteURL", [self::class, "addInvite"]);
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
@@ -50,6 +51,31 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                 $query->execute();
 
                 return self::send($message->channel, "Added! :triumph:");
+            } catch (\Throwable $e) {
+                return self::exceptionHandler($message, $e, true);
+            }
+        }
+    }
+
+    public static function importmoji(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
+            return self::unauthorized($message);
+        } elseif (!$message->guild->me->permissions->has('MANAGE_EMOJIS')) {
+            return self::error($message, "Unauthorized!", "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
+        } else {
+            try {
+                $emotes = self::getEmotes($message->content);
+                if (count($emotes) != 1) {
+                    return self::error($message, "Invalid Arguments", "Give me exactly one emote as an argument");
+                }
+                $url = \CharlotteDunois\Yasmin\HTTP\APIEndpoints::CDN['url'] . \CharlotteDunois\Yasmin\HTTP\APIEndpoints::format(\CharlotteDunois\Yasmin\HTTP\APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
+
+                return $message->guild->createEmoji($url, $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message) {
+                    return self::send($message->channel, "Imported the following emote:\n" . json_encode($emote, JSON_PRETTY_PRINT));
+                }, function ($e) use ($message) {
+                    return self::send($message->channel, "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
+                });
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
