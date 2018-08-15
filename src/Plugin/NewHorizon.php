@@ -23,6 +23,7 @@ class NewHorizon implements \Huntress\PluginInterface
         $bot->client->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_NHInternalSetWelcomeMessage", [self::class, "setWelcome"]);
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -31,6 +32,46 @@ class NewHorizon implements \Huntress\PluginInterface
         $t->addColumn("key", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t->addColumn("value", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t->setPrimaryKey(["key"]);
+    }
+
+    /**
+     * Adapted from Ligrev code by Christoph Burschka <christoph@burschka.de>
+     */
+    public static function poll(\Huntress\Bot $bot)
+    {
+        $bot->loop->addPeriodicTimer(60, function() use ($bot) {
+            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://ayin.earth/forum/index.php?action=.xml;type=rss2")->then(function(string $string) use ($bot) {
+
+                $data     = \qp($string);
+                $items    = $data->find('item');
+                $lastPub  = self::getLastRSS();
+                $newest   = $lastPub;
+                $newItems = [];
+                foreach ($items as $item) {
+                    $published  = strtotime($item->find('pubDate')->text());
+                    if ($published <= $lastPub || stripos($item->find('title')->text(), "Re:") === 0) // temporarily showing replies too :o
+                        continue;
+                    $newest     = max($newest, $published);
+                    $newItems[] = (object) [
+                        'title'    => $item->find('title')->text(),
+                        'link'     => $item->find('link')->text(),
+                        'date'     => (new \Carbon\Carbon($item->find('pubDate')->text())),
+                        'category' => $item->find('category')->text(),
+                        'body'     => (new \League\HTMLToMarkdown\HtmlConverter())->convert($item->find('description')->text()),
+                    ];
+                }
+                foreach ($newItems as $item) {
+                    $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                    $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setColor(0xffd22b)->setFooter($item->category, "https://ayin.earth/img/nh3_s.png");
+                    $bot->client->channels->get("479296410647527425")->send("", ['embed' => $embed]);
+                }
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO nh_config (`key`, `value`) VALUES(?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
+                $query->bindValue(1, "rssPublished");
+                $query->bindValue(2, $newest);
+                $query->execute();
+            });
+        });
     }
 
     public static function setWelcome(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
@@ -78,6 +119,17 @@ class NewHorizon implements \Huntress\PluginInterface
             return $data['value'];
         }
         return "Welcome to New Horizon!";
+    }
+
+    private static function getLastRSS(): int
+    {
+        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("*")->from("nh_config")->where('`key` = ?')->setParameter(0, 'rssPublished', "string");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return $data['value'];
+        }
+        return 0;
     }
 
     public static function voiceStateHandler(\CharlotteDunois\Yasmin\Models\GuildMember $new, ?\CharlotteDunois\Yasmin\Models\GuildMember $old)
