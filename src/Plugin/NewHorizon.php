@@ -57,7 +57,7 @@ class NewHorizon implements \Huntress\PluginInterface
                         'link'     => $item->find('link')->text(),
                         'date'     => (new \Carbon\Carbon($item->find('pubDate')->text())),
                         'category' => $item->find('category')->text(),
-                        'body'     => (new \League\HTMLToMarkdown\HtmlConverter())->convert($item->find('description')->text()),
+                        'body'     => (new \League\HTMLToMarkdown\HtmlConverter(['strip_tags' => true]))->convert($item->find('description')->text()),
                     ];
                 }
                 foreach ($newItems as $item) {
