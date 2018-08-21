@@ -84,7 +84,7 @@ class Bot
 
     public function readyHandler()
     {
-        $this->log->info('Logged in as ' . $this->client->user->tag . ' created on ' . $this->client->user->createdAt->format('d.m.Y H:i:s'));
+        $this->log->info('Logged in as ' . $this->client->user->tag);
         $this->client->emit(PluginInterface::PLUGINEVENT_READY, $this);
     }
 
@@ -94,16 +94,22 @@ class Bot
         $preg  = "/^!(\w+)(\s|$)/";
         $match = [];
         try {
-            if ($message->channel->type === 'text' && preg_match($preg, $message->content, $match)) {
+            if ($message->channel->type === 'text') {
                 try {
-                    $this->client->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
+                    $this->client->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
                 } catch (\Throwable $e) {
                     $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
-                    echo PHP_EOL . $e->xdebug_message . PHP_EOL;
+                }
+                if (preg_match($preg, $message->content, $match)) {
+                    try {
+                        $this->client->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
+                    } catch (\Throwable $e) {
+                        $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
+                    }
                 }
             }
         } catch (\Throwable $e) {
-            echo $e->xdebug_message;
+            $this->log->warning("Uncaught message processing exception!", ['exception' => $e]);
         }
     }
 }
