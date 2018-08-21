@@ -56,7 +56,6 @@ class RCB implements \Huntress\PluginInterface
                         'body'     => str_replace("<!-- SC_OFF -->", "", (new \League\HTMLToMarkdown\HtmlConverter(['strip_tags' => true]))->convert($item->find('content')->text())),
                     ];
                 }
-                var_dump($newItems);
                 foreach ($newItems as $item) {
                     if (mb_strlen($item->body) > 2048) {
                         $item->body = substr($item->body, 0, 2045) . "...";
