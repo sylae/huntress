@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use Carbon\Carbon;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
+
 /**
  * Simple builtin to show user information
  *
