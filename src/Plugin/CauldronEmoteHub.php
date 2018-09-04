@@ -72,7 +72,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                 $url = \CharlotteDunois\Yasmin\HTTP\APIEndpoints::CDN['url'] . \CharlotteDunois\Yasmin\HTTP\APIEndpoints::format(\CharlotteDunois\Yasmin\HTTP\APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
 
                 return $message->guild->createEmoji($url, $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message) {
-                    return self::send($message->channel, "Imported the following emote:\n" . json_encode($emote, JSON_PRETTY_PRINT));
+                    return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
                 }, function ($e) use ($message) {
                     return self::send($message->channel, "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
                 });
