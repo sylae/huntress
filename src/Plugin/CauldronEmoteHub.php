@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \CharlotteDunois\Yasmin\HTTP\APIEndpoints;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
+
 /**
  * Simple builtin to show user information
  *
@@ -21,6 +24,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
     {
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "emote", [self::class, "process"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "importEmote", [self::class, "importmoji"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "flopEmote", [self::class, "flopmoji"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_CEHInternalAddGuildInviteURL", [self::class, "addInvite"]);
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
@@ -69,7 +73,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                 if (count($emotes) != 1) {
                     return self::error($message, "Invalid Arguments", "Give me exactly one emote as an argument");
                 }
-                $url = \CharlotteDunois\Yasmin\HTTP\APIEndpoints::CDN['url'] . \CharlotteDunois\Yasmin\HTTP\APIEndpoints::format(\CharlotteDunois\Yasmin\HTTP\APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
+                $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
 
                 return $message->guild->createEmoji($url, $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message) {
                     return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
@@ -123,6 +127,39 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             return self::send($message->channel, implode(PHP_EOL, $s), ['split' => true]);
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
+        }
+    }
+
+    public static function flopmoji(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
+            return self::unauthorized($message);
+        } elseif (!$message->guild->me->permissions->has('MANAGE_EMOJIS')) {
+            return self::error($message, "Unauthorized!", "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
+        } else {
+            $emotes = self::getEmotes($message->content);
+            if (count($emotes) != 1) {
+                return self::error($message, "Invalid Arguments", "Give me exactly one emote as an argument");
+            }
+            $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
+
+            return URLHelpers::resolveURLToData($url)->then(function(string $string) use ($message, $emotes) {
+                try {
+                    $file = "/tmp/huntressEmote." . time() . "." . ($emotes[0]['animated'] ? 'gif' : 'png');
+                    file_put_contents($file, $string);
+                    $img  = new \Imagick($file);
+                    $img->flopImage();
+                    return $message->guild->createEmoji($img->getImagesBlob(), "r" . $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message, $file) {
+                        unlink($file);
+                        return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
+                    }, function ($e) use ($message, $file) {
+                        unlink($file);
+                        return self::send($message->channel, "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
+                    });
+                } catch (\Throwable $e) {
+                    return self::exceptionHandler($message, $e, true);
+                }
+            });
         }
     }
 
