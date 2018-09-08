@@ -148,7 +148,9 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                     $file = "/tmp/huntressEmote." . time() . "." . ($emotes[0]['animated'] ? 'gif' : 'png');
                     file_put_contents($file, $string);
                     $img  = new \Imagick($file);
-                    $img->flopImage();
+                    foreach ($img as $i) {
+                        $i->flopImage();
+                    }
                     return $message->guild->createEmoji($img->getImagesBlob(), "r" . $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message, $file) {
                         unlink($file);
                         return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
