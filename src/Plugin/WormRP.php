@@ -107,7 +107,7 @@ class WormRP implements \Huntress\PluginInterface
                     $users[$item->data->author] = max($published, $users[$item->data->author] ?? 0);
                 }
                 $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'datetime']);
+                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=VALUES(`lastSubActivity`);', ['string', 'datetime']);
                 foreach ($users as $name => $date) {
                     $query->bindValue(1, $name);
                     $query->bindValue(2, \Carbon\Carbon::createFromTimestamp($date));
