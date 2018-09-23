@@ -29,6 +29,17 @@ class WormRP implements \Huntress\PluginInterface
         $t->addColumn("key", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t->addColumn("value", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t->setPrimaryKey(["key"]);
+
+        $t2 = $schema->createTable("wormrp_users");
+        $t2->addColumn("user", "bigint", ["unsigned" => true]);
+        $t2->addColumn("redditName", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t2->setPrimaryKey(["user"]);
+        $t2->addIndex(["redditName"]);
+
+        $t3 = $schema->createTable("wormrp_activity");
+        $t3->addColumn("redditName", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t3->addColumn("lastSubActivity", "datetime");
+        $t3->setPrimaryKey(["redditName"]);
     }
 
     /**
@@ -85,6 +96,23 @@ class WormRP implements \Huntress\PluginInterface
                 $query->bindValue(1, "rssPublished");
                 $query->bindValue(2, $newest);
                 $query->execute();
+            });
+        });
+        $bot->loop->addPeriodicTimer(300, function() use ($bot) {
+            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
+                $items = json_decode($string)->data->children;
+                $users = [];
+                foreach ($items as $item) {
+                    $published                  = $item->data->created_utc;
+                    $users[$item->data->author] = max($published, $users[$item->data->author] ?? 0);
+                }
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'datetime']);
+                foreach ($users as $name => $date) {
+                    $query->bindValue(1, $name);
+                    $query->bindValue(2, \Carbon\Carbon::createFromTimestamp($date));
+                    $query->execute();
+                }
             });
         });
     }
