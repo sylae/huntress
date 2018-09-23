@@ -121,7 +121,7 @@ class WormRP implements \Huntress\PluginInterface
     public static function accountLinkHandler(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
     {
         if ($message->guild->id != "118981144464195584") {
-            return;
+            return null;
         }
         if (is_null($message->member->roles->get("456321111945248779"))) {
             return self::unauthorized($message);
