@@ -21,6 +21,7 @@ class WormRP implements \Huntress\PluginInterface
     {
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -117,6 +118,38 @@ class WormRP implements \Huntress\PluginInterface
         });
     }
 
+    public static function accountLinkHandler(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if ($message->guild->id != "118981144464195584") {
+            return;
+        }
+        if (is_null($message->member->roles->get("456321111945248779"))) {
+            return self::unauthorized($message);
+        } else {
+            try {
+                $args = self::_split($message->content);
+                if (count($args) < 3) {
+                    return self::error($message, "You dipshit :open_mouth:", "!linkAccount redditName discordName");
+                }
+                $user = self::parseGuildUser($message->guild, $args[2]);
+
+                if (is_null($user)) {
+                    return self::error($message, "Error", "I don't know who the hell {$args[2]} is :(");
+                }
+
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_users (`user`, `redditName`) VALUES(?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `redditName`=VALUES(`redditName`);', ['integer', 'string']);
+                $query->bindValue(1, $user->id);
+                $query->bindValue(2, $args[1]);
+                $query->execute();
+
+                return self::send($message->channel, "Added/updated {$user->user->tag} ({$user->id}) to tracker with reddit username /u/{$args[1]}.");
+            } catch (\Throwable $e) {
+                return self::exceptionHandler($message, $e, true);
+            }
+        }
+    }
+
     private static function getLastRSS(): int
     {
         $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
@@ -126,5 +159,16 @@ class WormRP implements \Huntress\PluginInterface
             return $data['value'];
         }
         return 0;
+    }
+
+    private static function fetchAccount(\CharlotteDunois\Yasmin\Models\Guild $guild, string $redditName): ?\CharlotteDunois\Yasmin\Models\GuildMember
+    {
+        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("*")->from("wormrp_users")->where('`key` = ?')->setParameter(0, $redditName, "string");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return $guild->members->get($data['user']) ?? null;
+        }
+        return null;
     }
 }
