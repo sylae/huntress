@@ -52,6 +52,19 @@ class Shipping implements \Huntress\PluginInterface
                     $cape = trim(str_replace("!ship " . $t[1], "", $message->content));
                     self::delCape($message->guild, $cape);
                     return self::send($message->channel, ":put_litter_in_its_place: " . $cape);
+                case "list":
+                    $qb   = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+                    $qb->select("ship")->from("ships")->where("guild = ?")->orderBy("ship")->setParameter(1, $message->guild->id, "integer");
+                    $x    = $qb->execute()->fetchAll();
+                    $r    = [];
+                    foreach ($x as $s) {
+                        $r[] = '`' . $s['ship'] . '`';
+                    }
+                    if (count($r) < 1) {
+                        throw new \Exception("No ships found for this server! Add some with `!ship add [name]`");
+                    }
+                    return self::send($message->channel, implode(", ", $r), ['split' => ['char' => ","]]);
+
                 case "me":
                     return self::send($message->channel, sprintf("%s x %s OTP", $message->member->displayName, self::getCape($message->guild)));
                 default:
