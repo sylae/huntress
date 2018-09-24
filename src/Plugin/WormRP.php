@@ -22,6 +22,7 @@ class WormRP implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -150,6 +151,31 @@ class WormRP implements \Huntress\PluginInterface
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
+        }
+    }
+
+    public static function lookupHandler(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if ($message->guild->id != "118981144464195584") {
+            return null;
+        }
+        try {
+            $args = self::_split($message->content);
+            if (count($args) < 2) {
+                return self::error($message, "Error", "usage: `!character Character Name`");
+            }
+            $char = urlencode(trim(str_replace($args[0], "", $message->content)));
+
+            $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . $char . "&sort=relevance&restrict_sr=on&t=all";
+            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($url)->then(function(string $string) use ($message) {
+                $items = json_decode($string)->data->children;
+                foreach ($items as $item) {
+                    return $message->channel->send("https://reddit.com" . $item->data->permalink);
+                }
+                return $message->channel->send("I didn't find anything :sob:");
+            });
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e, true);
         }
     }
 
