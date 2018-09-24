@@ -30,5 +30,17 @@ class Identity implements \Huntress\PluginInterface
                 $bot->log->debug("Avatar update complete!");
             });
         });
+        $bot->loop->addPeriodicTimer(15, function () use ($bot) {
+            $opts = [
+                'with your heart',
+                'with fire',
+                'with a Cauldron vial',
+                'with the server',
+                'at being a real person',
+                'with a ball of yarn',
+                'RWBY: Grimm Eclipse',
+            ];
+            $bot->client->user->setPresence(['status' => 'online', 'game' => ['name' => $opts[array_rand($opts)], 'type' => 0]]);
+        });
     }
 }
