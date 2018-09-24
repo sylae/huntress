@@ -53,6 +53,7 @@ class Shipping implements \Huntress\PluginInterface
                     self::delCape($message->guild, $cape);
                     return self::send($message->channel, ":put_litter_in_its_place: " . $cape);
                 case "list":
+                case "ls":
                     $qb   = \Huntress\DatabaseFactory::get()->createQueryBuilder();
                     $qb->select("ship")->from("ships")->where("guild = ?")->orderBy("ship")->setParameter(1, $message->guild->id, "integer");
                     $x    = $qb->execute()->fetchAll();
