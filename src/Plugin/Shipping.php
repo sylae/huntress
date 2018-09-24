@@ -37,12 +37,18 @@ class Shipping implements \Huntress\PluginInterface
             $t = self::_split($message->content);
             switch ($t[1] ?? "") {
                 case "add":
+                    if ($message->author->id == "225385744259219456") {
+                        return self::send($message->channel, "nope");
+                    }
                     $cape = trim(str_replace("!ship " . $t[1], "", $message->content));
                     self::addCape($message->guild, $cape);
                     return self::send($message->channel, ":ok_hand: " . $cape);
                 case "rm":
                 case "delete":
                 case "del":
+                    if ($message->author->id == "225385744259219456") {
+                        return self::send($message->channel, "nope");
+                    }
                     $cape = trim(str_replace("!ship " . $t[1], "", $message->content));
                     self::delCape($message->guild, $cape);
                     return self::send($message->channel, ":put_litter_in_its_place: " . $cape);
