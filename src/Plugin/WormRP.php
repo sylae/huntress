@@ -49,6 +49,9 @@ class WormRP implements \Huntress\PluginInterface
     public static function poll(\Huntress\Bot $bot)
     {
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
+            if (php_uname('s') == "Windows NT") {
+                return null; // don't run on testing because oof
+            }
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/new.json")->then(function(string $string) use ($bot) {
                 $items    = json_decode($string)->data->children;
                 $lastPub  = self::getLastRSS();
