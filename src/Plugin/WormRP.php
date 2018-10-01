@@ -20,7 +20,9 @@ class WormRP implements \Huntress\PluginInterface
     public static function register(\Huntress\Bot $bot)
     {
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
+        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "pollAnnouncer"]);
+        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "pollComments"]);
+        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "pollActiveCheck"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
     }
@@ -47,7 +49,7 @@ class WormRP implements \Huntress\PluginInterface
     /**
      * Adapted from Ligrev code by Christoph Burschka <christoph@burschka.de>
      */
-    public static function poll(\Huntress\Bot $bot)
+    public static function pollAnnouncer(\Huntress\Bot $bot)
     {
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
             if (php_uname('s') == "Windows NT") {
@@ -103,6 +105,10 @@ class WormRP implements \Huntress\PluginInterface
                 $query->execute();
             });
         });
+    }
+
+    public static function pollComments(\Huntress\Bot $bot)
+    {
         $bot->loop->addPeriodicTimer(300, function() {
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
                 $items = json_decode($string)->data->children;
@@ -120,6 +126,10 @@ class WormRP implements \Huntress\PluginInterface
                 }
             });
         });
+    }
+
+    public static function pollActiveCheck(\Huntress\Bot $bot)
+    {
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
             $redd   = [];
             $cutoff = \Carbon\Carbon::now()->addDays(-14);
