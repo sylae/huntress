@@ -103,7 +103,7 @@ class WormRP implements \Huntress\PluginInterface
                 $query->execute();
             });
         });
-        $bot->loop->addPeriodicTimer(300, function() use ($bot) {
+        $bot->loop->addPeriodicTimer(300, function() {
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
                 $items = json_decode($string)->data->children;
                 $users = [];

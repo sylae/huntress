@@ -127,7 +127,7 @@ class FanficLibrary implements \Huntress\PluginInterface
     public static function lookup(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
     {
         try {
-            $time  = \Carbon\Carbon::createFromTimestampMs(round(microtime(true) * 1000));
+            $time  = \Carbon\Carbon::createFromTimestampMs((int) round(microtime(true) * 1000));
             $count = number_format(count(self::$library));
             return self::send($message->channel, ":crystal_ball: Searching **$count** stories...")->then(function (\CharlotteDunois\Yasmin\Models\Message $sent) use ($message, $time) {
                 $args   = self::_split($message->content);
@@ -164,7 +164,7 @@ class FanficLibrary implements \Huntress\PluginInterface
 
                     $embed->addField(implode(" ", $title), implode(" ", $data));
                 }
-                $spent = number_format((\Carbon\Carbon::createFromTimestampMs(round(microtime(true) * 1000))->format("U.u") - $time->format("U.u")), 1);
+                $spent = number_format((\Carbon\Carbon::createFromTimestampMs((int) round(microtime(true) * 1000))->format("U.u") - $time->format("U.u")), 1);
                 $count = number_format(count(self::$library));
                 return $sent->edit("Searched **$count** records in {$spent} seconds.", ['embed' => $embed]);
             });

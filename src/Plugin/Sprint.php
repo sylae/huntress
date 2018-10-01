@@ -115,9 +115,6 @@ class Sprint implements \Huntress\PluginInterface
             }
 
             $command = $getOpt->getCommand();
-            if (!$command) {
-                return self::send($message->channel, $getOpt->getHelpText());
-            }
             return call_user_func($command->getHandler(), $getOpt, $message);
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
