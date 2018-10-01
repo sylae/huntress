@@ -120,6 +120,44 @@ class WormRP implements \Huntress\PluginInterface
                 }
             });
         });
+        $bot->loop->addPeriodicTimer(60, function() use ($bot) {
+            $redd   = [];
+            $cutoff = \Carbon\Carbon::now()->addDays(-14);
+            $query  = \Huntress\DatabaseFactory::get()->query('SELECT * from wormrp_activity right join wormrp_users on wormrp_users.redditName = wormrp_activity.redditName where wormrp_users.user is not null');
+            foreach ($query->fetchAll() as $redditor) {
+                $redd[$redditor['user']] = ((new \Carbon\Carbon($redditor['lastSubActivity'] ?? "1990-01-01")) >= $cutoff);
+            }
+
+            $curr_actives = $bot->client->guilds->get("118981144464195584")->members->filter(function($v, $k) {
+                return $v->roles->has("492933723340144640");
+            });
+
+            foreach ($curr_actives as $member) {
+                if (!array_key_exists($member->id, $redd)) {
+                    $member->removeRole("492933723340144640", "Active Users role requires a linked reddit account")->then(function($member) {
+                        $member->guild->channels->get("491099441357651969")->send("Removed <@{$member->id}> from Active Users due to account linkage. " .
+                        "Please perform `!linkAccount [redditName] {$member->user->tag}`");
+                    });
+                } elseif ($redd[$member->id]) {
+                    unset($redd[$member->id]);
+                } else {
+                    $member->removeRole("492933723340144640", "User fell out of Active status (14 days)")->then(function($member) {
+                        $member->guild->channels->get("491099441357651969")->send("Removed <@{$member->id}> from Active Users due to inactivity.");
+                    });
+                    unset($redd[$member->id]);
+                }
+            }
+            foreach ($redd as $id => $val) {
+                if ($val) {
+                    $member = $bot->client->guilds->get("118981144464195584")->members->get($id);
+                    if (!is_null($member)) {
+                        $member->addRole("492933723340144640", "User is now active on reddit")->then(function($member) {
+                            $member->guild->channels->get("491099441357651969")->send("Added <@{$member->id}> to Active Users.");
+                        });
+                    }
+                }
+            }
+        });
     }
 
     public static function accountLinkHandler(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
