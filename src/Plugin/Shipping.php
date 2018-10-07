@@ -41,6 +41,9 @@ class Shipping implements \Huntress\PluginInterface
                         return self::send($message->channel, "nope");
                     }
                     $cape = trim(str_replace("!ship " . $t[1], "", $message->content));
+                    if (mb_strlen($cape) < 1) {
+                        return self::send($message->channel, "usage: `!ship add [name]`");
+                    }
                     self::addCape($message->guild, $cape);
                     return self::send($message->channel, ":ok_hand: " . $cape);
                 case "rm":
