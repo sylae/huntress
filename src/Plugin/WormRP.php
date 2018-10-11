@@ -109,6 +109,9 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function pollComments(\Huntress\Bot $bot)
     {
+        if (php_uname('s') == "Windows NT") {
+            return null; // don't run on testing because oof
+        }
         $bot->loop->addPeriodicTimer(300, function() {
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
                 $items = json_decode($string)->data->children;
@@ -130,6 +133,9 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function pollActiveCheck(\Huntress\Bot $bot)
     {
+        if (php_uname('s') == "Windows NT") {
+            return null; // don't run on testing because oof
+        }
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
             $redd   = [];
             $cutoff = \Carbon\Carbon::now()->addDays(-14);
