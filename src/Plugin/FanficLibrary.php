@@ -40,6 +40,38 @@ class FanficLibrary implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "lookup", [self::class, "lookup"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "reloadfanfic", [self::class, "reload"]);
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "init"]);
+        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+    }
+
+    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
+    {
+        $t = $schema->createTable("fanfic");
+        $t->addColumn("fid", "integer", ["unsigned" => true, "autoincrement" => true]);
+        $t->addColumn("title", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("author", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("authorurl", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("status", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("comments", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("isSmut", "boolean");
+        $t->addColumn("created", "datetime");
+        $t->addColumn("modified", "datetime");
+        $t->addColumn("words", "integer", ["unsigned" => true]);
+        $t->setPrimaryKey(["fid"]);
+        $t->addIndex(["title"]);
+        $t->addIndex(["author"]);
+
+        $t2 = $schema->createTable("fanfic_links");
+        $t2->addColumn("lid", "integer", ["unsigned" => true, "autoincrement" => true]);
+        $t2->addColumn("fid", "integer", ["unsigned" => true]);
+        $t2->addColumn("url", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t2->setPrimaryKey(["lid"]);
+
+        $t3 = $schema->createTable("fanfic_tags");
+        $t3->addColumn("tid", "integer", ["unsigned" => true, "autoincrement" => true]);
+        $t3->addColumn("fid", "integer", ["unsigned" => true]);
+        $t3->addColumn("tag", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t3->setPrimaryKey(["tid"]);
+        $t3->addIndex(["fid"]);
     }
 
     public static function init(\Huntress\Bot $bot)
@@ -51,11 +83,6 @@ class FanficLibrary implements \Huntress\PluginInterface
         } else {
             $bot->log->warning("fanficDB.json not found. Run !reloadfanfic :o");
         }
-    }
-
-    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
-    {
-        $t = $schema->createTable("fanfic");
     }
 
     public static function reload(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
