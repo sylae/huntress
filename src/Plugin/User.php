@@ -27,18 +27,46 @@ class User implements \Huntress\PluginInterface
         try {
             $user = self::parseGuildUser($message->guild, str_replace(self::_split($message->content)[0], "", $message->content)) ?? $message->member;
 
+            $ur = [];
+            foreach ($user->roles as $id => $role) {
+                if ($role->name == "@everyone") {
+                    continue;
+                }
+                $ur[] = "<@&{$id}> ({$id})";
+            }
+            if (count($ur) == 0) {
+                $ur[] = "<no roles>";
+            }
+
+            $perms     = self::permissionsToArray($user->permissions);
+            $roomPerms = self::permissionsToArray($user->permissionsIn($message->channel));
+
             $embed = self::easyEmbed($message);
             $embed->setTitle("User Information")
-                    //         ->setDescription(substr("```json\n" . json_encode($user, JSON_PRETTY_PRINT) . "\n```", 0, 2048))
-                    ->addField("ID", $user->id, true)
-                    ->addField("Username", $user->user->username . "#" . $user->user->discriminator, true)
-                    ->addField("Nick", $user->nickname ?? "<unset>", true)
-                    ->addField("Color", $user->displayHexColor ?? "<unset>", true)
-                    ->setColor($user->displayColor)
-                    ->setThumbnail($user->user->getAvatarURL());
+            //         ->setDescription(substr("```json\n" . json_encode($user, JSON_PRETTY_PRINT) . "\n```", 0, 2048))
+            ->addField("ID", $user->id, true)
+            ->addField("Username", $user->user->username . "#" . $user->user->discriminator, true)
+            ->addField("Nick", $user->nickname ?? "<unset>", true)
+            ->addField("Color", $user->displayHexColor ?? "<unset>", true)
+            ->addField("Roles", implode("\n", $ur))
+            ->addField("Permissions", implode("\n", $perms), true)
+            ->addField("Room Permissions", implode("\n", $roomPerms), true)
+            ->setColor($user->displayColor)
+            ->setThumbnail($user->user->getAvatarURL());
             return self::send($message->channel, "", ['embed' => $embed]);
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
+    }
+
+    private static function permissionsToArray(\CharlotteDunois\Yasmin\Models\Permissions $p): array
+    {
+        $perm = [];
+        foreach (\CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS as $name => $mask) {
+            if ($p->has($name)) {
+                $perm[] = $p->resolveToName($mask);
+            }
+        }
+        return $perm;
     }
 }
