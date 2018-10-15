@@ -25,6 +25,7 @@ class WormRP implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "pollActiveCheck"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
+        $bot->client->on("messageReactionAdd", [self::class, "reportHandler"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -231,6 +232,34 @@ class WormRP implements \Huntress\PluginInterface
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e, true);
         }
+    }
+
+    public static function reportHandler(\CharlotteDunois\Yasmin\Models\MessageReaction $reaction, \CharlotteDunois\Yasmin\Models\User $user): ?\React\Promise\ExtendedPromiseInterface
+    {
+        $emote = 501301876621312001;
+        if ($reaction->message->guild->id != "118981144464195584" || $user->bot || $reaction->message->author->id == $user->id || $reaction->emoji->id != $emote) {
+            return null;
+        }
+        $guild  = $reaction->message->guild;
+        $member = $guild->members->get($user->id);
+
+        $url = "https://discordapp.com/channels/{$guild->id}/{$reaction->message->channel->id}/{$reaction->message->id}";
+
+        $embed = self::easyEmbed($reaction->message);
+        $embed->setTitle("REPORTED MESSAGE")->setDescription($reaction->message->content)
+        ->setFooter($reaction->message->author->tag, $reaction->message->author->getDisplayAvatarURL())->setColor(0xcc0000)
+        ->setTimestamp($reaction->message->createdTimestamp);
+
+        if (count($reaction->message->attachments) > 0) {
+            $att = [];
+            foreach ($reaction->message->attachments as $attach) {
+                $att[] = "{$attach->url} (" . number_format($attach->size) . " bytes)";
+            }
+            $embed->addField("Attachments", implode("\n", $att));
+        }
+
+        $guild->channels->get(501228539744354324)->send("**REPORTED MESSAGE** from <@{$member->id}> in <#{$reaction->message->channel->id}> - $url", ['embed' => $embed]);
+        return $reaction->remove($member->user);
     }
 
     private static function getLastRSS(): int
