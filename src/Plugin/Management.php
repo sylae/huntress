@@ -102,11 +102,11 @@ class Management implements \Huntress\PluginInterface
     public static function ping(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
     {
         try {
-            $message_tx = \Carbon\Carbon::createFromTimestampMs((int) round(microtime(true) * 1000));
-            $dstamp_tx  = \Carbon\Carbon::createFromTimestampMs((int) \CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($message->id)->timestamp * 1000);
+            $message_tx = \Carbon\Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
+            $dstamp_tx  = \Carbon\Carbon::createFromTimestampMs((int) (\CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($message->id)->timestamp * 1000));
             return self::send($message->channel, "Pong!")->then(function (\CharlotteDunois\Yasmin\Models\Message $message) use ($message_tx, $dstamp_tx) {
-                $message_rx = \Carbon\Carbon::createFromTimestampMs((int) round(microtime(true) * 1000));
-                $dstamp_rx  = \Carbon\Carbon::createFromTimestampMs((int) \CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($message->id)->timestamp * 1000);
+                $message_rx = \Carbon\Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
+                $dstamp_rx  = \Carbon\Carbon::createFromTimestampMs((int) (\CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($message->id)->timestamp * 1000));
 
                 $v = [
                     number_format(($message_rx->format("U.u") - $message_tx->format("U.u")) * 1000),
