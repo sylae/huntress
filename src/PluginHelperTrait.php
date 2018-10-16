@@ -15,6 +15,11 @@ namespace Huntress;
 trait PluginHelperTrait
 {
 
+    public static function isTestingClient(): bool
+    {
+        return (php_uname('s') == "Windows NT");
+    }
+
     public static function _split(string $string): array
     {
         //$regex = '/(.*?[^\\\\](\\\\\\\\)*?)\\s/';

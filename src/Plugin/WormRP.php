@@ -52,6 +52,9 @@ class WormRP implements \Huntress\PluginInterface
      */
     public static function pollAnnouncer(\Huntress\Bot $bot)
     {
+        if (self::isTestingClient()) {
+            return;
+        }
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/new.json")->then(function(string $string) use ($bot) {
                 try {
@@ -111,6 +114,9 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function pollComments(\Huntress\Bot $bot)
     {
+        if (self::isTestingClient()) {
+            return;
+        }
         $bot->loop->addPeriodicTimer(300, function() {
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
                 $items = json_decode($string)->data->children;
@@ -132,6 +138,9 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function pollActiveCheck(\Huntress\Bot $bot)
     {
+        if (self::isTestingClient()) {
+            return;
+        }
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
             try {
                 $redd   = [];
@@ -141,6 +150,7 @@ class WormRP implements \Huntress\PluginInterface
                     $redd[$redditor['user']] = ((new \Carbon\Carbon($redditor['lastSubActivity'] ?? "1990-01-01")) >= $cutoff);
                 }
 
+                // filter() is failing due to an upstream bug.
                 $curr_actives = $bot->client->guilds->get("118981144464195584")->members->filter(function($v, $k) {
                     return $v->roles->has("492933723340144640");
                 });
