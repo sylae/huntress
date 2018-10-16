@@ -43,7 +43,7 @@ class Bot
     {
         $this->log    = $this->setupLogger();
         $this->loop   = \React\EventLoop\Factory::create();
-        $this->client = new \CharlotteDunois\Yasmin\Client([], $this->loop);
+        $this->client = new \CharlotteDunois\Yasmin\Client(['shardCount' => 1], $this->loop);
         $this->config = $config;
 
         $classes = get_declared_classes();
