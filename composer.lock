@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "2e4ecb1dd478c390321749c5ee0b7d69",
+    "content-hash": "f0d894a565378168a89a64233c2ca49e",
     "packages": [
         {
             "name": "cakephp/core",
@@ -196,16 +196,16 @@
         },
         {
             "name": "charlottedunois/yasmin",
-            "version": "v0.5.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/CharlotteDunois/Yasmin.git",
-                "reference": "0ad8f2551bffcdf69ab61968360583e015d041cb"
+                "reference": "74b99b4fd48b7889f0bb7c88040b89c70801df21"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/CharlotteDunois/Yasmin/zipball/0ad8f2551bffcdf69ab61968360583e015d041cb",
-                "reference": "0ad8f2551bffcdf69ab61968360583e015d041cb",
+                "url": "https://api.github.com/repos/CharlotteDunois/Yasmin/zipball/74b99b4fd48b7889f0bb7c88040b89c70801df21",
+                "reference": "74b99b4fd48b7889f0bb7c88040b89c70801df21",
                 "shasum": ""
             },
             "require": {
@@ -246,7 +246,7 @@
                 }
             ],
             "description": "Yasmin is a Discord API library for PHP.",
-            "time": "2018-10-12T20:30:28+00:00"
+            "time": "2018-10-16 16:37:21"
         },
         {
             "name": "doctrine/cache",
@@ -2458,9 +2458,9 @@
     ],
     "packages-dev": [],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": [],
-    "prefer-stable": false,
+    "prefer-stable": true,
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": []
