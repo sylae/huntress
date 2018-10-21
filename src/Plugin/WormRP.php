@@ -96,9 +96,14 @@ class WormRP implements \Huntress\PluginInterface
                             default:
                                 $channel = "409043591881687041"; // events
                         }
-                        $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                        $channel    = $bot->client->channels->get($channel);
+                        $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                         $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
-                        $bot->client->channels->get($channel)->send("", ['embed' => $embed]);
+                        $redditUser = self::fetchAccount($channel->guild, $item->author);
+                        if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+                            $embed->setAuthor($redditUser->nickname, $redditUser->user->getDisplayAvatarURL());
+                        }
+                        $channel->send("", ['embed' => $embed]);
                     }
                     $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_config (`key`, `value`) VALUES(?, ?) '
                     . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
@@ -285,7 +290,7 @@ class WormRP implements \Huntress\PluginInterface
     private static function fetchAccount(\CharlotteDunois\Yasmin\Models\Guild $guild, string $redditName): ?\CharlotteDunois\Yasmin\Models\GuildMember
     {
         $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("*")->from("wormrp_users")->where('`key` = ?')->setParameter(0, $redditName, "string");
+        $qb->select("*")->from("wormrp_users")->where('`redditName` = ?')->setParameter(0, $redditName, "string");
         $res = $qb->execute()->fetchAll();
         foreach ($res as $data) {
             return $guild->members->get($data['user']) ?? null;
