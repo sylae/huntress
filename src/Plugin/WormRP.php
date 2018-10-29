@@ -44,6 +44,7 @@ class WormRP implements \Huntress\PluginInterface
         $t3 = $schema->createTable("wormrp_activity");
         $t3->addColumn("redditName", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t3->addColumn("lastSubActivity", "datetime");
+        $t3->addColumn("flair", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET, 'notnull' => false]);
         $t3->setPrimaryKey(["redditName"]);
     }
 
@@ -119,22 +120,20 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function pollComments(\Huntress\Bot $bot)
     {
-        if (self::isTestingClient()) {
-            return;
-        }
-        $bot->loop->addPeriodicTimer(300, function() {
+        $bot->loop->addPeriodicTimer(30, function() {
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
                 $items = json_decode($string)->data->children;
                 $users = [];
                 foreach ($items as $item) {
                     $published                  = $item->data->created_utc;
-                    $users[$item->data->author] = max($published, $users[$item->data->author] ?? 0);
+                    $users[$item->data->author] = [max($published, $users[$item->data->author][0] ?? 0), $item->data->author_flair_text ?? null];
                 }
-                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=VALUES(`lastSubActivity`);', ['string', 'datetime']);
-                foreach ($users as $name => $date) {
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`, `flair`) VALUES(?, ?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=VALUES(`lastSubActivity`), `flair`=VALUES(`flair`);', ['string', 'datetime', 'string']);
+                foreach ($users as $name => $data) {
                     $query->bindValue(1, $name);
-                    $query->bindValue(2, \Carbon\Carbon::createFromTimestamp($date));
+                    $query->bindValue(2, \Carbon\Carbon::createFromTimestamp($data[0]));
+                    $query->bindValue(3, $data[1]);
                     $query->execute();
                 }
             });
