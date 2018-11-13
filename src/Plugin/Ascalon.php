@@ -27,6 +27,7 @@ class Ascalon implements \Huntress\PluginInterface
         $asc = [
             "450916960318783488", // nh botspam
             "370727342076854302", // mast botspam
+            "511055798693134349", // void blossom botspam
         ];
         if ($message->author->id == "198749794523545601" && in_array($message->channel->id, $asc) && stripos($message->content, "you do not have permission to use this command.")) {
             return $message->delete();
