@@ -58,6 +58,7 @@ class PCT implements \Huntress\PluginInterface
                         ],
                         'numReplies' => (int) trim($item->find('.stats .major dd')->text()),
                         'numViews' => (int) str_replace(",", "", $item->find('.stats .minor dd')->text()),
+                        'wordcount' => str_replace("Word Count: ", "", $item->find(".posterDate a.OverlayTrigger")->text()),
                     ];
                     $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                     $embed->setTitle($x->title)->setColor(0x00ff00)
@@ -68,6 +69,10 @@ class PCT implements \Huntress\PluginInterface
                     ->addField("Views", number_format($x->numViews), true)
                     ->setFooter("Last reply")
                     ->setTimestamp($x->replyTime->timestamp);
+                    
+                    if (mb_strlen($x->wordcount) > 0) {
+                        $embed->addField("Wordcount", $x->wordcount, true);
+                    }
 
                     if (!self::alreadyPosted($x)) {
                         $bot->client->channels->get("514258427258601474")->send("", ['embed' => $embed])->then(function ($message) use ($x) {
