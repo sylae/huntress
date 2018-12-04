@@ -127,7 +127,7 @@ class PCT implements \Huntress\PluginInterface
                         }
                         $channel    = $bot->client->channels->get(466074264731385876);
                         $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                        $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, null, "https://reddit.com/user/".$item->author);
+                        $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/".$item->author);
                         $channel->send("", ['embed' => $embed]);
                     }
                     $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
