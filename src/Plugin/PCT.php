@@ -20,6 +20,7 @@ class PCT implements \Huntress\PluginInterface
     public static function register(\Huntress\Bot $bot)
     {
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "theVolcano"]);
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
     }
 
@@ -30,6 +31,11 @@ class PCT implements \Huntress\PluginInterface
         $t->addColumn("timeTopicPost", "datetime");
         $t->addColumn("timeLastReply", "datetime");
         $t->setPrimaryKey(["idTopic"]);
+
+        $t2 = $schema->createTable("pct_config");
+        $t2->addColumn("key", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t2->addColumn("value", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t2->setPrimaryKey(["key"]);
     }
 
     public static function sbHell(\Huntress\Bot $bot)
@@ -69,7 +75,7 @@ class PCT implements \Huntress\PluginInterface
                     ->addField("Views", number_format($x->numViews), true)
                     ->setFooter("Last reply")
                     ->setTimestamp($x->replyTime->timestamp);
-                    
+
                     if (mb_strlen($x->wordcount) > 0) {
                         $embed->addField("Wordcount", $x->wordcount, true);
                     }
@@ -84,6 +90,53 @@ class PCT implements \Huntress\PluginInterface
                             $query->execute();
                         });
                     }
+                }
+            });
+        });
+    }
+
+    public static function theVolcano(\Huntress\Bot $bot)
+    {
+        if (self::isTestingClient()) {
+            return;
+        }
+        $bot->loop->addPeriodicTimer(60, function() use ($bot) {
+            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormfanfic/new.json")->then(function(string $string) use ($bot) {
+                try {
+                    $items    = json_decode($string)->data->children;
+                    $lastPub  = self::getLastRSS();
+                    $newest   = $lastPub;
+                    $newItems = [];
+                    foreach ($items as $item) {
+                        $published  = (int) $item->data->created_utc;
+                        if ($published <= $lastPub)
+                            continue;
+                        $newest     = max($newest, $published);
+                        $newItems[] = (object) [
+                            'title'    => $item->data->title,
+                            'link'     => "https://reddit.com" . $item->data->permalink,
+                            'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
+                            'category' => $item->data->link_flair_text ?? "Unflaired",
+                            'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
+                            'author'   => $item->data->author,
+                        ];
+                    }
+                    foreach ($newItems as $item) {
+                        if (mb_strlen($item->body) > 512) {
+                            $item->body = substr($item->body, 0, 509) . "...";
+                        }
+                        $channel    = $bot->client->channels->get(466074264731385876);
+                        $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                        $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, null, "https://reddit.com/user/".$item->author);
+                        $channel->send("", ['embed' => $embed]);
+                    }
+                    $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
+                    . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
+                    $query->bindValue(1, "rssPublished");
+                    $query->bindValue(2, $newest);
+                    $query->execute();
+                } catch (\Throwable $e) {
+                    echo $e->xdebug_message;
                 }
             });
         });
@@ -117,5 +170,16 @@ class PCT implements \Huntress\PluginInterface
             return true;
         }
         return false;
+    }
+
+    private static function getLastRSS(): int
+    {
+        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("*")->from("pct_config")->where('`key` = ?')->setParameter(0, 'rssPublished', "string");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return $data['value'];
+        }
+        return 0;
     }
 }
