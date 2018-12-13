@@ -103,8 +103,11 @@ class NewHorizon implements \Huntress\PluginInterface
         }
     }
 
-    public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): \React\Promise\ExtendedPromiseInterface
+    public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?\React\Promise\ExtendedPromiseInterface
     {
+        if ($member->guild->id != 450657331068403712) {
+            return null;
+        }
         return self::send($member->guild->channels->get("450691718359023616"), self::formatWelcomeMessage($member->user));
     }
 
