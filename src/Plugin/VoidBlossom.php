@@ -37,11 +37,11 @@ class VoidBlossom implements \Huntress\PluginInterface
      */
     public static function poll(\Huntress\Bot $bot)
     {
-        $bot->loop->addPeriodicTimer(60, function() use ($bot) {
+        $bot->loop->addPeriodicTimer(60, function () use ($bot) {
             if (php_uname('s') == "Windows NT") {
                 return null; // don't run on testing because oof
             }
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://voidblossom.syl.ae/index.php?action=.xml;type=rss2")->then(function(string $string) use ($bot) {
+            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://voidblossom.syl.ae/index.php?action=.xml;type=rss2")->then(function (string $string) use ($bot) {
 
                 $data     = \qp($string);
                 $items    = $data->find('item');
@@ -50,8 +50,9 @@ class VoidBlossom implements \Huntress\PluginInterface
                 $newItems = [];
                 foreach ($items as $item) {
                     $published  = strtotime($item->find('pubDate')->text());
-                    if ($published <= $lastPub) // temporarily showing replies too :o
+                    if ($published <= $lastPub) { // temporarily showing replies too :o
                         continue;
+                    }
                     $newest     = max($newest, $published);
                     $newItems[] = (object) [
                         'title'    => $item->find('title')->text(),
