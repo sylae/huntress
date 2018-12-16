@@ -64,7 +64,7 @@ foreach ($nomatch as $row) {
     $fic = $iarna->get($key);
     $ins = [];
     foreach ($fic->links as $link) {
-      $tag = storyURL($link);
+      $tag = self::storyURL($link);
       $ins[$tag] = $link;
     }
     $ins['author'] = $fic->author;
@@ -84,4 +84,35 @@ foreach ($nomatch as $row) {
             }
         }
     }
+    
+    private static function storyURL(string $url): string
+{
+    $regex   = "/https?\\:\\/\\/(.+?)\\//i";
+    $matches = [];
+    if (preg_match($regex, $url, $matches)) {
+        switch ($matches[1]) {
+            case "forums.spacebattles.com":
+                $tag = "linkSB";
+                break;
+            case "forums.sufficientvelocity.com":
+                $tag = "linkSV";
+                break;
+            case "archiveofourown.org":
+                $tag = "linkAO3";
+                break;
+            case "www.fanfiction.net":
+            case "fanfiction.net":
+                $tag = "linkFFN";
+                break;
+            case "forum.questionablequesting.com":
+            case "questionablequesting.com":
+                $tag = "linkQQ";
+                break;
+            default:
+                $tag = "linkOther";
+        }
+        return $tag;
+    }
+    return "linkOther";
+}
 }
