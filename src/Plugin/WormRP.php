@@ -233,7 +233,7 @@ class WormRP implements \Huntress\PluginInterface
                 return self::error($message, "Error", "usage: `!character Character Name`");
             }
             $char = urlencode(trim(str_replace($args[0], "", $message->content)));
-            $url = "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . $char . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Meta%20element%20og-image";
+            $url = "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . $char . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image";
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
                 $items = json_decode($string)->query->results;
                 if (count($items) > 0) {
@@ -245,6 +245,7 @@ class WormRP implements \Huntress\PluginInterface
                         $embed->setURL($item->fullurl);
                         $embed->addField("Known as", implode(", ", $item->printouts->Identity ?? ['Unkown']));
                         $embed->addField("Player", implode("\n", $item->printouts->Author ?? ['Unkown']), true);
+                        $embed->addField("Status", implode("\n", $item->printouts->Status ?? ['Unkown']), true);
                         $embed->addField("Alignment", implode("\n", $item->printouts->Alignment ?? ['Unkown']), true);
                         $embed->addField("Affiliation", implode("\n", $item->printouts->Affiliation ?? ['Unkown']), true);
                         if (count($item->printouts->{'Meta element og-image'}) > 0) {
