@@ -233,14 +233,36 @@ class WormRP implements \Huntress\PluginInterface
                 return self::error($message, "Error", "usage: `!character Character Name`");
             }
             $char = urlencode(trim(str_replace($args[0], "", $message->content)));
-
-            $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . $char . "&sort=relevance&restrict_sr=on&t=all";
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($url)->then(function(string $string) use ($message) {
-                $items = json_decode($string)->data->children;
-                foreach ($items as $item) {
-                    return $message->channel->send("https://reddit.com" . $item->data->permalink);
+            $url = "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . $char . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Meta%20element%20og-image";
+            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
+                $items = json_decode($string)->query->results;
+                if (count($items) > 0) {
+                    foreach ($items as $item) {
+                        $title = key($item);
+                        $item = current($item);
+                        $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                        $embed->setTitle($item->fulltext);
+                        $embed->setURL($item->fullurl);
+                        $embed->addField("Known as", implode(", ", $item->printouts->Identity ?? ['Unkown']));
+                        $embed->addField("Player", implode("\n", $item->printouts->Author ?? ['Unkown']), true);
+                        $embed->addField("Alignment", implode("\n", $item->printouts->Alignment ?? ['Unkown']), true);
+                        $embed->addField("Affiliation", implode("\n", $item->printouts->Affiliation ?? ['Unkown']), true);
+                        if (count($item->printouts->{'Meta element og-image'}) > 0) {
+                            $embed->setThumbnail($item->printouts->{'Meta element og-image'}[0]);
+                        }
+                        $message->channel->send("", ['embed' => $embed]);
+                    }
+                } else {
+                    // no results found on the wiki, use reddit backup.
+                    $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . $char . "&sort=relevance&restrict_sr=on&t=all";
+                    return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message) {
+                        $items = json_decode($string)->data->children;
+                        foreach ($items as $item) {
+                            return $message->channel->send("I didn't find anything on the WormRP wiki, but reddit gave me this: https://reddit.com" . $item->data->permalink . "\n*If this is your character, please port them over to the wiki when you have time!*");
+                        }
+                        return $message->channel->send("I didn't find anything on the wiki or reddit :sob:");
+                    });
                 }
-                return $message->channel->send("I didn't find anything :sob:");
             });
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e, true);
