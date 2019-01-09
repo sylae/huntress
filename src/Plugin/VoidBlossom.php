@@ -49,7 +49,7 @@ class VoidBlossom implements \Huntress\PluginInterface
                 $newest   = $lastPub;
                 $newItems = [];
                 foreach ($items as $item) {
-                    $published  = strtotime($item->find('pubDate')->text());
+                    $published = strtotime($item->find('pubDate')->text());
                     if ($published <= $lastPub) { // temporarily showing replies too :o
                         continue;
                     }
