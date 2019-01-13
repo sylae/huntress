@@ -23,6 +23,7 @@ class PCT implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "theVolcano"]);
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_PCTInternalSetWelcomeMessage", [self::class, "setWelcome"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "pctcup", [self::class, "pctcup"]);
         $bot->client->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
     }
 
@@ -73,6 +74,44 @@ class PCT implements \Huntress\PluginInterface
                 return self::send($member->guild->channels->get(397462075896627221), self::formatWelcomeMessage($member->user));
             });
         });
+    }
+
+    public static function pctcup(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if (is_null($message->member->roles->get(406698099143213066))) {
+            return self::unauthorized($message);
+        }
+        try {
+            $t = self::_split($message->content);
+            switch ($t[1] ?? "") {
+                case "createChannel":
+                    $sf = \Huntress\Snowflake::format(\Huntress\Snowflake::generate());
+                    return $message->guild->createChannel([
+                        'name'   => "pct-cup-secret-$sf",
+                        'type'   => "text",
+                        'parent' => 486732403084230657,
+                    ], "Created on behalf of {$message->author->tag} from {$message->id}")->then(function (\CharlotteDunois\Yasmin\Models\TextChannel $channel) use ($message) {
+                        return self::send($message->channel, "<#{$channel->id}> :ok_hand:");
+                    }, function ($error) use ($message) {
+                        self::error($message, "Error", json_encode($error));
+                    });
+                case "summon":
+                    $user = self::parseGuildUser($message->guild, $t[2] ?? "");
+                    if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+                        return self::send($message->channel, "You fucking moron.");
+                    }
+                    return $message->channel->overwritePermissions($user, \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['VIEW_CHANNEL'], 0,
+                                                                   "Created on behalf of {$message->author->tag} from {$message->id}")->then(function ($overwrites) use ($message, $user) {
+                        return self::send($message->channel, "$user come here.");
+                    }, function ($error) use ($message) {
+                        self::error($message, "Error", json_encode($error));
+                    });
+                default:
+                    return self::send($message->channel, "You fucking moron.");
+            }
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e);
+        }
     }
 
     private static function formatWelcomeMessage(\CharlotteDunois\Yasmin\Models\User $member)
