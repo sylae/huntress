@@ -21,6 +21,7 @@ class Masturbatorium implements \Huntress\PluginInterface
     {
         $bot->client->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "modlog", [self::class, "modlog"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "zoe", [self::class, "honk"]);
     }
 
     public static function voiceStateHandler(\CharlotteDunois\Yasmin\Models\GuildMember $new, ?\CharlotteDunois\Yasmin\Models\GuildMember $old)
@@ -48,6 +49,15 @@ class Masturbatorium implements \Huntress\PluginInterface
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
+        }
+    }
+
+    public static function honk(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    {
+        try {
+            return self::send($message->channel, "https://www.youtube.com/watch?v=hb3lnUx0xO0");
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e, true);
         }
     }
 }
