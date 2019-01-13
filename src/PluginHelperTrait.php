@@ -130,6 +130,12 @@ trait PluginHelperTrait
         return $channel->send($msg, $opts);
     }
 
+    public static function dump(\CharlotteDunois\Yasmin\Interfaces\TextChannelInterface $channel, $msg): \React\Promise\ExtendedPromiseInterface
+    {
+        $pre = "```json" . PHP_EOL . json_encode($msg, JSON_PRETTY_PRINT) . PHP_EOL . "```";
+        return self::send($channel, $pre, ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
+    }
+
     public static function getEmotes(string $s): array
     {
         $regex   = "/<(a?):(.*?):(\\d+)>/i";
