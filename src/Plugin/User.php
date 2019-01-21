@@ -28,7 +28,9 @@ class User implements \Huntress\PluginInterface
             $user = self::parseGuildUser($message->guild, str_replace(self::_split($message->content)[0], "", $message->content)) ?? $message->member;
 
             $ur = [];
-            foreach ($user->roles as $id => $role) {
+            foreach ($user->roles->sort(function ($a, $b) {
+                return $b->position <=> $a->position;
+            }) as $id => $role) {
                 if ($role->name == "@everyone") {
                     continue;
                 }
