@@ -24,6 +24,8 @@ class PCT implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_PCTInternalSetWelcomeMessage", [self::class, "setWelcome"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "pctcup", [self::class, "pctcup"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
         $bot->client->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
     }
 
@@ -69,11 +71,120 @@ class PCT implements \Huntress\PluginInterface
         if ($member->guild->id != 397462075418607618) {
             return null;
         }
-        return $member->addRole(463601286260981763, "new user setup")->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
-            return $member->setNickname("Recruit {$member->displayName}", "new user setup")->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
-                return self::send($member->guild->channels->get(397462075896627221), self::formatWelcomeMessage($member->user));
-            });
+        return $member->addRole(463601286260981763, "new user setup")
+        ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
+            return $member->addRole(536798744218304541, "new user setup");
+        })
+        ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
+            return $member->setNickname("Recruit {$member->displayName}", "new user setup");
+        })
+        ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
+            return self::send($member->guild->channels->get(397462075896627221), self::formatWelcomeMessage($member->user));
         });
+    }
+
+    public static function promote(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if (is_null($message->member->roles->get(406698099143213066))) {
+            return self::unauthorized($message);
+        }
+        try {
+            $user = self::parseGuildUser($message->guild, str_replace(self::_split($message->content)[0], "", $message->content));
+            if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+                return self::error($message, "Error", "I don't know who that is.");
+            }
+            if ($user->roles->has(486762403292512256)) {
+                return self::send($message->channel, "Capes can't be in the PRT, silly!");
+            }
+
+            // get our highest role
+            $ranks = [
+                [463601286260981763, "Recruit"],
+                [486760992521584640, "Squaddie"],
+                [486760604372041729, "Officer"],
+                [486760747427299338, "Captain"],
+                [486760608944095232, "Deputy Director"],
+                [486760607241076736, "Director"],
+            ];
+
+            // get the current highest role
+            $user_rank = null;
+            foreach ($ranks as $value => $key) { // :ahyperlul:
+                if ($user->roles->has($key[0])) {
+                    $user_rank = $value;
+                }
+            }
+            switch ($ranks[$user_rank][1] ?? null) {
+                case null:
+                    throw new Exception("tell keira something is fucked, user with no rank found");
+                case "Director":
+                    return self::send($message->channel, "This user is already at the maximum rank!");
+                default:
+                    $new_rank = $ranks[$user_rank + 1];
+
+                    return $user->addRole($new_rank[0], "Promotion on behalf of {$message->author->tag}")
+                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $new_rank) {
+                        return $member->setNickname("{$new_rank[1]} {$member->user->username}", "Promotion on behalf of {$message->author->tag}");
+                    })
+                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
+                        return self::send($message->channel, "$member has been promoted!");
+                    });
+            }
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e);
+        }
+    }
+
+    public static function demote(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if (is_null($message->member->roles->get(406698099143213066))) {
+            return self::unauthorized($message);
+        }
+        try {
+            $user = self::parseGuildUser($message->guild, str_replace(self::_split($message->content)[0], "", $message->content));
+            if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+                return self::error($message, "Error", "I don't know who that is.");
+            }
+            if ($user->roles->has(486762403292512256)) {
+                return self::send($message->channel, "Capes can't be in the PRT, silly!");
+            }
+
+            // get our highest role
+            $ranks = [
+                [463601286260981763, "Recruit"],
+                [486760992521584640, "Squaddie"],
+                [486760604372041729, "Officer"],
+                [486760747427299338, "Captain"],
+                [486760608944095232, "Deputy Director"],
+                [486760607241076736, "Director"],
+            ];
+
+            // get the current highest role
+            $user_rank = null;
+            foreach ($ranks as $value => $key) { // :ahyperlul:
+                if ($user->roles->has($key[0])) {
+                    $user_rank = $value;
+                }
+            }
+            switch ($ranks[$user_rank][1] ?? null) {
+                case null:
+                    throw new Exception("tell keira something is fucked, user with no rank found");
+                case "Recruit":
+                    return self::send($message->channel, "This user is already at the minimum rank!");
+                default:
+                    $new_rank = $ranks[$user_rank];
+
+                    return $user->removeRole($new_rank[0], "Demotion on behalf of {$message->author->tag}")
+                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $user_rank, $ranks) {
+                        return $member->setNickname("{$ranks[$user_rank - 1][1]} {$member->user->username}", "Demotion on behalf of {$message->author->tag}");
+                    })
+                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
+                        return self::send($message->channel, "$member has been demoted. :pensive:");
+                    });
+            }
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e);
+        }
     }
 
     public static function pctcup(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
@@ -100,8 +211,8 @@ class PCT implements \Huntress\PluginInterface
                     if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
                         return self::send($message->channel, "You fucking moron.");
                     }
-                    return $message->channel->overwritePermissions($user, \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['VIEW_CHANNEL'], 0,
-                                                                   "Created on behalf of {$message->author->tag} from {$message->id}")->then(function ($overwrites) use ($message, $user) {
+                    return $message->channel->overwritePermissions($user, \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['VIEW_CHANNEL'], 0, "Created on behalf of {$message->author->tag}")
+                    ->then(function ($overwrites) use ($message, $user) {
                         return self::send($message->channel, "$user come here.");
                     }, function ($error) use ($message) {
                         self::error($message, "Error", json_encode($error));
