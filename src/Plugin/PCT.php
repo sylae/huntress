@@ -211,7 +211,7 @@ class PCT implements \Huntress\PluginInterface
                     if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
                         return self::send($message->channel, "You fucking moron.");
                     }
-                    return $message->channel->overwritePermissions($user, \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['VIEW_CHANNEL'], 0, "Created on behalf of {$message->author->tag}")
+                    return $message->channel->overwritePermissions($user, \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['VIEW_CHANNEL'] | \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['MANAGE_MESSAGES'], 0, "Created on behalf of {$message->author->tag}")
                     ->then(function ($overwrites) use ($message, $user) {
                         return self::send($message->channel, "$user come here.");
                     }, function ($error) use ($message) {

@@ -68,7 +68,7 @@ trait PluginHelperTrait
         if (mb_strlen($string) == 0) {
             return null;
         }
-        if (preg_match("/<@(\\d+)>/", $string, $matches)) {
+        if (preg_match("/<@!*(\\d+)>/", $string, $matches)) {
             return $guild->members->resolve($matches[1]);
         }
         try {
