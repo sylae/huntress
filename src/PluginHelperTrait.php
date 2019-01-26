@@ -22,7 +22,6 @@ trait PluginHelperTrait
 
     public static function _split(string $string): array
     {
-        //$regex = '/(.*?[^\\\\](\\\\\\\\)*?)\\s/';
         $regex = '/(?<=^|\s)([\'"]?)(.+?)(?<!\\\\)\1(?=$|\s)/';
         preg_match_all($regex, $string . ' ', $matches);
         return $matches[2];
