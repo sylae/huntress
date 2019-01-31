@@ -248,23 +248,33 @@ NOTE
 
     public static function gaywatch(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
     {
-        if (is_null($message->member->roles->get(406698099143213066))) {
-            return self::unauthorized($message);
-        }
         try {
             $t = self::_split($message->content);
-            if (count($t) < 2 || !is_numeric($t[1])) {
-                return $message->channel->send("Usage: `!gaywatch sbThreadID`");
+            if (count($t) < 2) {
+                $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+                $qb->select("*")->from("pct_sbhell")->where('`gaywatch` = 1');
+                $res = $qb->execute()->fetchAll();
+                $r   = [];
+                if ($message->member->roles->has(406698099143213066)) {
+                    $r[] = "As a mod, you can add a gaywatch fic using `!gaywatch SBFicID`";
+                }
+                foreach ($res as $data) {
+                    $title = $data['title'] ?? "<Title unknown>";
+                    $r[]   = "*$title* - <https://forums.spacebattles.com/threads/{$data['idTopic']}/>";
+                }
+                return self::send(implode("\n", $r), ['split' => true]);
             }
-            $t[1]        = (int) $t[1];
-            $defaultTime = \Carbon\Carbon::now();
-            $query       = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `gaywatch`) VALUES(?, ?, ?, 1) '
-            . 'ON DUPLICATE KEY UPDATE `gaywatch`=VALUES(`gaywatch`);', ['string', 'datetime', 'datetime']);
-            $query->bindValue(1, $t[1]);
-            $query->bindValue(2, $defaultTime);
-            $query->bindValue(3, $defaultTime);
-            $query->execute();
-            return $message->channel->send("<a:gaybulba:504954316394725376> :eyes: I am now watching for updates to SB thread {$t[1]}.");
+            if (is_numeric($t[1]) && $message->member->roles->has(406698099143213066)) {
+                $t[1]        = (int) $t[1];
+                $defaultTime = \Carbon\Carbon::now();
+                $query       = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `gaywatch`) VALUES(?, ?, ?, 1) '
+                . 'ON DUPLICATE KEY UPDATE `gaywatch`=VALUES(`gaywatch`);', ['string', 'datetime', 'datetime']);
+                $query->bindValue(1, $t[1]);
+                $query->bindValue(2, $defaultTime);
+                $query->bindValue(3, $defaultTime);
+                $query->execute();
+                return $message->channel->send("<a:gaybulba:504954316394725376> :eyes: I am now watching for updates to SB thread {$t[1]}.");
+            }
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
