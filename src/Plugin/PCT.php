@@ -262,7 +262,7 @@ NOTE
                     $title = $data['title'] ?? "<Title unknown>";
                     $r[]   = "*$title* - <https://forums.spacebattles.com/threads/{$data['idTopic']}/>";
                 }
-                return self::send(implode("\n", $r), ['split' => true]);
+                return self::send($message->channel, implode("\n", $r), ['split' => true]);
             }
             if (is_numeric($t[1]) && $message->member->roles->has(406698099143213066)) {
                 $t[1]        = (int) $t[1];
