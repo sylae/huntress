@@ -263,7 +263,7 @@ NOTE
             $query->bindValue(2, $defaultTime);
             $query->bindValue(3, $defaultTime);
             $query->execute();
-            return $message->channel->send("<a:gaybulba:504954316394725376> :eyes: I am now watching for updated to SB thread {$t[1]}.");
+            return $message->channel->send("<a:gaybulba:504954316394725376> :eyes: I am now watching for updates to SB thread {$t[1]}.");
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
