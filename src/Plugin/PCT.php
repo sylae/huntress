@@ -24,6 +24,7 @@ class PCT implements \Huntress\PluginInterface
         $bot->client->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_PCTInternalSetWelcomeMessage", [self::class, "setWelcome"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "pctcup", [self::class, "pctcup"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
         $bot->client->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
@@ -35,6 +36,7 @@ class PCT implements \Huntress\PluginInterface
         $t->addColumn("idTopic", "integer");
         $t->addColumn("timeTopicPost", "datetime");
         $t->addColumn("timeLastReply", "datetime");
+        $t->addColumn("gaywatch", "boolean", ['default' => false]);
         $t->setPrimaryKey(["idTopic"]);
 
         $t2 = $schema->createTable("pct_config");
@@ -243,6 +245,30 @@ NOTE
         }
     }
 
+    public static function gaywatch(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        if (is_null($message->member->roles->get(406698099143213066))) {
+            return self::unauthorized($message);
+        }
+        try {
+            $t = self::_split($message->content);
+            if (count($t) < 2 || !is_numeric($t[1])) {
+                return $message->channel->send("Usage: `!gaywatch sbThreadID`");
+            }
+            $t[1]        = (int) $t[1];
+            $defaultTime = \Carbon\Carbon::now();
+            $query       = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `gaywatch`) VALUES(?, ?, ?, 1) '
+            . 'ON DUPLICATE KEY UPDATE `gaywatch`=VALUES(`gaywatch`);', ['string', 'datetime', 'datetime']);
+            $query->bindValue(1, $t[1]);
+            $query->bindValue(2, $defaultTime);
+            $query->bindValue(3, $defaultTime);
+            $query->execute();
+            return $message->channel->send("<a:gaybulba:504954316394725376> :eyes: I am now watching for updated to SB thread {$t[1]}.");
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e);
+        }
+    }
+
     private static function formatWelcomeMessage(\CharlotteDunois\Yasmin\Models\User $member)
     {
         return sprintf(self::getWelcomeMessage(), (string) $member);
@@ -269,7 +295,7 @@ NOTE
                 $data  = \html5qp($string);
                 $items = $data->find('li.discussionListItem');
                 foreach ($items as $item) {
-                    $x     = (object) [
+                    $x = (object) [
                         'id'         => (int) str_replace("thread-", "", $item->attr("id")),
                         'title'      => trim($item->find('h3')->text()),
                         'threadTime' => self::unfuckDates($item->find(".startDate .DateTime")),
@@ -287,30 +313,56 @@ NOTE
                         'numViews'   => (int) str_replace(",", "", $item->find('.stats .minor dd')->text()),
                         'wordcount'  => str_replace("Word Count: ", "", $item->find(".posterDate a.OverlayTrigger")->text()),
                     ];
-                    $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                    $embed->setTitle($x->title)->setColor(0x00ff00)
-                    ->setURL("https://forums.spacebattles.com/threads/{$x->id}/")
-                    ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
-                    ->addField("Created", $x->threadTime->toFormattedDateString(), true)
-                    ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies), number_format(ceil($x->numReplies / 25))), true)
-                    ->addField("Views", number_format($x->numViews), true)
-                    ->setFooter("Last reply")
-                    ->setTimestamp($x->replyTime->timestamp);
-
-                    if (mb_strlen($x->wordcount) > 0) {
-                        $embed->addField("Wordcount", $x->wordcount, true);
-                    }
 
                     if (!self::alreadyPosted($x)) {
-                        $bot->client->channels->get("514258427258601474")->send("", ['embed' => $embed])->then(function ($message) use ($x) {
-                            $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`) VALUES(?, ?, ?) '
-                            . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`);', ['string', 'datetime', 'datetime']);
-                            $query->bindValue(1, $x->id);
-                            $query->bindValue(2, $x->threadTime);
-                            $query->bindValue(3, $x->replyTime);
-                            $query->execute();
-                        });
+                        // sbHell mode if it's a new topic
+                        $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                        $embed->setTitle($x->title)->setColor(0x00ff00)
+                        ->setURL("https://forums.spacebattles.com/threads/{$x->id}/")
+                        ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
+                        ->addField("Created", $x->threadTime->toFormattedDateString(), true)
+                        ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies), number_format(ceil($x->numReplies / 25))), true)
+                        ->addField("Views", number_format($x->numViews), true)
+                        ->setFooter("Last reply")
+                        ->setTimestamp($x->replyTime->timestamp);
+
+                        if (mb_strlen($x->wordcount) > 0) {
+                            $embed->addField("Wordcount", $x->wordcount, true);
+                        }
+                        $bot->client->channels->get(514258427258601474)->send("", ['embed' => $embed]);
+                    } else {
+                        // gaywatch
+                        if (self::isGaywatch($x) && self::lastPost($x) < $x->replyTime) {
+                            if ($x->author['name'] == $x->replier['name']) {
+                                // op update
+                                $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                                $embed->setTitle($x->title)->setColor(0x00ff00)
+                                ->setURL("https://forums.spacebattles.com/threads/{$x->id}/unread")
+                                ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
+                                ->addField("Created", $x->threadTime->toFormattedDateString(), true)
+                                ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies), number_format(ceil($x->numReplies / 25))), true)
+                                ->addField("Views", number_format($x->numViews), true)
+                                ->setFooter("Last reply")
+                                ->setTimestamp($x->replyTime->timestamp);
+
+                                if (mb_strlen($x->wordcount) > 0) {
+                                    $embed->addField("Wordcount", $x->wordcount, true);
+                                }
+                                $bot->client->channels->get(540449157320802314)->send("<@&540465395576864789>: {$x->author['name']} has updated *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>", ['embed' => $embed]);
+                            } else {
+                                // not op update
+                                $bot->client->channels->get(540449157320802314)->send("SB member {$x->replier['name']} has replied to *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>");
+                            }
+                        }
                     }
+
+                    // push to db
+                    $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`) VALUES(?, ?, ?) '
+                    . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`), `timeTopicPost`=VALUES(`timeTopicPost`);', ['string', 'datetime', 'datetime']);
+                    $query->bindValue(1, $x->id);
+                    $query->bindValue(2, $x->threadTime);
+                    $query->bindValue(3, $x->replyTime);
+                    $query->execute();
                 }
             });
         });
@@ -390,6 +442,28 @@ NOTE
         $res = $qb->execute()->fetchAll();
         foreach ($res as $data) {
             return true;
+        }
+        return false;
+    }
+
+    private static function lastPost(\stdClass $post): \Carbon\Carbon
+    {
+        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("*")->from("pct_sbhell")->where('`idTopic` = ?')->setParameter(0, $post->id, "integer");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return new \Carbon\Carbon($data['timeLastReply']);
+        }
+        return false;
+    }
+
+    private static function isGaywatch(\stdClass $post): bool
+    {
+        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("*")->from("pct_sbhell")->where('`idTopic` = ?')->setParameter(0, $post->id, "integer");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return (bool) $data['gaywatch'] ?? false;
         }
         return false;
     }
