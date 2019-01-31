@@ -37,6 +37,7 @@ class PCT implements \Huntress\PluginInterface
         $t->addColumn("timeTopicPost", "datetime");
         $t->addColumn("timeLastReply", "datetime");
         $t->addColumn("gaywatch", "boolean", ['default' => false]);
+        $t->addColumn("title", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET, 'notnull' => false]);
         $t->setPrimaryKey(["idTopic"]);
 
         $t2 = $schema->createTable("pct_config");
@@ -357,11 +358,12 @@ NOTE
                     }
 
                     // push to db
-                    $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`) VALUES(?, ?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`), `timeTopicPost`=VALUES(`timeTopicPost`);', ['string', 'datetime', 'datetime']);
+                    $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `title`) VALUES(?, ?, ?, ?) '
+                    . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`), `timeTopicPost`=VALUES(`timeTopicPost`), `title`=VALUES(`title`);', ['string', 'datetime', 'datetime', 'string']);
                     $query->bindValue(1, $x->id);
                     $query->bindValue(2, $x->threadTime);
                     $query->bindValue(3, $x->replyTime);
+                    $query->bindValue(4, $x->title);
                     $query->execute();
                 }
             });
