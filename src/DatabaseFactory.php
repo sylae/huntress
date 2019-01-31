@@ -65,7 +65,19 @@ class DatabaseFactory
             \Monolog\Registry::Bot()->info("Schema needs initialization or upgrade", ["statements_to_execute" => $total_changes]);
             foreach ($sql as $s) {
                 \Monolog\Registry::Bot()->debug($s);
-                $db->exec($s);
+                if (stripos($s, "DROP FOREIGN KEY") !== false || stripos($s, "DROP INDEX") !== false) {
+                    \Monolog\Registry::Bot()->debug("skipping foreign key/index dropping - dbal bug!");
+                    continue;
+                }
+                try {
+                    $db->exec($s);
+                } catch (\Doctrine\DBAL\Exception\DriverException $e) {
+                    if ($e->getErrorCode() == 1826) {
+                        \Monolog\Registry::Bot()->debug("ignoring foreign key duplication exception - dbal bug!");
+                    } else {
+                        throw $e;
+                    }
+                }
             }
         } else {
             \Monolog\Registry::Bot()->info("Schema up to date", ["statements_to_execute" => $total_changes]);
