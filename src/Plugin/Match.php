@@ -31,6 +31,7 @@ class Match implements \Huntress\PluginInterface
     {
         $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
         $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "match", [self::class, "matchHandler"]);
+        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "tally", [self::class, "tallyHandler"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -368,5 +369,72 @@ class Match implements \Huntress\PluginInterface
         });
 
         return $match;
+    }
+
+    public static function tallyHandler(\Huntress\Bot $bot, Message $message): ?\React\Promise\ExtendedPromiseInterface
+    {
+        try {
+            $getOpt = new GetOpt();
+            $getOpt->set(GetOpt::SETTING_SCRIPT_NAME, '!tally');
+            $getOpt->set(GetOpt::SETTING_STRICT_OPERANDS, true);
+            $getOpt->addOperands([
+                (new Operand('message', Operand::REQUIRED))->setValidation('is_numeric')->setDescription('The message ID to count votes on.'),
+                (new Operand('channel', Operand::OPTIONAL))->setValidation('is_string')->setDefaultValue((string) $message->channel)->setDescription('The channel the message is in, in #mention format. Default: current channel.'),
+            ]);
+            try {
+                $args = substr(strstr($message->content, " "), 1);
+                $getOpt->process((string) $args);
+            } catch (ArgumentException $exception) {
+                return self::send($message->channel, $getOpt->getHelpText());
+            }
+
+            return \CharlotteDunois\Yasmin\Utils\DataHelpers::parseMentions($bot->client, $getOpt->getOperand('channel'))->then(function (array $res) use ($message, $getOpt) {
+                try {
+                    if (count($res) != 1 || !$res[0]['ref'] instanceof \CharlotteDunois\Yasmin\Models\TextChannel) {
+                        return self::error($message, "Could not parse channel!", "#mention one channel, this channel must be accessible by Huntress.");
+                    }
+                    return $res[0]['ref']->fetchMessage($getOpt->getOperand('message'))->then(function ($quest) use ($message) {
+                        return \React\Promise\all($quest->reactions->map(function (\CharlotteDunois\Yasmin\Models\MessageReaction $mr) {
+                            return $mr->fetchUsers();
+                        })->all())->then(function (array $reactUsers) use ($message, $quest) {
+                            $reactions = [];
+                            $seenUsers = [];
+                            $cheaters  = [];
+
+                            /** @var \CharlotteDunois\Collect\Collection  $users */
+                            foreach ($reactUsers as $reactionID => $users) {
+                                /** @var \CharlotteDunois\Yasmin\Models\User  $user */
+                                foreach ($users as $user) {
+                                    if (isset($seenUsers[$user->id])) {
+                                        if (isset($cheaters[$user->id])) {
+                                            continue;
+                                        } else {
+                                            $reactions[$seenUsers[$user->id]] --;
+                                            $cheaters[$user->id] = true;
+                                        }
+                                    } else {
+                                        if (!isset($reactions[$reactionID])) {
+                                            $reactions[$reactionID] = 0;
+                                        }
+
+                                        $reactions[$reactionID] ++;
+                                        $seenUsers[$user->id] = $reactionID;
+                                    }
+                                }
+                            }
+                            $msg = $quest->reactions->map(function (\CharlotteDunois\Yasmin\Models\MessageReaction $mr) use ($reactions) {
+                                return $mr->emoji->name . ' ' . ($reactions[$mr->emoji->name] ?? 0);
+                            })->implode(null, PHP_EOL);
+
+                            return $message->channel->send($msg);
+                        });
+                    });
+                } catch (\Throwable $e) {
+                    self::exceptionHandler($message, $e);
+                }
+            });
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($message, $e);
+        }
     }
 }
