@@ -78,13 +78,13 @@ class PCT implements \Huntress\PluginInterface
             return null;
         }
         return $member->addRole(463601286260981763, "new user setup")
-        ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
+        ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) {
             return $member->addRole(536798744218304541, "new user setup");
         })
-        ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
+        ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) {
             return $member->setNickname("Recruit {$member->displayName}", "new user setup");
         })
-        ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) {
+        ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) {
             return self::send($member->guild->channels->get(397462075896627221), self::formatWelcomeMessage($member->user));
         });
     }
@@ -129,10 +129,10 @@ class PCT implements \Huntress\PluginInterface
                     $new_rank = $ranks[$user_rank + 1];
 
                     return $user->addRole($new_rank[0], "Promotion on behalf of {$message->author->tag}")
-                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $new_rank) {
+                    ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $new_rank) {
                         return $member->setNickname("{$new_rank[1]} {$member->user->username}", "Promotion on behalf of {$message->author->tag}");
                     })
-                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
+                    ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
                         return self::send($message->channel, "$member has been promoted!");
                     });
             }
@@ -181,10 +181,10 @@ class PCT implements \Huntress\PluginInterface
                     $new_rank = $ranks[$user_rank];
 
                     return $user->removeRole($new_rank[0], "Demotion on behalf of {$message->author->tag}")
-                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $user_rank, $ranks) {
+                    ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $user_rank, $ranks) {
                         return $member->setNickname("{$ranks[$user_rank - 1][1]} {$member->user->username}", "Demotion on behalf of {$message->author->tag}");
                     })
-                    ->then(function(\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
+                    ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
                         return self::send($message->channel, "$member has been demoted. :pensive:");
                     });
             }
@@ -414,7 +414,7 @@ NOTE
                         if (mb_strlen($item->body) > 512) {
                             $item->body = substr($item->body, 0, 509) . "...";
                         }
-                        $channel = $bot->channels->get(466074264731385876);
+                        $channel = $bot->channels->get(542263101559668736);
                         $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                         $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
                         $channel->send("", ['embed' => $embed]);
