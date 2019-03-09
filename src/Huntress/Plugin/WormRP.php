@@ -100,7 +100,7 @@ class WormRP implements \Huntress\PluginInterface
                             default:
                                 $channel = "409043591881687041"; // events
                         }
-                        $channel    = $bot->client->channels->get($channel);
+                        $channel    = $bot->channels->get($channel);
                         $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                         $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
                         $redditUser = self::fetchAccount($channel->guild, $item->author);
@@ -159,7 +159,7 @@ class WormRP implements \Huntress\PluginInterface
                 }
 
                 // filter() is failing due to an upstream bug.
-                $curr_actives = $bot->client->guilds->get("118981144464195584")->members->filter(function($v, $k) {
+                $curr_actives = $bot->guilds->get("118981144464195584")->members->filter(function($v, $k) {
                     return $v->roles->has("492933723340144640");
                 });
 
@@ -180,7 +180,7 @@ class WormRP implements \Huntress\PluginInterface
                 }
                 foreach ($redd as $id => $val) {
                     if ($val) {
-                        $member = $bot->client->guilds->get("118981144464195584")->members->get($id);
+                        $member = $bot->client->get("118981144464195584")->members->get($id);
                         if (!is_null($member)) {
                             $member->addRole("492933723340144640", "User is now active on reddit")->then(function($member) {
                                 $member->guild->channels->get("491099441357651969")->send("Added <@{$member->id}> to Active Users.");

@@ -48,7 +48,7 @@ class Masturbatorium implements \Huntress\PluginInterface
                 $args = self::_split($message->content);
                 $msg  = str_replace($args[0], "", $message->content);
 
-                return self::send($message->client->channels->get(446320118784589826), $msg);
+                return self::send($message->channels->get(446320118784589826), $msg);
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
