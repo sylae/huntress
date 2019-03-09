@@ -23,7 +23,7 @@ if (!is_writable("temp")) {
     }
 }
 
-foreach (glob(__DIR__ . "/src/Plugin/*.php") as $file) {
+foreach (glob(__DIR__ . "/src/Huntress/Plugin/*.php") as $file) {
     require_once($file);
 }
 
