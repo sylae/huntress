@@ -39,6 +39,7 @@ class NewHorizon implements \Huntress\PluginInterface
      */
     public static function poll(\Huntress\Bot $bot)
     {
+        return; // project is inactive, disable this for now.
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
             if (php_uname('s') == "Windows NT") {
                 return null; // don't run on testing because oof
