@@ -9,11 +9,11 @@
 namespace Huntress;
 
 /**
- * Description of Bot
+ * This is the main Huntress class, mostly backend stuff tbh.
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Bot
+class Huntress extends \CharlotteDunois\Yasmin\Client
 {
     /**
      *
@@ -29,12 +29,6 @@ class Bot
 
     /**
      *
-     * @var \CharlotteDunois\Yasmin\Client
-     */
-    public $client;
-
-    /**
-     *
      * @var array
      */
     public $config;
@@ -42,9 +36,8 @@ class Bot
     public function __construct(array $config)
     {
         $this->log    = $this->setupLogger();
-        $this->loop   = \React\EventLoop\Factory::create();
-        $this->client = new \CharlotteDunois\Yasmin\Client(['shardCount' => 1], $this->loop);
         $this->config = $config;
+        parent::__construct(['shardCount' => 1], \React\EventLoop\Factory::create());
 
         $classes = get_declared_classes();
         foreach ($classes as $class) {
@@ -53,12 +46,9 @@ class Bot
                 $class::register($this);
             }
         }
-
         DatabaseFactory::make($this);
-
-
-        $this->client->on('ready', [$this, 'readyHandler']);
-        $this->client->on('message', [$this, 'messageHandler']);
+        $this->on('ready', [$this, 'readyHandler']);
+        $this->on('message', [$this, 'messageHandler']);
     }
 
     private function setupLogger(): \Monolog\Logger
@@ -78,14 +68,14 @@ class Bot
 
     public function start()
     {
-        $this->client->login($this->config['botToken']);
+        $this->login($this->config['botToken']);
         $this->loop->run();
     }
 
     public function readyHandler()
     {
-        $this->log->info('Logged in as ' . $this->client->user->tag);
-        $this->client->emit(PluginInterface::PLUGINEVENT_READY, $this);
+        $this->log->info('Logged in as ' . $this->user->tag);
+        $this->emit(PluginInterface::PLUGINEVENT_READY, $this);
     }
 
     public function messageHandler(\CharlotteDunois\Yasmin\Models\Message $message)
@@ -96,14 +86,14 @@ class Bot
         try {
             if ($message->channel->type === 'text') {
                 try {
-                    $this->client->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
+                    $this->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
                 } catch (\Throwable $e) {
                     \Sentry\captureException($e);
                     $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
                 }
                 if (preg_match($preg, $message->content, $match)) {
                     try {
-                        $this->client->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
+                        $this->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
                     } catch (\Throwable $e) {
                         \Sentry\captureException($e);
                         $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);

@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -17,17 +20,17 @@ class PCT implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "theVolcano"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_PCTInternalSetWelcomeMessage", [self::class, "setWelcome"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "pctcup", [self::class, "pctcup"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
-        $bot->client->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "theVolcano"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "_PCTInternalSetWelcomeMessage", [self::class, "setWelcome"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "pctcup", [self::class, "pctcup"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
+        $bot->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -46,7 +49,7 @@ class PCT implements \Huntress\PluginInterface
         $t2->setPrimaryKey(["key"]);
     }
 
-    public static function setWelcome(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function setWelcome(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (is_null($message->member->roles->get(406698099143213066))) {
             return self::unauthorized($message);
@@ -69,7 +72,7 @@ class PCT implements \Huntress\PluginInterface
         }
     }
 
-    public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?\React\Promise\ExtendedPromiseInterface
+    public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?Promise
     {
         if ($member->guild->id != 397462075418607618) {
             return null;
@@ -86,7 +89,7 @@ class PCT implements \Huntress\PluginInterface
         });
     }
 
-    public static function promote(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function promote(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (is_null($message->member->roles->get(406698099143213066))) {
             return self::unauthorized($message);
@@ -138,7 +141,7 @@ class PCT implements \Huntress\PluginInterface
         }
     }
 
-    public static function demote(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function demote(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (is_null($message->member->roles->get(406698099143213066))) {
             return self::unauthorized($message);
@@ -190,7 +193,7 @@ class PCT implements \Huntress\PluginInterface
         }
     }
 
-    public static function pctcup(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function pctcup(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (is_null($message->member->roles->get(406698099143213066))) {
             return self::unauthorized($message);
@@ -246,7 +249,7 @@ NOTE
         }
     }
 
-    public static function gaywatch(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function gaywatch(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $t = self::_split($message->content);
@@ -296,7 +299,7 @@ NOTE
         return "Welcome to PCT, %s!";
     }
 
-    public static function sbHell(\Huntress\Bot $bot)
+    public static function sbHell(Huntress $bot)
     {
         $bot->loop->addPeriodicTimer(60, function () use ($bot) {
             if (php_uname('s') == "Windows NT") {
@@ -340,7 +343,7 @@ NOTE
                         if (mb_strlen($x->wordcount) > 0) {
                             $embed->addField("Wordcount", $x->wordcount, true);
                         }
-                        $bot->client->channels->get(514258427258601474)->send("", ['embed' => $embed]);
+                        $bot->channels->get(514258427258601474)->send("", ['embed' => $embed]);
                     } else {
                         // gaywatch
                         if (self::isGaywatch($x) && self::lastPost($x) < $x->replyTime) {
@@ -359,10 +362,10 @@ NOTE
                                 if (mb_strlen($x->wordcount) > 0) {
                                     $embed->addField("Wordcount", $x->wordcount, true);
                                 }
-                                $bot->client->channels->get(540449157320802314)->send("<@&540465395576864789>: {$x->author['name']} has updated *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>", ['embed' => $embed]);
+                                $bot->channels->get(540449157320802314)->send("<@&540465395576864789>: {$x->author['name']} has updated *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>", ['embed' => $embed]);
                             } else {
                                 // not op update
-                                $bot->client->channels->get(540449157320802314)->send("SB member {$x->replier['name']} has replied to *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>");
+                                $bot->channels->get(540449157320802314)->send("SB member {$x->replier['name']} has replied to *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>");
                             }
                         }
                     }
@@ -380,7 +383,7 @@ NOTE
         });
     }
 
-    public static function theVolcano(\Huntress\Bot $bot)
+    public static function theVolcano(Huntress $bot)
     {
         if (self::isTestingClient()) {
             return;
@@ -411,7 +414,7 @@ NOTE
                         if (mb_strlen($item->body) > 512) {
                             $item->body = substr($item->body, 0, 509) . "...";
                         }
-                        $channel = $bot->client->channels->get(466074264731385876);
+                        $channel = $bot->channels->get(466074264731385876);
                         $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                         $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
                         $channel->send("", ['embed' => $embed]);

@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -17,11 +20,11 @@ class Localization implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "timezone", [self::class, "timezone"]);
-        // $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "locale", [self::class, "locale"]);
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "timezone", [self::class, "timezone"]);
+        // $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "locale", [self::class, "locale"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -33,7 +36,7 @@ class Localization implements \Huntress\PluginInterface
         $t->setPrimaryKey(["user"]);
     }
 
-    public static function timezone(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function timezone(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $args = self::_split($message->content);

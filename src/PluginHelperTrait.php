@@ -8,6 +8,8 @@
 
 namespace Huntress;
 
+use \Carbon\Carbon;
+
 /**
  *
  * @author Keira Sylae Aro <sylae@calref.net>
@@ -150,5 +152,62 @@ trait PluginHelperTrait
             ];
         }
         return $r;
+    }
+
+    public static function readTime(string $r): Carbon
+    {
+        if (self::isRelativeTime($r)) {
+            return self::timeRelative($r);
+        } else {
+            return (new Carbon($r))->setTimezone("UTC");
+        }
+    }
+
+    private static function isRelativeTime(string $r): bool
+    {
+        $matches  = [];
+        $nmatches = 0;
+        if (preg_match_all("/((\\d+)([ywdhm]))/i", $r, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $nmatches++;
+            }
+        }
+        $m = preg_replace("/((\\d+)([ywdhm]))/i", "", $r);
+        return ($nmatches > 0 && mb_strlen(trim($m)) == 0);
+    }
+
+    private static function timeRelative(string $r): Carbon
+    {
+        $matches = [];
+        if (preg_match_all("/((\\d+)([ywdhms]))/i", $r, $matches, PREG_SET_ORDER)) {
+            $time = Carbon::now();
+            foreach ($matches as $m) {
+                $num = $m[2] ?? 1;
+                $typ = mb_strtolower($m[3] ?? "m");
+                switch ($typ) {
+                    case "y":
+                        $time->addYears($num);
+                        break;
+                    case "w":
+                        $time->addWeeks($num);
+                        break;
+                    case "d":
+                        $time->addDays($num);
+                        break;
+                    case "h":
+                        $time->addHours($num);
+                        break;
+                    case "m":
+                        $time->addMinutes($num);
+                        break;
+                    case "s":
+                        $time->addSeconds($num);
+                        break;
+                }
+            }
+            return $time;
+        } else {
+            throw new \Exception("Could not parse relative time.");
+        }
     }
 }

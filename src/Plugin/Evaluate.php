@@ -8,8 +8,8 @@
 
 namespace Huntress\Plugin;
 
-use Carbon\Carbon;
-use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
 
 /**
  * Simple builtin to show user information
@@ -19,13 +19,18 @@ use CharlotteDunois\Yasmin\Utils\URLHelpers;
 class Evaluate implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
+    const USE_CLASSES = [
+        '\Carbon\Carbon',
+        '\CharlotteDunois\Yasmin\Utils\URLHelpers',
+        '\Huntress\Huntress',
+    ];
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "eval", [self::class, "process"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "eval", [self::class, "process"]);
     }
 
-    public static function process(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function process(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
@@ -34,7 +39,7 @@ class Evaluate implements \Huntress\PluginInterface
                 $args     = self::_split($message->content);
                 $msg      = str_replace($args[0], "", $message->content);
                 $msg      = str_replace(['```php', '```'], "", $msg);
-                $response = eval($msg);
+                $response = eval(self::useClassesString() . $msg);
                 if (is_string($response)) {
                     return self::send($message->channel, $response, ['split' => true]);
                 } else {
@@ -44,5 +49,16 @@ class Evaluate implements \Huntress\PluginInterface
                 return self::exceptionHandler($message, $e, true);
             }
         }
+    }
+
+    private static function useClassesString(): string
+    {
+        $x   = [];
+        $x[] = PHP_EOL;
+        foreach (self::USE_CLASSES as $class) {
+            $x[] = "use $class;";
+        }
+        $x[] = PHP_EOL;
+        return implode(PHP_EOL, $x);
     }
 }

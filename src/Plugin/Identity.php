@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -17,16 +20,16 @@ class Identity implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "process"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "process"]);
     }
 
-    public static function process(\Huntress\Bot $bot)
+    public static function process(Huntress $bot)
     {
         $bot->loop->addPeriodicTimer(60 * 60 * 24, function () use ($bot) {
             $bot->log->debug("Updating avatar...");
-            $bot->client->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
+            $bot->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
                 $bot->log->debug("Avatar update complete!");
             });
         });
@@ -40,7 +43,7 @@ class Identity implements \Huntress\PluginInterface
                 'with a ball of yarn',
                 'RWBY: Grimm Eclipse',
             ];
-            $bot->client->user->setPresence(['status' => 'online', 'game' => ['name' => $opts[array_rand($opts)], 'type' => 0]]);
+            $bot->user->setPresence(['status' => 'online', 'game' => ['name' => $opts[array_rand($opts)], 'type' => 0]]);
         });
     }
 }

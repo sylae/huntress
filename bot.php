@@ -37,6 +37,6 @@ register_shutdown_function(function () {
     }
 });
 
-$bot = new Bot($config);
+$bot = new Huntress($config);
 $bot->log->info('Connecting to discord...');
 $bot->start();

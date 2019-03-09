@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -17,13 +20,13 @@ class NewHorizon implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
-        $bot->client->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_NHInternalSetWelcomeMessage", [self::class, "setWelcome"]);
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
+        $bot->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
+        $bot->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "_NHInternalSetWelcomeMessage", [self::class, "setWelcome"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -37,7 +40,7 @@ class NewHorizon implements \Huntress\PluginInterface
     /**
      * Adapted from Ligrev code by Christoph Burschka <christoph@burschka.de>
      */
-    public static function poll(\Huntress\Bot $bot)
+    public static function poll(Huntress $bot)
     {
         return; // project is inactive, disable this for now.
         $bot->loop->addPeriodicTimer(60, function() use ($bot) {
@@ -67,7 +70,7 @@ class NewHorizon implements \Huntress\PluginInterface
                 foreach ($newItems as $item) {
                     $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                     $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setColor(0xffd22b)->setFooter($item->category, "https://ayin.earth/img/nh3_s.png");
-                    $bot->client->channels->get("479296410647527425")->send("", ['embed' => $embed]);
+                    $bot->channels->get("479296410647527425")->send("", ['embed' => $embed]);
                 }
                 $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO nh_config (`key`, `value`) VALUES(?, ?) '
                 . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
@@ -78,9 +81,9 @@ class NewHorizon implements \Huntress\PluginInterface
         });
     }
 
-    public static function setWelcome(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function setWelcome(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
-        if (is_null($message->member->roles->get("450658242125627402"))) {
+        if (is_null($message->member->roles->get(450658242125627402))) {
             return self::unauthorized($message);
         } else {
             try {
@@ -104,7 +107,7 @@ class NewHorizon implements \Huntress\PluginInterface
         }
     }
 
-    public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?\React\Promise\ExtendedPromiseInterface
+    public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?Promise
     {
         if ($member->guild->id != 450657331068403712) {
             return null;

@@ -8,6 +8,8 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
 use Carbon\Carbon;
 use CharlotteDunois\Yasmin\Models\Message;
 use GetOpt\GetOpt;
@@ -27,11 +29,11 @@ class Match implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "match", [self::class, "matchHandler"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "tally", [self::class, "tallyHandler"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "match", [self::class, "matchHandler"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "tally", [self::class, "tallyHandler"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -61,7 +63,7 @@ class Match implements \Huntress\PluginInterface
         $t3->addForeignKeyConstraint($t2, ["idMatch", "idCompetitor"], ["idMatch", "idCompetitor"], ["onUpdate" => "CASCADE", "onDelete" => "CASCADE"], "fk_idMatch_idCompetitor");
     }
 
-    public static function matchHandler(\Huntress\Bot $bot, Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function matchHandler(Huntress $bot, Message $message): ?Promise
     {
         try {
             $getOpt     = new GetOpt();
@@ -278,63 +280,6 @@ class Match implements \Huntress\PluginInterface
         }
     }
 
-    private static function readTime(string $r): Carbon
-    {
-        if (self::isRelativeTime($r)) {
-            return self::timeRelative($r);
-        } else {
-            return (new Carbon($r))->setTimezone("UTC");
-        }
-    }
-
-    private static function isRelativeTime(string $r): bool
-    {
-        $matches  = [];
-        $nmatches = 0;
-        if (preg_match_all("/((\\d+)([ywdhm]))/i", $r, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $nmatches++;
-            }
-        }
-        $m = preg_replace("/((\\d+)([ywdhm]))/i", "", $r);
-        return ($nmatches > 0 && mb_strlen(trim($m)) == 0);
-    }
-
-    private static function timeRelative(string $r): Carbon
-    {
-        $matches = [];
-        if (preg_match_all("/((\\d+)([ywdhms]))/i", $r, $matches, PREG_SET_ORDER)) {
-            $time = Carbon::now();
-            foreach ($matches as $m) {
-                $num = $m[2] ?? 1;
-                $typ = mb_strtolower($m[3] ?? "m");
-                switch ($typ) {
-                    case "y":
-                        $time->addYears($num);
-                        break;
-                    case "w":
-                        $time->addWeeks($num);
-                        break;
-                    case "d":
-                        $time->addDays($num);
-                        break;
-                    case "h":
-                        $time->addHours($num);
-                        break;
-                    case "m":
-                        $time->addMinutes($num);
-                        break;
-                    case "s":
-                        $time->addSeconds($num);
-                        break;
-                }
-            }
-            return $time;
-        } else {
-            throw new \Exception("Could not parse relative time.");
-        }
-    }
-
     private static function getMatchInfo(int $idMatch, \CharlotteDunois\Yasmin\Models\Guild $guild): \stdClass
     {
         $db    = \Huntress\DatabaseFactory::get();
@@ -371,7 +316,7 @@ class Match implements \Huntress\PluginInterface
         return $match;
     }
 
-    public static function tallyHandler(\Huntress\Bot $bot, Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function tallyHandler(Huntress $bot, Message $message): ?Promise
     {
         try {
             $getOpt = new GetOpt();
@@ -388,7 +333,7 @@ class Match implements \Huntress\PluginInterface
                 return self::send($message->channel, $getOpt->getHelpText());
             }
 
-            return \CharlotteDunois\Yasmin\Utils\DataHelpers::parseMentions($bot->client, $getOpt->getOperand('channel'))->then(function (array $res) use ($message, $getOpt) {
+            return \CharlotteDunois\Yasmin\Utils\DataHelpers::parseMentions($bot, $getOpt->getOperand('channel'))->then(function (array $res) use ($message, $getOpt) {
                 try {
                     if (count($res) != 1 || !$res[0]['ref'] instanceof \CharlotteDunois\Yasmin\Models\TextChannel) {
                         return self::error($message, "Could not parse channel!", "#mention one channel, this channel must be accessible by Huntress.");

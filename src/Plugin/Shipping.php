@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -17,10 +20,10 @@ class Shipping implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "ship", [self::class, "process"]);
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "ship", [self::class, "process"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -31,15 +34,12 @@ class Shipping implements \Huntress\PluginInterface
         $t->setPrimaryKey(["guild", "ship"]);
     }
 
-    public static function process(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function process(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $t = self::_split($message->content);
             switch ($t[1] ?? "") {
                 case "add":
-                    if ($message->author->id == "225385744259219456") {
-                        return self::send($message->channel, "nope");
-                    }
                     $cape = trim(str_replace("!ship " . $t[1], "", $message->content));
                     if (mb_strlen($cape) < 1) {
                         return self::send($message->channel, "usage: `!ship add [name]`");
@@ -49,9 +49,6 @@ class Shipping implements \Huntress\PluginInterface
                 case "rm":
                 case "delete":
                 case "del":
-                    if ($message->author->id == "225385744259219456") {
-                        return self::send($message->channel, "nope");
-                    }
                     $cape = trim(str_replace("!ship " . $t[1], "", $message->content));
                     self::delCape($message->guild, $cape);
                     return self::send($message->channel, ":put_litter_in_its_place: " . $cape);

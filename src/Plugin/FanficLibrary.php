@@ -8,11 +8,8 @@
 
 namespace Huntress\Plugin;
 
-use GetOpt\GetOpt;
-use GetOpt\Operand;
-use GetOpt\Option;
-use GetOpt\Command;
-use GetOpt\ArgumentException;
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
 
 /**
  * Simple builtin to show user information
@@ -34,13 +31,13 @@ class FanficLibrary implements \Huntress\PluginInterface
      */
     static $lastUpdateTime;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "find", [self::class, "find"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "lookup", [self::class, "lookup"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "reloadfanfic", [self::class, "reload"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "init"]);
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "find", [self::class, "find"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "lookup", [self::class, "lookup"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "reloadfanfic", [self::class, "reload"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "init"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -74,7 +71,7 @@ class FanficLibrary implements \Huntress\PluginInterface
         $t3->addIndex(["fid"]);
     }
 
-    public static function init(\Huntress\Bot $bot)
+    public static function init(Huntress $bot)
     {
         self::$library = new \Huntress\Library();
         if (file_exists("temp/fanficDB.json")) {
@@ -85,7 +82,7 @@ class FanficLibrary implements \Huntress\PluginInterface
         }
     }
 
-    public static function reload(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function reload(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
@@ -105,7 +102,7 @@ class FanficLibrary implements \Huntress\PluginInterface
         }
     }
 
-    public static function find(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function find(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $args = self::_split($message->content);
@@ -151,7 +148,7 @@ class FanficLibrary implements \Huntress\PluginInterface
         }
     }
 
-    public static function lookup(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function lookup(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $time  = \Carbon\Carbon::createFromTimestampMs((int) round(microtime(true) * 1000));

@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -17,11 +20,11 @@ class Masturbatorium implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "modlog", [self::class, "modlog"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "zoe", [self::class, "honk"]);
+        $bot->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "modlog", [self::class, "modlog"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "zoe", [self::class, "honk"]);
     }
 
     public static function voiceStateHandler(\CharlotteDunois\Yasmin\Models\GuildMember $new, ?\CharlotteDunois\Yasmin\Models\GuildMember $old)
@@ -36,23 +39,23 @@ class Masturbatorium implements \Huntress\PluginInterface
         }
     }
 
-    public static function modlog(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function modlog(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
-        if (is_null($message->member->roles->get("446317817604603904"))) {
+        if (is_null($message->member->roles->get(446317817604603904))) {
             return self::unauthorized($message);
         } else {
             try {
                 $args = self::_split($message->content);
                 $msg  = str_replace($args[0], "", $message->content);
 
-                return self::send($message->client->channels->get("446320118784589826"), $msg);
+                return self::send($message->client->channels->get(446320118784589826), $msg);
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
         }
     }
 
-    public static function honk(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function honk(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             return self::send($message->channel, "https://www.youtube.com/watch?v=hb3lnUx0xO0");

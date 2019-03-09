@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -17,15 +20,15 @@ class WormRP implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "pollAnnouncer"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "pollComments"]);
-        $bot->client->on(self::PLUGINEVENT_READY, [self::class, "pollActiveCheck"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
-        $bot->client->on("messageReactionAdd", [self::class, "reportHandler"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "pollAnnouncer"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "pollComments"]);
+        $bot->on(self::PLUGINEVENT_READY, [self::class, "pollActiveCheck"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
+        $bot->on("messageReactionAdd", [self::class, "reportHandler"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -51,7 +54,7 @@ class WormRP implements \Huntress\PluginInterface
     /**
      * Adapted from Ligrev code by Christoph Burschka <christoph@burschka.de>
      */
-    public static function pollAnnouncer(\Huntress\Bot $bot)
+    public static function pollAnnouncer(Huntress $bot)
     {
         if (self::isTestingClient()) {
             return;
@@ -119,7 +122,7 @@ class WormRP implements \Huntress\PluginInterface
         });
     }
 
-    public static function pollComments(\Huntress\Bot $bot)
+    public static function pollComments(Huntress $bot)
     {
         $bot->loop->addPeriodicTimer(30, function() {
             return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
@@ -141,7 +144,7 @@ class WormRP implements \Huntress\PluginInterface
         });
     }
 
-    public static function pollActiveCheck(\Huntress\Bot $bot)
+    public static function pollActiveCheck(Huntress $bot)
     {
         if (self::isTestingClient()) {
             return;
@@ -192,7 +195,7 @@ class WormRP implements \Huntress\PluginInterface
         });
     }
 
-    public static function accountLinkHandler(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function accountLinkHandler(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
     {
         if ($message->guild->id != "118981144464195584") {
             return null;
@@ -224,7 +227,7 @@ class WormRP implements \Huntress\PluginInterface
         }
     }
 
-    public static function lookupHandler(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function lookupHandler(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
     {
         if ($message->guild->id != "118981144464195584") {
             return null;

@@ -10,9 +10,11 @@ namespace Huntress\Plugin;
 
 use \CharlotteDunois\Yasmin\HTTP\APIEndpoints;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
 
 /**
- * Simple builtin to show user information
+ * Emoji management functions.
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
@@ -20,13 +22,13 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "emote", [self::class, "process"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "importEmote", [self::class, "importmoji"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "flopEmote", [self::class, "flopmoji"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "_CEHInternalAddGuildInviteURL", [self::class, "addInvite"]);
-        $bot->client->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "emote", [self::class, "process"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "importEmote", [self::class, "importmoji"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "flopEmote", [self::class, "flopmoji"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "_CEHInternalAddGuildInviteURL", [self::class, "addInvite"]);
+        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -37,9 +39,9 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
         $t->setPrimaryKey(["guild"]);
     }
 
-    public static function addInvite(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function addInvite(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
-        if (is_null($message->member->roles->get("444432484114104321"))) {
+        if (is_null($message->member->roles->get(444432484114104321))) {
             return self::unauthorized($message);
         } else {
             try {
@@ -61,7 +63,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
         }
     }
 
-    public static function importmoji(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function importmoji(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
             return self::unauthorized($message);
@@ -86,7 +88,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
         }
     }
 
-    public static function process(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function process(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $m = self::_split($message->content);
@@ -95,7 +97,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             }
             $code = $m[1];
             $x    = [];
-            $bot->client->emojis->each(function ($v, $k) use ($code, &$x) {
+            $bot->emojis->each(function ($v, $k) use ($code, &$x) {
                 if ($v->guild->name == "Cauldron Emote Hub" || stripos($v->guild->name, "CEH") !== false) { // todo: do this better
                     $l = levenshtein($code, $v->name);
                     if (stripos($v->name, $code) !== false || $l < 3) {
@@ -108,7 +110,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             $s          = [];
             $guildcount = [];
             foreach (array_slice($x, 0, 50, true) as $code => $similarity) {
-                $emote   = $bot->client->emojis->resolve($code);
+                $emote   = $bot->emojis->resolve($code);
                 $sim_str = ($similarity == 0) ? "perfect match" : "similarity $similarity";
 
                 $guildcount[$emote->guild->id] = true;
@@ -119,7 +121,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                 $s[] = "No results found matching `$code`";
             }
             foreach ($guildcount as $guild => $count) {
-                if (!$bot->client->guilds->get($guild)->members->has($message->author->id) && $url = self::getInvite($guild)) {
+                if (!$bot->guilds->get($guild)->members->has($message->author->id) && $url = self::getInvite($guild)) {
                     $s[] = $url;
                 }
             }
@@ -130,7 +132,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
         }
     }
 
-    public static function flopmoji(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function flopmoji(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
             return self::unauthorized($message);

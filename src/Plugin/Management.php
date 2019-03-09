@@ -8,6 +8,9 @@
 
 namespace Huntress\Plugin;
 
+use \Huntress\Huntress;
+use \React\Promise\ExtendedPromiseInterface as Promise;
+
 /**
  * Simple builtin to show user information
  *
@@ -22,26 +25,26 @@ class Management implements \Huntress\PluginInterface
      */
     public static $startupTime;
 
-    public static function register(\Huntress\Bot $bot)
+    public static function register(Huntress $bot)
     {
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "update", [self::class, "update"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "restart", [self::class, "restart"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "ping", [self::class, "ping"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "huntress", [self::class, "info"]);
-        $bot->client->on(self::PLUGINEVENT_COMMAND_PREFIX . "invite", [self::class, "invite"]);
-        $bot->client->on(self::PLUGINEVENT_READY, function () {
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "update", [self::class, "update"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "restart", [self::class, "restart"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "ping", [self::class, "ping"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "huntress", [self::class, "info"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "invite", [self::class, "invite"]);
+        $bot->on(self::PLUGINEVENT_READY, function () {
             self::$startupTime = \Carbon\Carbon::now();
         });
     }
 
-    public static function invite(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function invite(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
-        return $bot->client->generateOAuthInvite()->then(function($i) use ($message) {
+        return $bot->generateOAuthInvite()->then(function($i) use ($message) {
             self::send($message->channel, sprintf("Use the following URL to add this Huntress instance to your server!\n<%s>", $i));
         });
     }
 
-    public static function update(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function update(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
@@ -54,7 +57,7 @@ class Management implements \Huntress\PluginInterface
         }
     }
 
-    public static function info(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function info(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $embed = self::easyEmbed($message);
@@ -86,7 +89,7 @@ class Management implements \Huntress\PluginInterface
         }
     }
 
-    public static function restart(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function restart(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
@@ -99,7 +102,7 @@ class Management implements \Huntress\PluginInterface
         }
     }
 
-    public static function ping(\Huntress\Bot $bot, \CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
+    public static function ping(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         try {
             $message_tx = \Carbon\Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));

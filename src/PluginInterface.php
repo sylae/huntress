@@ -19,5 +19,5 @@ interface PluginInterface
     const PLUGINEVENT_MESSAGE        = "huntress_message";
     const PLUGINEVENT_READY          = "huntress_ready";
 
-    public static function register(\Huntress\Bot $bot);
+    public static function register(Huntress $bot);
 }

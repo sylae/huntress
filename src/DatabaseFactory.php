@@ -41,13 +41,13 @@ class DatabaseFactory
      * throw shit.
      * @return void
      */
-    public static function make(Bot $bot): void
+    public static function make(Huntress $bot): void
     {
         self::$db = \Doctrine\DBAL\DriverManager::getConnection(['url' => $bot->config['database']], new \Doctrine\DBAL\Configuration());
         self::schema($bot);
     }
 
-    public static function schema(Bot $bot): void
+    public static function schema(Huntress $bot): void
     {
         $db         = self::get();
         $sm         = $db->getSchemaManager();
@@ -55,7 +55,7 @@ class DatabaseFactory
 
         // Initialize existing schema database.
         $schema = new \Doctrine\DBAL\Schema\Schema();
-        $bot->client->emit(PluginInterface::PLUGINEVENT_DB_SCHEMA, $schema);
+        $bot->emit(PluginInterface::PLUGINEVENT_DB_SCHEMA, $schema);
 
         $comparator    = new \Doctrine\DBAL\Schema\Comparator();
         $schemaDiff    = $comparator->compare($fromSchema, $schema);
