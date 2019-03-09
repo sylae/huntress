@@ -11,6 +11,8 @@ namespace Huntress;
 require_once __DIR__ . "/vendor/autoload.php";
 require_once __DIR__ . "/config.php";
 
+\Sentry\init($config['sentry']);
+
 if (PHP_SAPI != "cli") {
     die("Only run from the command-line.");
 }

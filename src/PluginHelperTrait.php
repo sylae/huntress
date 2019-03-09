@@ -36,6 +36,7 @@ trait PluginHelperTrait
 
     public static function exceptionHandler(\CharlotteDunois\Yasmin\Models\Message $message, \Throwable $e, bool $showTrace = false): \React\Promise\ExtendedPromiseInterface
     {
+        \Sentry\captureException($e);
         $msg = $e->getFile() . ":" . $e->getLine() . PHP_EOL . PHP_EOL . $e->getMessage();
         if ($showTrace) {
             $msg   .= PHP_EOL;

@@ -112,7 +112,8 @@ class WormRP implements \Huntress\PluginInterface
                     $query->bindValue(2, $newest);
                     $query->execute();
                 } catch (\Throwable $e) {
-                    echo $e->xdebug_message;
+                    \Sentry\captureException($e);
+                    $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
                 }
             });
         });
@@ -185,7 +186,8 @@ class WormRP implements \Huntress\PluginInterface
                     }
                 }
             } catch (\Throwable $e) {
-                echo $e->xdebug_message;
+                \Sentry\captureException($e);
+                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
             }
         });
     }

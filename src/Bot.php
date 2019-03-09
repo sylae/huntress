@@ -98,17 +98,20 @@ class Bot
                 try {
                     $this->client->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
                 } catch (\Throwable $e) {
+                    \Sentry\captureException($e);
                     $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
                 }
                 if (preg_match($preg, $message->content, $match)) {
                     try {
                         $this->client->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
                     } catch (\Throwable $e) {
+                        \Sentry\captureException($e);
                         $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
                     }
                 }
             }
         } catch (\Throwable $e) {
+            \Sentry\captureException($e);
             $this->log->warning("Uncaught message processing exception!", ['exception' => $e]);
         }
     }

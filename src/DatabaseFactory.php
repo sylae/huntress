@@ -72,6 +72,7 @@ class DatabaseFactory
                 try {
                     $db->exec($s);
                 } catch (\Doctrine\DBAL\Exception\DriverException $e) {
+                    \Sentry\captureException($e);
                     if ($e->getErrorCode() == 1826) {
                         \Monolog\Registry::Bot()->debug("ignoring foreign key duplication exception - dbal bug!");
                     } else {
