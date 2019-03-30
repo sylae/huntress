@@ -301,7 +301,9 @@ class Match implements \Huntress\PluginInterface
             $entry->data    = $v['data'];
             $entry->votes   = new Collection();
             return $entry;
-        })->keyBy("id");
+        })->groupBy("id")->map(function ($v, $k) {
+            return $v[0];
+        });
         $votes = (new Collection($db->createQueryBuilder()->select("*")->from("match_votes")->where('idMatch = ?')->setParameter(0, $idMatch)->execute()->fetchAll()));
         $votes->each(function ($v, $k) use ($match, $guild) {
             if ($guild->members->has($v['idVoter'])) {
