@@ -28,7 +28,7 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
 
     public static function parse(string $snow): int
     {
-        return base_convert($snow, 36, 10);
+        return (int) base_convert($snow, 36, 10);
     }
 
     /**
@@ -36,13 +36,13 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
      * @param string|int  $snowflake
      * @throws \InvalidArgumentException
      */
-    function __construct($snowflake)
+    public function __construct($snowflake)
     {
 
         $snowflake   = (int) $snowflake;
         $this->value = $snowflake;
 
-        $this->binary = \str_pad(\decbin($snowflake), 64, 0, \STR_PAD_LEFT);
+        $this->binary = str_pad(decbin($snowflake), 64, 0, STR_PAD_LEFT);
 
         $time = (string) ($snowflake >> 2);
 
@@ -60,7 +60,7 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
      * @param string|int  $snowflake
      * @return Snowflake
      */
-    static function deconstruct($snowflake)
+    public static function deconstruct($snowflake)
     {
         return (new self($snowflake));
     }
@@ -69,9 +69,9 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
      * Generates a new snowflake.
      * @param int  $workerID   Valid values are in the range of 0-31.
      * @param int  $processID  Valid values are in the range of 0-31.
-     * @return string
+     * @return int
      */
-    static function generate(int $workerID = 1, int $processID = 0)
+    public static function generate(int $workerID = 1, int $processID = 0): int
     {
         $time = time();
 
@@ -92,7 +92,7 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
 
         $time = (string) $time - self::EPOCH;
 
-        $binary = \str_pad(\decbin(((int) $time)), 62, 0, \STR_PAD_LEFT) . \str_pad(\decbin(self::$incrementIndex), 2, 0, \STR_PAD_LEFT);
-        return ((string) \bindec($binary));
+        $binary = str_pad(decbin(((int) $time)), 62, 0, STR_PAD_LEFT) . str_pad(decbin(self::$incrementIndex), 2, 0, STR_PAD_LEFT);
+        return (int) bindec($binary);
     }
 }

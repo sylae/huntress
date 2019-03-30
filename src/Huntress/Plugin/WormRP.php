@@ -243,7 +243,7 @@ class WormRP implements \Huntress\PluginInterface
                 $items = json_decode($string)->query->results;
                 if (count($items) > 0) {
                     foreach ($items as $item) {
-                        $title = key($item);
+                        key($item);
                         $item  = current($item);
                         $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                         $embed->setTitle($item->fulltext);

@@ -42,7 +42,7 @@ class SentryTransport implements \Sentry\Transport\TransportInterface
      * Constructor.
      * @param \Sentry\Options  $config  The client configuration
      */
-    function __construct(\Sentry\Options $config, \React\EventLoop\LoopInterface $loop)
+    public function __construct(\Sentry\Options $config, \React\EventLoop\LoopInterface $loop)
     {
         $this->config = $config;
         $this->loop   = $loop;
@@ -55,7 +55,7 @@ class SentryTransport implements \Sentry\Transport\TransportInterface
      * Destructor. Ensures that all pending requests ends before destroying this object instance.
      * @return void
      */
-    function __destruct()
+    public function __destruct()
     {
         $this->cleanupPendingRequests();
     }
@@ -65,7 +65,7 @@ class SentryTransport implements \Sentry\Transport\TransportInterface
      * @param \Sentry\Event  $event  The event
      * @return string|null  Returns the ID of the event or `null` if it failed to be sent
      */
-    function send(\Sentry\Event $event): ?string
+    public function send(\Sentry\Event $event): ?string
     {
         $event->getUserContext()->setIpAddress(null);
 

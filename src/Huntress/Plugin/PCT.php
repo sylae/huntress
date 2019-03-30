@@ -122,7 +122,7 @@ class PCT implements \Huntress\PluginInterface
             }
             switch ($ranks[$user_rank][1] ?? null) {
                 case null:
-                    throw new Exception("tell keira something is fucked, user with no rank found");
+                    throw new \Exception("tell keira something is fucked, user with no rank found");
                 case "Director":
                     return self::send($message->channel, "This user is already at the maximum rank!");
                 default:
@@ -469,7 +469,6 @@ NOTE
         foreach ($res as $data) {
             return new \Carbon\Carbon($data['timeLastReply']);
         }
-        return false;
     }
 
     private static function isGaywatch(\stdClass $post): bool

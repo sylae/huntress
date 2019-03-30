@@ -29,11 +29,11 @@ class Masturbatorium implements \Huntress\PluginInterface
 
     public static function voiceStateHandler(\CharlotteDunois\Yasmin\Models\GuildMember $new, ?\CharlotteDunois\Yasmin\Models\GuildMember $old)
     {
-        if ($new->guild->id == "349058708304822273" && $new->voiceChannel instanceof \CharlotteDunois\Yasmin\Models\VoiceChannel) {
-            $role = $new->guild->roles->get("455005371208302603");
-            if (is_null($new->roles->get("455005371208302603"))) {
+        if ($new->guild->id == 349058708304822273 && $new->voiceChannel instanceof \CharlotteDunois\Yasmin\Models\VoiceChannel) {
+            $role = $new->guild->roles->get(455005371208302603);
+            if (is_null($new->roles->get(455005371208302603))) {
                 $new->addRole($role)->then(function () use ($new) {
-                    self::send($new->guild->channels->get("455013336833327104"), "<@{$new->id}>, I'm going to give you the DJ role, since you're joining a voice chat.");
+                    self::send($new->guild->channels->get(455013336833327104), "<@{$new->id}>, I'm going to give you the DJ role, since you're joining a voice chat.");
                 });
             }
         }

@@ -18,7 +18,7 @@ use GetOpt\Option;
 use GetOpt\Command;
 use GetOpt\ArgumentException;
 use Huntress\Snowflake;
-use CharlotteDunois\Yasmin\Utils\Collection;
+use CharlotteDunois\Collect\Collection;
 
 /**
  * Simple builtin to show user information
@@ -188,7 +188,6 @@ class Match implements \Huntress\PluginInterface
             $match = Snowflake::parse($getOpt->getOperand('match'));
             $entry = Snowflake::parse($getOpt->getOperand('entry'));
 
-            $room = $getOpt->getOperand('room');
             $info = self::getMatchInfo($match, $message->guild);
 
             if ($info->duedate < Carbon::now()) {
@@ -237,7 +236,7 @@ class Match implements \Huntress\PluginInterface
             $embed->setTitle("Match " . $info->title);
             $embed->setTimestamp($info->duedate->timestamp);
             $embed->setDescription(sprintf("Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]", $info->duedate->toCookieString(), $info->duedate->timestamp));
-            $info->entries->each(function ($v, $k) use ($message, $info, $anon, $embed) {
+            $info->entries->each(function ($v, $k) use ($info, $anon, $embed) {
                 if ($anon) {
                     $embed->addField(sprintf("Option %s", Snowflake::format($v->id)), sprintf("%s\nVote with `!match vote %s %s`", $v->data, Snowflake::format($info->idMatch), Snowflake::format($v->id)));
                 } else {
@@ -333,7 +332,7 @@ class Match implements \Huntress\PluginInterface
                 return self::send($message->channel, $getOpt->getHelpText());
             }
 
-            return \CharlotteDunois\Yasmin\Utils\DataHelpers::parseMentions($bot, $getOpt->getOperand('channel'))->then(function (array $res) use ($message, $getOpt) {
+            return \CharlotteDunois\Yasmin\Utils\MessageHelpers::parseMentions($bot, $getOpt->getOperand('channel'))->then(function (array $res) use ($message, $getOpt) {
                 try {
                     if (count($res) != 1 || !$res[0]['ref'] instanceof \CharlotteDunois\Yasmin\Models\TextChannel) {
                         return self::error($message, "Could not parse channel!", "#mention one channel, this channel must be accessible by Huntress.");

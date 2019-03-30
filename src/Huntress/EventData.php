@@ -23,7 +23,7 @@ class EventData implements \JsonSerializable
 
     /**
      *
-     * @var \CharlotteDunois\Yasmin\Models\GuildChannelInterface
+     * @var \CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface
      */
     public $channel;
 
