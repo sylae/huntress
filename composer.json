@@ -21,5 +21,8 @@
     },
     "provide": {
         "php-http/async-client-implementation": "^1"
+    },
+    "config": {
+        "optimize-autoloader": true
     }
 }
