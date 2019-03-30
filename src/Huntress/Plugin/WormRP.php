@@ -180,7 +180,7 @@ class WormRP implements \Huntress\PluginInterface
                 }
                 foreach ($redd as $id => $val) {
                     if ($val) {
-                        $member = $bot->client->get("118981144464195584")->members->get($id);
+                        $member = $bot->guilds->get("118981144464195584")->members->get($id);
                         if (!is_null($member)) {
                             $member->addRole("492933723340144640", "User is now active on reddit")->then(function($member) {
                                 $member->guild->channels->get("491099441357651969")->send("Added <@{$member->id}> to Active Users.");
