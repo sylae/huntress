@@ -33,11 +33,11 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
      */
     public $config;
 
-    public function __construct(array $config)
+    public function __construct(array $config, \React\EventLoop\LoopInterface $loop)
     {
         $this->log    = $this->setupLogger();
         $this->config = $config;
-        parent::__construct(['shardCount' => 1], \React\EventLoop\Factory::create());
+        parent::__construct(['shardCount' => 1], $loop);
 
         $classes = get_declared_classes();
         foreach ($classes as $class) {
@@ -80,24 +80,22 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
 
     public function messageHandler(\CharlotteDunois\Yasmin\Models\Message $message)
     {
-        $this->log->info('[' . ($message->channel->type === 'text' ? $message->guild->name . ' #' . $message->channel->name : '(DM)') . '] ' . $message->author->tag . ': ' . $message->content);
+        $this->log->info('[' . ($message->guild->name ?? "DM") . '] ' . $message->author->tag . ': ' . $message->content);
         $preg  = "/^!(\w+)(\s|$)/";
         $match = [];
         try {
-            if ($message->channel->type === 'text') {
+            try {
+                $this->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
+            } catch (\Throwable $e) {
+                \Sentry\captureException($e);
+                $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
+            }
+            if (preg_match($preg, $message->content, $match)) {
                 try {
-                    $this->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
+                    $this->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
                 } catch (\Throwable $e) {
                     \Sentry\captureException($e);
                     $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
-                }
-                if (preg_match($preg, $message->content, $match)) {
-                    try {
-                        $this->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
-                    } catch (\Throwable $e) {
-                        \Sentry\captureException($e);
-                        $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
-                    }
                 }
             }
         } catch (\Throwable $e) {

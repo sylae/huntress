@@ -31,7 +31,7 @@ class User implements \Huntress\PluginInterface
             $user = self::parseGuildUser($message->guild, str_replace(self::_split($message->content)[0], "", $message->content)) ?? $message->member;
 
             $ur = [];
-            foreach ($user->roles->sort(function ($a, $b) {
+            foreach ($user->roles->sortCustom(function ($a, $b) {
                 return $b->position <=> $a->position;
             }) as $id => $role) {
                 if ($role->name == "@everyone") {
@@ -52,11 +52,17 @@ class User implements \Huntress\PluginInterface
             ->addField("ID", $user->id, true)
             ->addField("Username", $user->user->username . "#" . $user->user->discriminator, true)
             ->addField("Nick", $user->nickname ?? "<unset>", true)
-            ->addField("Color", $user->displayHexColor ?? "<unset>", true)
-            ->addField("Roles", implode("\n", $ur))
-            ->addField("Permissions", implode("\n", $perms), true)
+            ->addField("Color", $user->displayHexColor ?? "<unset>", true);
+
+            $roles     = \CharlotteDunois\Yasmin\Utils\MessageHelpers::splitMessage(implode("\n", $ur), ['maxLength' => 1024]);
+            $firstRole = true;
+            foreach ($roles as $role) {
+                $embed->addField($firstRole ? "Roles" : "Roles (cont.)", $role);
+                $firstRole = false;
+            }
+            $embed->addField("Permissions", implode("\n", $perms), true)
             ->addField("Room Permissions", implode("\n", $roomPerms), true)
-            ->setColor($user->displayColor)
+            ->setColor($user->getDisplayColor())
             ->setThumbnail($user->user->getAvatarURL());
             return self::send($message->channel, "", ['embed' => $embed]);
         } catch (\Throwable $e) {

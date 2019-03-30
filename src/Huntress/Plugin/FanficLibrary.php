@@ -113,7 +113,7 @@ class FanficLibrary implements \Huntress\PluginInterface
             $embed = self::easyEmbed($message);
             $embed->setTitle($v->title)
             ->setDescription(self::htmlToMD((string) $v->comments))
-            ->setColor($user->displayColor);
+            ->setColor($user->getDisplayColor());
 
 
             if (mb_strlen(trim($v->cover ?? "")) > 0) {
@@ -163,7 +163,7 @@ class FanficLibrary implements \Huntress\PluginInterface
                 $embed = self::easyEmbed($message);
                 $embed->setTitle("Browsing stories matching: `$search`")
                 ->setDescription("For more details, use `!find [FIC_NAME]`")
-                ->setColor($user->displayColor);
+                ->setColor($user->getDisplayColor());
                 foreach ($res as $k => $v) {
                     $title = [];
                     $data  = [];

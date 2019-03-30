@@ -13,7 +13,7 @@ namespace Huntress;
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Library extends \CharlotteDunois\Yasmin\Utils\Collection
+class Library extends \CharlotteDunois\Collect\Collection
 {
 
     public function loadFanfic()
@@ -39,7 +39,7 @@ class Library extends \CharlotteDunois\Yasmin\Utils\Collection
                 return [$this->get($key)];
             }
         }
-        $index = $this->sort(function ($a, $b) use ($search) {
+        $index = $this->sortCustom(function ($a, $b) use ($search) {
             return $this->similarity($search, $b->title) <=> $this->similarity($search, $a->title);
         });
         if (!is_null($results)) {

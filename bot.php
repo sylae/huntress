@@ -11,7 +11,19 @@ namespace Huntress;
 require_once __DIR__ . "/vendor/autoload.php";
 require_once __DIR__ . "/config.php";
 
-\Sentry\init($config['sentry']);
+$loop = \React\EventLoop\Factory::create();
+\CharlotteDunois\Yasmin\Utils\URLHelpers::setLoop($loop);
+
+$builder   = \Sentry\ClientBuilder::create($config['sentry']);
+$transport = new SentryTransport($builder->getOptions(), $loop);
+$client    = $builder->setTransport($transport)->getClient();
+\Sentry\State\Hub::setCurrent((new \Sentry\State\Hub($client)));
+
+set_exception_handler(function (\Throwable $e) {
+    $scope = new \Sentry\State\Scope();
+    $scope->setExtra('fatal', true);
+    \Sentry\State\Hub::getCurrent()->getClient()->captureException($e, $scope);
+});
 
 if (PHP_SAPI != "cli") {
     die("Only run from the command-line.");
@@ -37,6 +49,6 @@ register_shutdown_function(function () {
     }
 });
 
-$bot = new Huntress($config);
+$bot = new Huntress($config, $loop);
 $bot->log->info('Connecting to discord...');
 $bot->start();

@@ -67,9 +67,9 @@ class Management implements \Huntress\PluginInterface
             $embed->addField("PID / User", getmypid() . " / " . get_current_user(), true);
 
             $count = [
-                $message->guilds->count(),
-                $message->channels->count(),
-                $message->users->count(),
+                $bot->guilds->count(),
+                $bot->channels->count(),
+                $bot->users->count(),
             ];
             $embed->addField("Guilds / Channels / Users", implode(" / ", $count));
             $embed->addField("Huntress", self::gitVersion());
