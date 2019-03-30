@@ -25,7 +25,6 @@ class PCT implements \Huntress\PluginInterface
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
         $bot->on(self::PLUGINEVENT_READY, [self::class, "theVolcano"]);
         $bot->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "_PCTInternalSetWelcomeMessage", [self::class, "setWelcome"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "pctcup", [self::class, "pctcup"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
@@ -49,29 +48,6 @@ class PCT implements \Huntress\PluginInterface
         $t2->setPrimaryKey(["key"]);
     }
 
-    public static function setWelcome(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
-    {
-        if (is_null($message->member->roles->get(406698099143213066))) {
-            return self::unauthorized($message);
-        } else {
-            try {
-                $args = self::_split($message->content);
-                if (count($args) < 2) {
-                    return self::error($message, "You dipshit :open_mouth:", "!_PCTInternalSetWelcomeMessage This is where you put the message\n%s = username");
-                }
-                $welcomeMsg = trim(str_replace($args[0], "", $message->content));
-                $query      = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'string']);
-                $query->bindValue(1, "serverWelcomeMessage");
-                $query->bindValue(2, $welcomeMsg);
-                $query->execute();
-                return self::send($message->channel, self::formatWelcomeMessage($message->author));
-            } catch (\Throwable $e) {
-                return self::exceptionHandler($message, $e, true);
-            }
-        }
-    }
-
     public static function guildMemberAddHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?Promise
     {
         if ($member->guild->id != 397462075418607618) {
@@ -85,7 +61,7 @@ class PCT implements \Huntress\PluginInterface
             return $member->setNickname("Recruit {$member->displayName}", "new user setup");
         })
         ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) {
-            return self::send($member->guild->channels->get(397462075896627221), self::formatWelcomeMessage($member->user));
+            return self::send($member->guild->channels->get(397462075896627221), sprintf("Welcome to PCT, %s!", (string) $member));
         });
     }
 
@@ -281,22 +257,6 @@ NOTE
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
-    }
-
-    private static function formatWelcomeMessage(\CharlotteDunois\Yasmin\Models\User $member)
-    {
-        return sprintf(self::getWelcomeMessage(), (string) $member);
-    }
-
-    private static function getWelcomeMessage(): string
-    {
-        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("*")->from("pct_config")->where('`key` = ?')->setParameter(0, 'serverWelcomeMessage', "string");
-        $res = $qb->execute()->fetchAll();
-        foreach ($res as $data) {
-            return $data['value'];
-        }
-        return "Welcome to PCT, %s!";
     }
 
     public static function sbHell(Huntress $bot)
