@@ -80,7 +80,8 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
 
     public function messageHandler(\CharlotteDunois\Yasmin\Models\Message $message)
     {
-        $this->log->info('[' . ($message->guild->name ?? "DM") . '] ' . $message->author->tag . ': ' . $message->content);
+        $tag   = ($message->guild->name ?? false) ? $message->guild->name . " " . $message->channel->name : "DM";
+        $this->log->info('[' . $tag . '] ' . $message->author->tag . ': ' . $message->content);
         $preg  = "/^!(\w+)(\s|$)/";
         $match = [];
         try {
