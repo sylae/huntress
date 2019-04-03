@@ -1,15 +1,17 @@
 <?php
 
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+ * Use of this source code is governed by the MIT license, which
+ * can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
 /**
  * Hold the database
+ *
+ * @author Keira Dueck <sylae@calref.net>
  */
 class DatabaseFactory
 {
@@ -43,6 +45,7 @@ class DatabaseFactory
      */
     public static function make(Huntress $bot): void
     {
+        $bot->log->info("[DB] Database initialized");
         self::$db = \Doctrine\DBAL\DriverManager::getConnection(['url' => $bot->config['database']], new \Doctrine\DBAL\Configuration());
         self::schema($bot);
     }
@@ -56,24 +59,25 @@ class DatabaseFactory
         // Initialize existing schema database.
         $schema = new \Doctrine\DBAL\Schema\Schema();
         $bot->emit(PluginInterface::PLUGINEVENT_DB_SCHEMA, $schema);
+        $bot->eventManager->fire("dbSchema", $schema);
 
         $comparator    = new \Doctrine\DBAL\Schema\Comparator();
         $schemaDiff    = $comparator->compare($fromSchema, $schema);
         $sql           = $schemaDiff->toSaveSql($db->getDatabasePlatform());
         $total_changes = count($sql);
         if ($total_changes > 0) {
-            \Monolog\Registry::Bot()->info("Schema needs initialization or upgrade", ["statements_to_execute" => $total_changes]);
+            $bot->log->info("[DB] Schema needs initialization or upgrade", ["statements_to_execute" => $total_changes]);
             foreach ($sql as $s) {
-                \Monolog\Registry::Bot()->debug($s);
+                $bot->log->debug($s);
                 if (stripos($s, "DROP FOREIGN KEY") !== false || stripos($s, "DROP INDEX") !== false) {
-                    \Monolog\Registry::Bot()->debug("skipping foreign key/index dropping - dbal bug!");
+                    $bot->log->debug("[DB] skipping foreign key/index dropping - dbal bug!");
                     continue;
                 }
                 try {
                     $db->exec($s);
                 } catch (\Doctrine\DBAL\Exception\DriverException $e) {
                     if ($e->getErrorCode() == 1826) {
-                        \Monolog\Registry::Bot()->debug("ignoring foreign key duplication exception - dbal bug!");
+                        $bot->log->debug("[DB] ignoring foreign key duplication error 1826 - dbal bug!");
                     } else {
                         \Sentry\captureException($e);
                         throw $e;
@@ -81,7 +85,7 @@ class DatabaseFactory
                 }
             }
         } else {
-            \Monolog\Registry::Bot()->info("Schema up to date", ["statements_to_execute" => $total_changes]);
+            $bot->log->info("[DB] Schema up to date", ["statements_to_execute" => $total_changes]);
         }
     }
 }
