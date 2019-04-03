@@ -33,10 +33,18 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
      */
     public $config;
 
+    /**
+     *
+     * @var EventManager
+     */
+    public $eventManager;
+
     public function __construct(array $config, \React\EventLoop\LoopInterface $loop)
     {
-        $this->log    = $this->setupLogger();
-        $this->config = $config;
+        $this->log          = $this->setupLogger();
+        $this->config       = $config;
+        $this->eventManager = new EventManager($this);
+
         parent::__construct(['shardCount' => 1], $loop);
 
         $classes = get_declared_classes();
@@ -47,8 +55,34 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
             }
         }
         DatabaseFactory::make($this);
+
+        // legacy handlers
         $this->on('ready', [$this, 'readyHandler']);
         $this->on('message', [$this, 'messageHandler']);
+
+        $yasminEvents = new \ReflectionClass('\CharlotteDunois\Yasmin\ClientEvents');
+        foreach ($yasminEvents->getMethods() as $method) {
+            switch ($method->name) {
+                case "raw":
+                case "reconnect":
+                case "disconnect":
+                    continue 2;
+                case "error":
+                    $handler = [$this, 'errorHandler'];
+                    break;
+                case "debug":
+                    $handler = function($msg) {
+                        $this->log->debug("[yasmin] " . $msg);
+                    };
+                    break;
+                default:
+                    $handler = function(...$args) use ($method) {
+                        return $this->eventManager->yasminEventHandler($method->name, $args);
+                    };
+                    break;
+            }
+            $this->on($method->name, $handler);
+        }
     }
 
     private function setupLogger(): \Monolog\Logger
@@ -75,6 +109,7 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
     public function readyHandler()
     {
         $this->log->info('Logged in as ' . $this->user->tag);
+        $this->eventManager->initializePeriodics();
         $this->emit(PluginInterface::PLUGINEVENT_READY, $this);
     }
 
@@ -103,5 +138,11 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
             \Sentry\captureException($e);
             $this->log->warning("Uncaught message processing exception!", ['exception' => $e]);
         }
+    }
+
+    public function errorHandler(\Throwable $e)
+    {
+        \Sentry\captureException($e);
+        $this->log->warning("Uncaught error!", ['exception' => $e]);
     }
 }
