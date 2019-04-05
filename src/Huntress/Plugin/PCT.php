@@ -374,6 +374,9 @@ NOTE
                         if (mb_strlen($item->body) > 512) {
                             $item->body = substr($item->body, 0, 509) . "...";
                         }
+                        if (mb_strlen($item->title) > 256) {
+                            $item->body = substr($item->title, 0, 253) . "...";
+                        }
                         $channel = $bot->channels->get(542263101559668736);
                         $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
                         $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
