@@ -385,7 +385,7 @@ NOTE
                     $query->bindValue(2, $newest);
                     $query->execute();
                 } catch (\Throwable $e) {
-                    echo $e->xdebug_message;
+                    \Sentry\captureException($e);
                 }
             });
         });
