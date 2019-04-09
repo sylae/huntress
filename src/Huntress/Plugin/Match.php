@@ -205,8 +205,12 @@ class Match implements \Huntress\PluginInterface
             return self::send($message->channel, $line1)->then(function ($donemsg) use ($message) {
                 return $message->delete();
             });
+        } catch (\Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException $e) {
+            self::send($message->channel, sprintf("%s, that competitor is invalid!", $message->member->displayName));
+            return $message->delete();
         } catch (\Throwable $e) {
-            self::exceptionHandler($message, $e);
+            self::send($message->channel, sprintf("%s, either that match doesn't exist or something has gone wrong!", $message->member->displayName));
+            return $message->delete();
         }
     }
 
@@ -232,16 +236,19 @@ class Match implements \Huntress\PluginInterface
                 throw new \Exception("That's not a valid channel name!");
             }
 
-            $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-            $embed->setTitle("Match " . $info->title);
+            $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+            $embed->setTitle($info->title);
             $embed->setTimestamp($info->duedate->timestamp);
             $embed->setDescription(sprintf("Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]", $info->duedate->toCookieString(), $info->duedate->timestamp));
-            $info->entries->each(function ($v, $k) use ($info, $anon, $embed) {
+            $counter = 1;
+            $info->entries->each(function ($v, $k) use ($info, $anon, $embed, &$counter) {
+                $data = sprintf("%s\nVote with `!match vote %s %s`", $v->data, Snowflake::format($info->idMatch), Snowflake::format($v->id));
                 if ($anon) {
-                    $embed->addField(sprintf("Option %s", Snowflake::format($v->id)), sprintf("%s\nVote with `!match vote %s %s`", $v->data, Snowflake::format($info->idMatch), Snowflake::format($v->id)));
+                    $embed->addField(sprintf("Option %s", $counter), $data);
                 } else {
-                    $embed->addField(sprintf("%s", $v->user->displayName), sprintf("%s\nVote with `!match vote %s %s`", $v->data, Snowflake::format($info->idMatch), Snowflake::format($v->id)));
+                    $embed->addField(sprintf("%s", $v->user->displayName), $data);
                 }
+                $counter++;
             });
             return self::send($channel, "A match is available for voting!\n" . implode(", ", $getOpt->getOption("cc")), ['embed' => $embed]);
         } catch (\Throwable $e) {
