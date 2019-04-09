@@ -25,7 +25,6 @@ class PCT implements \Huntress\PluginInterface
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
         $bot->on(self::PLUGINEVENT_READY, [self::class, "theVolcano"]);
         $bot->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "pctcup", [self::class, "pctcup"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
@@ -163,62 +162,6 @@ class PCT implements \Huntress\PluginInterface
                     ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
                         return self::send($message->channel, "$member has been demoted. :pensive:");
                     });
-            }
-        } catch (\Throwable $e) {
-            return self::exceptionHandler($message, $e);
-        }
-    }
-
-    public static function pctcup(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
-    {
-        if (is_null($message->member->roles->get(406698099143213066))) {
-            return self::unauthorized($message);
-        }
-        try {
-            $t = self::_split($message->content);
-            switch ($t[1] ?? "") {
-                case "createChannel":
-                    $sf = \Huntress\Snowflake::format(\Huntress\Snowflake::generate());
-                    return $message->guild->createChannel([
-                        'name'   => "pct-cup-secret-$sf",
-                        'type'   => "text",
-                        'parent' => 486732403084230657,
-                    ], "Created on behalf of {$message->author->tag} from {$message->id}")->then(function (\CharlotteDunois\Yasmin\Models\TextChannel $channel) use ($message, $t) {
-                        $channel->send(sprintf(<<<NOTE
-**Welcome to PCT Cup Season Two!**
-As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **48 hours** to complete your snips and submit them for processing.
-
-Your submission should be around **1k words**, no biggie if more or less but shoot for that. The link to submit snips is located in #pct-cup-green-room. Good luck!
-
-Please note that competitors have permission to **pin** anything they might find useful. Please pin your characters once you've chosen them! :)
-
-__What you need to do:__
-1. Pick a character! Your opponent will do the same.
-2. Write a snippet featuring the two characters within theme and including the emotion.
-3. Submit your snippet within 48 hours of this post to the google form
-
-Round One's **theme** is: *%s*
-Your **match** is: *%s*
-NOTE
-                        , $t[2] ?? "Unknown", $t[3] ?? "Unknown"));
-                        return self::send($message->channel, "<#{$channel->id}> :ok_hand:");
-                    }, function ($error) use ($message) {
-                        self::error($message, "Error", json_encode($error));
-                    });
-                case "summon":
-                    $user = self::parseGuildUser($message->guild, $t[2] ?? "");
-                    if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
-                        return self::send($message->channel, "You fucking moron.");
-                    }
-                    return $message->channel->overwritePermissions($user, \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['VIEW_CHANNEL'] | \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['MANAGE_MESSAGES'], 0, "Created on behalf of {$message->author->tag}")
-                    ->then(function ($overwrites) use ($message, $user) {
-                        $message->delete();
-                        return self::send($message->channel, "$user come here.");
-                    }, function ($error) use ($message) {
-                        self::error($message, "Error", json_encode($error));
-                    });
-                default:
-                    return self::send($message->channel, "You fucking moron.");
             }
         } catch (\Throwable $e) {
             return self::exceptionHandler($message, $e);
