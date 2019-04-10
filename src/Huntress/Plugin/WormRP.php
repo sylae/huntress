@@ -105,7 +105,7 @@ class WormRP implements \Huntress\PluginInterface
                         $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
                         $redditUser = self::fetchAccount($channel->guild, $item->author);
                         if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
-                            $embed->setAuthor($redditUser->nickname, $redditUser->user->getDisplayAvatarURL());
+                            $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL());
                         } else {
                             $embed->setAuthor($item->author);
                         }
