@@ -92,11 +92,14 @@ class EventManager
             $timing = $interval / count($events);
             $this->huntress->log->debug("[HEM] Periodic interval {$interval}s has " . count($events) . " slots.");
             $this->huntress->loop->addPeriodicTimer($timing, function() use ($interval, $events) {
-                static $phase = 0;
-                $fire         = $phase % count($events);
+                static $phase = [];
+                if (!array_key_exists($interval, $phase)) {
+                    $phase[$interval] = 0;
+                }
+                $fire = $phase[$interval] % count($events);
                 $this->huntress->log->debug("[HEM] Firing periodic {$interval}s phase $fire/" . count($events));
                 $events[$fire]->getCallback()($this->huntress);
-                $phase++;
+                $phase[$interval] ++;
             });
         }
     }
