@@ -10,6 +10,7 @@ namespace Huntress\Plugin;
 
 use \Huntress\Huntress;
 use \React\Promise\ExtendedPromiseInterface as Promise;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
 
 /**
  * Simple builtin to show user information
@@ -19,12 +20,20 @@ use \React\Promise\ExtendedPromiseInterface as Promise;
 class PCT implements \Huntress\PluginInterface
 {
     use \Huntress\PluginHelperTrait;
+    const RANKS = [
+        [463601286260981763, "Recruit"],
+        [486760992521584640, "Squaddie"],
+        [486760604372041729, "Officer"],
+        [486760747427299338, "Captain"],
+        [486760608944095232, "Deputy Director"],
+        [486760607241076736, "Director"],
+    ];
 
     public static function register(Huntress $bot)
     {
+        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "sbHell"])->setPeriodic(60));
+        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "theVolcano"])->setPeriodic(60));
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->on(self::PLUGINEVENT_READY, [self::class, "theVolcano"]);
-        $bot->on(self::PLUGINEVENT_READY, [self::class, "sbHell"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
@@ -78,30 +87,20 @@ class PCT implements \Huntress\PluginInterface
                 return self::send($message->channel, "Capes can't be in the PRT, silly!");
             }
 
-            // get our highest role
-            $ranks = [
-                [463601286260981763, "Recruit"],
-                [486760992521584640, "Squaddie"],
-                [486760604372041729, "Officer"],
-                [486760747427299338, "Captain"],
-                [486760608944095232, "Deputy Director"],
-                [486760607241076736, "Director"],
-            ];
-
             // get the current highest role
             $user_rank = null;
-            foreach ($ranks as $value => $key) { // :ahyperlul:
+            foreach (self::RANKS as $value => $key) { // :ahyperlul:
                 if ($user->roles->has($key[0])) {
                     $user_rank = $value;
                 }
             }
-            switch ($ranks[$user_rank][1] ?? null) {
+            switch (self::RANKS[$user_rank][1] ?? null) {
                 case null:
                     throw new \Exception("tell keira something is fucked, user with no rank found");
                 case "Director":
                     return self::send($message->channel, "This user is already at the maximum rank!");
                 default:
-                    $new_rank = $ranks[$user_rank + 1];
+                    $new_rank = self::RANKS[$user_rank + 1];
 
                     return $user->addRole($new_rank[0], "Promotion on behalf of {$message->author->tag}")
                     ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $new_rank) {
@@ -130,34 +129,24 @@ class PCT implements \Huntress\PluginInterface
                 return self::send($message->channel, "Capes can't be in the PRT, silly!");
             }
 
-            // get our highest role
-            $ranks = [
-                [463601286260981763, "Recruit"],
-                [486760992521584640, "Squaddie"],
-                [486760604372041729, "Officer"],
-                [486760747427299338, "Captain"],
-                [486760608944095232, "Deputy Director"],
-                [486760607241076736, "Director"],
-            ];
-
             // get the current highest role
             $user_rank = null;
-            foreach ($ranks as $value => $key) { // :ahyperlul:
+            foreach (self::RANKS as $value => $key) { // :ahyperlul:
                 if ($user->roles->has($key[0])) {
                     $user_rank = $value;
                 }
             }
-            switch ($ranks[$user_rank][1] ?? null) {
+            switch (self::RANKS[$user_rank][1] ?? null) {
                 case null:
                     throw new \Exception("tell keira something is fucked, user with no rank found");
                 case "Recruit":
                     return self::send($message->channel, "This user is already at the minimum rank!");
                 default:
-                    $new_rank = $ranks[$user_rank];
+                    $new_rank = self::RANKS[$user_rank];
 
                     return $user->removeRole($new_rank[0], "Demotion on behalf of {$message->author->tag}")
-                    ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $user_rank, $ranks) {
-                        return $member->setNickname("{$ranks[$user_rank - 1][1]} {$member->user->username}", "Demotion on behalf of {$message->author->tag}");
+                    ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message, $user_rank) {
+                        return $member->setNickname(self::RANKS[$user_rank - 1][1] . " {$member->user->username}", "Demotion on behalf of {$message->author->tag}");
                     })
                     ->then(function (\CharlotteDunois\Yasmin\Models\GuildMember $member) use ($message) {
                         return self::send($message->channel, "$member has been demoted. :pensive:");
@@ -204,11 +193,12 @@ class PCT implements \Huntress\PluginInterface
 
     public static function sbHell(Huntress $bot)
     {
-        $bot->loop->addPeriodicTimer(60, function () use ($bot) {
-            if (php_uname('s') == "Windows NT") {
-                return null; // don't run on testing because oof
-            }
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://forums.spacebattles.com/forums/worm.115/")->then(function (string $string) use ($bot) {
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not firing " . __METHOD__);
+            return;
+        }
+        return URLHelpers::resolveURLToData("https://forums.spacebattles.com/forums/worm.115/")->then(function (string $string) use ($bot) {
+            try {
                 $data  = \html5qp($string);
                 $items = $data->find('li.discussionListItem');
                 foreach ($items as $item) {
@@ -282,58 +272,61 @@ class PCT implements \Huntress\PluginInterface
                     $query->bindValue(4, $x->title);
                     $query->execute();
                 }
-            });
+            } catch (\Throwable $e) {
+                \Sentry\captureException($e);
+                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+            }
         });
     }
 
     public static function theVolcano(Huntress $bot)
     {
         if (self::isTestingClient()) {
+            $bot->log->debug("Not firing " . __METHOD__);
             return;
         }
-        $bot->loop->addPeriodicTimer(60, function () use ($bot) {
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormfanfic/new.json")->then(function (string $string) use ($bot) {
-                try {
-                    $items    = json_decode($string)->data->children;
-                    $lastPub  = self::getLastRSS();
-                    $newest   = $lastPub;
-                    $newItems = [];
-                    foreach ($items as $item) {
-                        $published = (int) $item->data->created_utc;
-                        if ($published <= $lastPub) {
-                            continue;
-                        }
-                        $newest     = max($newest, $published);
-                        $newItems[] = (object) [
-                            'title'    => $item->data->title,
-                            'link'     => "https://reddit.com" . $item->data->permalink,
-                            'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
-                            'category' => $item->data->link_flair_text ?? "Unflaired",
-                            'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                            'author'   => $item->data->author,
-                        ];
+        return URLHelpers::resolveURLToData("https://www.reddit.com/r/wormfanfic/new.json")->then(function (string $string) use ($bot) {
+            try {
+                $items    = json_decode($string)->data->children;
+                $lastPub  = self::getLastRSS();
+                $newest   = $lastPub;
+                $newItems = [];
+                foreach ($items as $item) {
+                    $published = (int) $item->data->created_utc;
+                    if ($published <= $lastPub) {
+                        continue;
                     }
-                    foreach ($newItems as $item) {
-                        if (mb_strlen($item->body) > 512) {
-                            $item->body = substr($item->body, 0, 509) . "...";
-                        }
-                        if (mb_strlen($item->title) > 256) {
-                            $item->body = substr($item->title, 0, 253) . "...";
-                        }
-                        $channel = $bot->channels->get(542263101559668736);
-                        $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                        $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
-                        $channel->send("", ['embed' => $embed]);
-                    }
-                    $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
-                    $query->bindValue(1, "rssPublished");
-                    $query->bindValue(2, $newest);
-                    $query->execute();
-                } catch (\Throwable $e) {
-                    \Sentry\captureException($e);
+                    $newest     = max($newest, $published);
+                    $newItems[] = (object) [
+                        'title'    => $item->data->title,
+                        'link'     => "https://reddit.com" . $item->data->permalink,
+                        'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
+                        'category' => $item->data->link_flair_text ?? "Unflaired",
+                        'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
+                        'author'   => $item->data->author,
+                    ];
                 }
-            });
+                foreach ($newItems as $item) {
+                    if (mb_strlen($item->body) > 512) {
+                        $item->body = substr($item->body, 0, 509) . "...";
+                    }
+                    if (mb_strlen($item->title) > 256) {
+                        $item->body = substr($item->title, 0, 253) . "...";
+                    }
+                    $channel = $bot->channels->get(542263101559668736);
+                    $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                    $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
+                    $channel->send("", ['embed' => $embed]);
+                }
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
+                $query->bindValue(1, "rssPublished");
+                $query->bindValue(2, $newest);
+                $query->execute();
+            } catch (\Throwable $e) {
+                \Sentry\captureException($e);
+                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+            }
         });
     }
 
