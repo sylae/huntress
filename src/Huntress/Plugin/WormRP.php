@@ -9,7 +9,7 @@
 namespace Huntress\Plugin;
 
 use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
 
 /**
  * Simple builtin to show user information
@@ -22,10 +22,10 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function register(Huntress $bot)
     {
+        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollAnnouncer"])->setPeriodic(30));
+        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollComments"])->setPeriodic(30));
+        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollActiveCheck"])->setPeriodic(10));
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->on(self::PLUGINEVENT_READY, [self::class, "pollAnnouncer"]);
-        $bot->on(self::PLUGINEVENT_READY, [self::class, "pollComments"]);
-        $bot->on(self::PLUGINEVENT_READY, [self::class, "pollActiveCheck"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
         $bot->on("messageReactionAdd", [self::class, "reportHandler"]);
@@ -57,77 +57,77 @@ class WormRP implements \Huntress\PluginInterface
     public static function pollAnnouncer(Huntress $bot)
     {
         if (self::isTestingClient()) {
+            $bot->log->debug("Not firing " . __METHOD__);
             return;
         }
-        $bot->loop->addPeriodicTimer(60, function() use ($bot) {
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/new.json")->then(function(string $string) use ($bot) {
-                try {
-                    $items    = json_decode($string)->data->children;
-                    $lastPub  = self::getLastRSS();
-                    $newest   = $lastPub;
-                    $newItems = [];
-                    foreach ($items as $item) {
-                        $published  = (int) $item->data->created_utc;
-                        if ($published <= $lastPub || is_null($item->data->link_flair_text))
-                            continue;
-                        $newest     = max($newest, $published);
-                        $newItems[] = (object) [
-                            'title'    => $item->data->title,
-                            'link'     => "https://reddit.com" . $item->data->permalink,
-                            'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
-                            'category' => $item->data->link_flair_text,
-                            'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                            'author'   => $item->data->author,
-                        ];
+        return URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/new.json")->then(function(string $string) use ($bot) {
+            try {
+                $items    = json_decode($string)->data->children;
+                $lastPub  = self::getLastRSS();
+                $newest   = $lastPub;
+                $newItems = [];
+                foreach ($items as $item) {
+                    $published = (int) $item->data->created_utc;
+                    if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
+                        continue;
                     }
-                    foreach ($newItems as $item) {
-                        if (mb_strlen($item->body) > 512) {
-                            $item->body = substr($item->body, 0, 509) . "...";
-                        }
-                        switch ($item->category) {
-                            case "Character":
-                            case "Equipment":
-                            case "Lore":
-                            case "Group":
-                                $channel = "386943351062265888"; // the_list
-                                break;
-                            case "Meta":
-                                $channel = "118981144464195584"; // general
-                                break;
-                            case "Event":
-                            case "Patrol":
-                            case "Non-Canon":
-                            default:
-                                $channel = "409043591881687041"; // events
-                        }
-                        $channel    = $bot->channels->get($channel);
-                        $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                        $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
-                        $redditUser = self::fetchAccount($channel->guild, $item->author);
-                        if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
-                            $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL());
-                        } else {
-                            $embed->setAuthor($item->author);
-                        }
-                        $channel->send("", ['embed' => $embed]);
-                    }
-                    $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_config (`key`, `value`) VALUES(?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
-                    $query->bindValue(1, "rssPublished");
-                    $query->bindValue(2, $newest);
-                    $query->execute();
-                } catch (\Throwable $e) {
-                    \Sentry\captureException($e);
-                    $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+                    $newest     = max($newest, $published);
+                    $newItems[] = (object) [
+                        'title'    => $item->data->title,
+                        'link'     => "https://reddit.com" . $item->data->permalink,
+                        'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
+                        'category' => $item->data->link_flair_text,
+                        'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
+                        'author'   => $item->data->author,
+                    ];
                 }
-            });
+                foreach ($newItems as $item) {
+                    if (mb_strlen($item->body) > 512) {
+                        $item->body = substr($item->body, 0, 509) . "...";
+                    }
+                    switch ($item->category) {
+                        case "Character":
+                        case "Equipment":
+                        case "Lore":
+                        case "Group":
+                            $channel = 386943351062265888; // the_list
+                            break;
+                        case "Meta":
+                            $channel = 118981144464195584; // general
+                            break;
+                        case "Event":
+                        case "Patrol":
+                        case "Non-Canon":
+                        default:
+                            $channel = 409043591881687041; // events
+                    }
+                    $channel    = $bot->channels->get($channel);
+                    $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                    $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
+                    $redditUser = self::fetchAccount($channel->guild, $item->author);
+                    if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+                        $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL());
+                    } else {
+                        $embed->setAuthor($item->author);
+                    }
+                    $channel->send("", ['embed' => $embed]);
+                }
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_config (`key`, `value`) VALUES(?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
+                $query->bindValue(1, "rssPublished");
+                $query->bindValue(2, $newest);
+                $query->execute();
+            } catch (\Throwable $e) {
+                \Sentry\captureException($e);
+                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+            }
         });
     }
 
     public static function pollComments(Huntress $bot)
     {
-        $bot->loop->addPeriodicTimer(30, function() {
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) {
+        return URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) use ($bot) {
+            try {
                 $items = json_decode($string)->data->children;
                 $users = [];
                 foreach ($items as $item) {
@@ -142,54 +142,6 @@ class WormRP implements \Huntress\PluginInterface
                     $query->bindValue(3, $data[1]);
                     $query->execute();
                 }
-            });
-        });
-    }
-
-    public static function pollActiveCheck(Huntress $bot)
-    {
-        if (self::isTestingClient()) {
-            return;
-        }
-        $bot->loop->addPeriodicTimer(60, function() use ($bot) {
-            try {
-                $redd   = [];
-                $cutoff = \Carbon\Carbon::now()->addDays(-14);
-                $query  = \Huntress\DatabaseFactory::get()->query('SELECT * from wormrp_activity right join wormrp_users on wormrp_users.redditName = wormrp_activity.redditName where wormrp_users.user is not null');
-                foreach ($query->fetchAll() as $redditor) {
-                    $redd[$redditor['user']] = ((new \Carbon\Carbon($redditor['lastSubActivity'] ?? "1990-01-01")) >= $cutoff);
-                }
-
-                // filter() is failing due to an upstream bug.
-                $curr_actives = $bot->guilds->get("118981144464195584")->members->filter(function($v, $k) {
-                    return $v->roles->has("492933723340144640");
-                });
-
-                foreach ($curr_actives as $member) {
-                    if (!array_key_exists($member->id, $redd)) {
-                        $member->removeRole("492933723340144640", "Active Users role requires a linked reddit account")->then(function($member) {
-                            $member->guild->channels->get("491099441357651969")->send("Removed <@{$member->id}> from Active Users due to account linkage. " .
-                            "Please perform `!linkAccount [redditName] {$member->user->tag}`");
-                        });
-                    } elseif ($redd[$member->id]) {
-                        unset($redd[$member->id]);
-                    } else {
-                        $member->removeRole("492933723340144640", "User fell out of Active status (14 days)")->then(function($member) {
-                            $member->guild->channels->get("491099441357651969")->send("Removed <@{$member->id}> from Active Users due to inactivity.");
-                        });
-                        unset($redd[$member->id]);
-                    }
-                }
-                foreach ($redd as $id => $val) {
-                    if ($val) {
-                        $member = $bot->guilds->get("118981144464195584")->members->get($id);
-                        if (!is_null($member)) {
-                            $member->addRole("492933723340144640", "User is now active on reddit")->then(function($member) {
-                                $member->guild->channels->get("491099441357651969")->send("Added <@{$member->id}> to Active Users.");
-                            });
-                        }
-                    }
-                }
             } catch (\Throwable $e) {
                 \Sentry\captureException($e);
                 $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
@@ -197,12 +149,62 @@ class WormRP implements \Huntress\PluginInterface
         });
     }
 
+    public static function pollActiveCheck(Huntress $bot)
+    {
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not firing " . __METHOD__);
+            return;
+        }
+        try {
+            $redd   = [];
+            $cutoff = \Carbon\Carbon::now()->addDays(-14);
+            $query  = \Huntress\DatabaseFactory::get()->query('SELECT * from wormrp_activity right join wormrp_users on wormrp_users.redditName = wormrp_activity.redditName where wormrp_users.user is not null');
+            foreach ($query->fetchAll() as $redditor) {
+                $redd[$redditor['user']] = ((new \Carbon\Carbon($redditor['lastSubActivity'] ?? "1990-01-01")) >= $cutoff);
+            }
+
+            // filter() is failing due to an upstream bug.
+            $curr_actives = $bot->guilds->get(118981144464195584)->members->filter(function($v, $k) {
+                return $v->roles->has(492933723340144640);
+            });
+
+            foreach ($curr_actives as $member) {
+                if (!array_key_exists($member->id, $redd)) {
+                    $member->removeRole(492933723340144640, "Active Users role requires a linked reddit account")->then(function($member) {
+                        $member->guild->channels->get(491099441357651969)->send("Removed <@{$member->id}> from Active Users due to account linkage. " .
+                        "Please perform `!linkAccount [redditName] {$member->user->tag}`");
+                    });
+                } elseif ($redd[$member->id]) {
+                    unset($redd[$member->id]);
+                } else {
+                    $member->removeRole(492933723340144640, "User fell out of Active status (14 days)")->then(function($member) {
+                        $member->guild->channels->get(491099441357651969)->send("Removed <@{$member->id}> from Active Users due to inactivity.");
+                    });
+                    unset($redd[$member->id]);
+                }
+            }
+            foreach ($redd as $id => $val) {
+                if ($val) {
+                    $member = $bot->guilds->get(118981144464195584)->members->get($id);
+                    if (!is_null($member)) {
+                        $member->addRole(492933723340144640, "User is now active on reddit")->then(function($member) {
+                            $member->guild->channels->get(491099441357651969)->send("Added <@{$member->id}> to Active Users.");
+                        });
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Sentry\captureException($e);
+            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
+    }
+
     public static function accountLinkHandler(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
     {
-        if ($message->guild->id != "118981144464195584") {
+        if ($message->guild->id != 118981144464195584) {
             return null;
         }
-        if (is_null($message->member->roles->get("456321111945248779"))) {
+        if (!$message->member->roles->has(456321111945248779)) {
             return self::unauthorized($message);
         } else {
             try {
@@ -231,7 +233,7 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function lookupHandler(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
     {
-        if ($message->guild->id != "118981144464195584") {
+        if ($message->guild->id != 118981144464195584) {
             return null;
         }
         try {
@@ -241,7 +243,7 @@ class WormRP implements \Huntress\PluginInterface
             }
             $char = urlencode(trim(str_replace($args[0], "", $message->content)));
             $url  = "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . $char . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image";
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
+            return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
                 $items = json_decode($string)->query->results;
                 if (count($items) > 0) {
                     foreach ($items as $item) {
@@ -263,7 +265,7 @@ class WormRP implements \Huntress\PluginInterface
                 } else {
                     // no results found on the wiki, use reddit backup.
                     $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . $char . "&sort=relevance&restrict_sr=on&t=all";
-                    return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message) {
+                    return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message) {
                         $items = json_decode($string)->data->children;
                         foreach ($items as $item) {
                             return $message->channel->send("I didn't find anything on the WormRP wiki, but reddit gave me this: https://reddit.com" . $item->data->permalink . "\n*If this is your character, please port them over to the wiki when you have time!*");
@@ -280,7 +282,7 @@ class WormRP implements \Huntress\PluginInterface
     public static function reportHandler(\CharlotteDunois\Yasmin\Models\MessageReaction $reaction, \CharlotteDunois\Yasmin\Models\User $user): ?\React\Promise\ExtendedPromiseInterface
     {
         $emote = 501301876621312001;
-        if ($reaction->message->guild->id != "118981144464195584" || $user->bot || $reaction->message->author->id == $user->id || $reaction->emoji->id != $emote) {
+        if ($reaction->message->guild->id != 118981144464195584 || $user->bot || $reaction->message->author->id == $user->id || $reaction->emoji->id != $emote) {
             return null;
         }
         $guild  = $reaction->message->guild;
