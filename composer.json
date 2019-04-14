@@ -9,7 +9,7 @@
         "ulrichsg/getopt-php": "^3.2",
         "querypath/querypath": "^3.0",
         "charlottedunois/yasmin": "dev-master",
-        "clue/buzz-react": "dev-master as v2.5.1",
+        "clue/buzz-react": "^2.6",
         "sentry/sentry": "^2.0",
         "intervention/image": "^2.4",
         "clue/block-react": "^1.3"
