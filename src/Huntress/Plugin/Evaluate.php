@@ -46,7 +46,7 @@ class Evaluate implements \Huntress\PluginInterface
                     return self::send($message->channel, "```json" . PHP_EOL . json_encode($response, JSON_PRETTY_PRINT) . PHP_EOL . "```", ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
                 }
             } catch (\Throwable $e) {
-                return self::exceptionHandler($message, $e, true);
+                return self::exceptionHandler($message, $e, true, false);
             }
         }
     }
