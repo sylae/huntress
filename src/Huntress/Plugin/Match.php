@@ -157,7 +157,7 @@ class Match implements \Huntress\PluginInterface
             $id    = Snowflake::generate();
 
             if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
-                throw new \Exception("Could not parse user. Try a username, @-mention, or their Tag#0000.");
+                return self::send($message->channel, "Could not parse user. Try a username, @-mention, or their Tag#0000.");
             }
 
             $qb    = \Huntress\DatabaseFactory::get()->createQueryBuilder();
