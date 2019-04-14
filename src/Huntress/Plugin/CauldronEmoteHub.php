@@ -97,8 +97,8 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             }
             $code = $m[1];
             $x    = [];
-            $bot->emojis->each(function ($v, $k) use ($code, &$x) {
-                if ($v->guild->name == "Cauldron Emote Hub" || stripos($v->guild->name, "CEH") !== false) { // todo: do this better
+            $bot->emojis->each(function (\CharlotteDunois\Yasmin\Models\Emoji $v, $k) use ($code, &$x) {
+                if ($v->requireColons && ($v->guild->name == "Cauldron Emote Hub" || stripos($v->guild->name, "CEH") !== false)) { // todo: do this better
                     $l = levenshtein($code, $v->name);
                     if (stripos($v->name, $code) !== false || $l < 3) {
                         $x[$k] = $l;
