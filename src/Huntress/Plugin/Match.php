@@ -228,12 +228,12 @@ class Match implements \Huntress\PluginInterface
             $info->duedate->setTimezone($getOpt->getOption("timezone"));
 
             if (preg_match("/<#(\\d+)>/", $room, $matches)) {
-                $channel = $message->guild->channels->get($matches[1]);
-                if (!$channel instanceof \CharlotteDunois\Yasmin\Interfaces\TextChannelInterface) {
-                    throw new \Exception("$room is not a valid text channel in this guild.");
+                $channel = $message->client->channels->get($matches[1]);
+                if (!$channel instanceof \CharlotteDunois\Yasmin\Interfaces\TextChannelInterface || $message->guild != $channel->guild) {
+                    return self::send($message->channel, "$room is not a valid text channel in this guild.");
                 }
             } else {
-                throw new \Exception("That's not a valid channel name!");
+                return self::send($message->channel, "That's not a valid channel name!");
             }
 
             $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();

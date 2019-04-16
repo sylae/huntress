@@ -41,9 +41,9 @@ Your **match** is: *%s*
 NOTE;
     const NOTE_CCUP = <<<NOTE
 **Welcome to Cauldron Cup Season Three!**
-As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **72 hours** to complete your snips and submit them for processing. *Note that if both competitors choose OCs, and additional 24 hours will be added to allow you time to familiarize yourself.*
+As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **72 hours** to complete your snips and submit them for processing. *Note that if both competitors choose OCs, an additional 24 hours will be added to allow you time to familiarize yourself.*
 
-Your submission should be around **1k words**, no biggie if more or less but shoot for that. The link to submit snips is located in <#565085613955612702>. Good luck!
+Your submission should be around **1k words**, no biggie if more or less but shoot for that. The link to submit snips is pinned in <#565085613955612702>. Good luck!
 
 Competitors have permission to pin anything they might find useful. Please pin your characters once you've chosen them! :)
 
@@ -66,6 +66,28 @@ NOTE;
         ->setCallback([self::class, "cup"]);
 
         $bot->eventManager->addEventListener($eh);
+
+
+        $eh2 = \Huntress\EventListener::new()
+        ->addGuild(385678357745893376)
+        ->addChannel(567713466148716544)
+        ->addEvent("message")
+        ->setCallback([self::class, "reposter"]);
+
+        $bot->eventManager->addEventListener($eh2);
+    }
+
+    public static function reposter(\Huntress\EventData $data)
+    {
+        if ($data->message->author->id == $data->message->client->user->id) {
+            return;
+        }
+        if ($data->channel->id != 567713466148716544) {
+            return; // sanity check
+        }
+        return $data->channel->send($data->message->cleanContent)->then(function ($newmsg) use ($data) {
+            return $data->message->delete();
+        });
     }
 
     public static function cup(\Huntress\EventData $data)
