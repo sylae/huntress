@@ -89,7 +89,9 @@ class Match implements \Huntress\PluginInterface
             ])->addOptions([
                 (new Option(null, 'no-anonymous', GetOpt::NO_ARGUMENT))->setDescription("Show user names instead of anonymizing options."),
                 (new Option(null, 'cc', GetOpt::MULTIPLE_ARGUMENT))->setDescription("Add a user or group to be @-ed."),
+                (new Option(null, 'pin', GetOpt::NO_ARGUMENT))->setDescription("Attempt to pin the announcement."),
                 (new Option('t', 'timezone', GetOpt::OPTIONAL_ARGUMENT))->setDefaultValue("UTC")->setDescription("Set the announcement timezone. Default: UTC"),
+                (new Option('s', 'spoiler', GetOpt::OPTIONAL_ARGUMENT))->setDescription("Add a spoiler warning for the match"),
             ]
             );
             $commands[] = Command::create('tally', [self::class, 'tallyMatch'])->setDescription('Get results for a match')->addOperands([
@@ -218,7 +220,7 @@ class Match implements \Huntress\PluginInterface
     {
         try {
             $anon = !((bool) $getOpt->getOption("no-anonymous"));
-            if (!$message->member->permissions->has('MANAGE_ROLES') || !in_array($message->author->id, $message->client->config['evalUsers'])) { // todo: actual permission stuff
+            if (!in_array($message->author->id, $message->client->config['evalUsers'])) { // todo: actual permission stuff
                 return self::unauthorized($message);
             }
             $match = Snowflake::parse($getOpt->getOperand('match'));
@@ -229,7 +231,7 @@ class Match implements \Huntress\PluginInterface
 
             if (preg_match("/<#(\\d+)>/", $room, $matches)) {
                 $channel = $message->client->channels->get($matches[1]);
-                if (!$channel instanceof \CharlotteDunois\Yasmin\Interfaces\TextChannelInterface || $message->guild != $channel->guild) {
+                if (!$channel instanceof \CharlotteDunois\Yasmin\Interfaces\TextChannelInterface) {
                     return self::send($message->channel, "$room is not a valid text channel in this guild.");
                 }
             } else {
@@ -241,6 +243,10 @@ class Match implements \Huntress\PluginInterface
             $embed->setTimestamp($info->duedate->timestamp);
             $embed->setDescription(sprintf("Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]", $info->duedate->toCookieString(), $info->duedate->timestamp));
             $counter = 1;
+
+            if (!is_null($getOpt->getOption("spoiler"))) {
+                $embed->addField("SPOILER ALERT", $getOpt->getOption("spoiler"));
+            }
             $info->entries->each(function ($v, $k) use ($info, $anon, $embed, &$counter) {
                 $data = sprintf("%s\nVote with `!match vote %s %s`", $v->data, Snowflake::format($info->idMatch), Snowflake::format($v->id));
                 if ($anon) {
@@ -250,7 +256,15 @@ class Match implements \Huntress\PluginInterface
                 }
                 $counter++;
             });
-            return self::send($channel, "A match is available for voting!\n" . implode(", ", $getOpt->getOption("cc")), ['embed' => $embed]);
+            $prom = self::send($channel, "A match is available for voting!\n" . implode(", ", $getOpt->getOption("cc")), ['embed' => $embed]);
+            if ((bool) $getOpt->getOption("pin")) {
+                $prom->then(function ($announcement) use ($message) {
+                    $message->channel->send("Announcement sent!");
+                    return $announcement->pin();
+                }, function ($error) use ($message) {
+                    self::dump($message->channel, $error);
+                });
+            }
         } catch (\Throwable $e) {
             self::exceptionHandler($message, $e);
         }
