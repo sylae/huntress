@@ -291,10 +291,10 @@ class Match implements \Huntress\PluginInterface
                 if ($anon) {
                     $r[] = sprintf("Competitor ID %s - Data `%s`", Snowflake::format($v->id), $v->data ?? "<null>");
                 } else {
-                    $r[] = sprintf("Competitor %s (ID %s) - Data `%s`", $v->displayName, Snowflake::format($v->id), $v->data ?? "<null>");
+                    $r[] = sprintf("Competitor %s (ID %s) - Data `%s`", $v->user, Snowflake::format($v->id), $v->data ?? "<null>");
                 }
                 $vcount = $v->votes->count();
-                $vplode = $v->votes->implode("displayName", ", ");
+                $vplode = $v->votes->implode("user", ", ");
                 $r[]    = sprintf("%s votes - %s", $vcount, $vplode);
                 $r[]    = "";
             });
