@@ -278,7 +278,7 @@ class Match implements \Huntress\PluginInterface
     {
         try {
             $anon = !((bool) $getOpt->getOption("no-anonymous"));
-            if (!$message->member->permissions->has('MANAGE_ROLES') || !in_array($message->author->id, $message->client->config['evalUsers'])) { // todo: actual permission stuff
+            if (!in_array($message->author->id, $message->client->config['evalUsers'])) { // todo: actual permission stuff
                 return self::unauthorized($message);
             }
             $match = Snowflake::parse($getOpt->getOperand('match'));
