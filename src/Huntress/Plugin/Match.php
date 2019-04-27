@@ -87,11 +87,12 @@ class Match implements \Huntress\PluginInterface
                 (new Operand('room', Operand::REQUIRED))->setValidation('is_string')->setDescription('Where you would like the match to be announced.'),
                 (new Operand('match', Operand::REQUIRED))->setValidation('is_string')->setDescription('The match you are announcing.'),
             ])->addOptions([
-                (new Option(null, 'no-anonymous', GetOpt::NO_ARGUMENT))->setDescription("Show user names instead of anonymizing options."),
-                (new Option(null, 'cc', GetOpt::MULTIPLE_ARGUMENT))->setDescription("Add a user or group to be @-ed."),
-                (new Option(null, 'pin', GetOpt::NO_ARGUMENT))->setDescription("Attempt to pin the announcement."),
-                (new Option('t', 'timezone', GetOpt::OPTIONAL_ARGUMENT))->setDefaultValue("UTC")->setDescription("Set the announcement timezone. Default: UTC"),
-                (new Option('s', 'spoiler', GetOpt::OPTIONAL_ARGUMENT))->setDescription("Add a spoiler warning for the match"),
+                (new Option('u', 'no-anonymous', GetOpt::NO_ARGUMENT))->setDescription("Show user names instead of anonymizing options."),
+                (new Option('c', 'cc', GetOpt::MULTIPLE_ARGUMENT))->setDescription("Add a user or group to be @-ed."),
+                (new Option('p', 'pin', GetOpt::NO_ARGUMENT))->setDescription("Attempt to pin the announcement."),
+                (new Option('t', 'timezone', GetOpt::OPTIONAL_ARGUMENT))->setDefaultValue("UTC")->setDescription("Set the announcement timezone. Default: UTC."),
+                (new Option('s', 'spoiler', GetOpt::OPTIONAL_ARGUMENT))->setDescription("Add a spoiler warning for the match."),
+                (new Option('n', 'note', GetOpt::OPTIONAL_ARGUMENT))->setDescription("Add an additional note to be displayed."),
             ]
             );
             $commands[] = Command::create('tally', [self::class, 'tallyMatch'])->setDescription('Get results for a match')->addOperands([
@@ -244,6 +245,9 @@ class Match implements \Huntress\PluginInterface
             $embed->setDescription(sprintf("Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]", $info->duedate->toCookieString(), $info->duedate->timestamp));
             $counter = 1;
 
+            if (!is_null($getOpt->getOption("note"))) {
+                $embed->addField("Note", $getOpt->getOption("note"));
+            }
             if (!is_null($getOpt->getOption("spoiler"))) {
                 $embed->addField("SPOILER ALERT", $getOpt->getOption("spoiler"));
             }
