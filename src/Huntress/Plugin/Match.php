@@ -291,10 +291,10 @@ class Match implements \Huntress\PluginInterface
                 if ($anon) {
                     $r[] = sprintf("Competitor ID %s - Data `%s`", Snowflake::format($v->id), $v->data ?? "<null>");
                 } else {
-                    $r[] = sprintf("Competitor %s (ID %s) - Data `%s`", $v->user, Snowflake::format($v->id), $v->data ?? "<null>");
+                    $r[] = sprintf("Competitor %s (ID %s) - Data `%s`", $v->user->displayName, Snowflake::format($v->id), $v->data ?? "<null>");
                 }
                 $vcount = $v->votes->count();
-                $vplode = $v->votes->implode("user", ", ");
+                $vplode = $v->votes->implode("displayName", ", ");
                 $r[]    = sprintf("%s votes - %s", $vcount, $vplode);
                 $r[]    = "";
             });
@@ -332,9 +332,10 @@ class Match implements \Huntress\PluginInterface
         $votes = (new Collection($db->createQueryBuilder()->select("*")->from("match_votes")->where('idMatch = ?')->setParameter(0, $idMatch)->execute()->fetchAll()));
         $votes->each(function ($v, $k) use ($match, $guild) {
             if ($guild->members->has($v['idVoter'])) {
-                $vote          = new \stdClass();
-                $vote->user    = $guild->members->get($v['idVoter']);
-                $vote->created = new Carbon($v['created']);
+                $vote              = new \stdClass();
+                $vote->user        = $guild->members->get($v['idVoter']);
+                $vote->displayName = $vote->user->displayName;
+                $vote->created     = new Carbon($v['created']);
                 $match->entries->get($v['idCompetitor'])->votes->set($v['idVoter'], $vote);
             }
         });
