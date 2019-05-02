@@ -68,7 +68,8 @@ class RSSProcessor
 
     public function eventManagerCallback(string $string, Huntress $bot)
     {
-        $collect = $this->dataProcessingCallback($string);
+        $collect = $this->dataProcessingCallback($string)->sortCustom([$this, 'sortObjects']);
+        $this->huntress->log->addDebug("[RSS] {$this->id} - There are " . $collect->count() . " items to post.");
         foreach ($collect as $item) {
             $this->dataPublishingCallback($item);
         }
@@ -77,16 +78,19 @@ class RSSProcessor
         }
     }
 
-    private function dataProcessingCallback(string $string): Collection
+    protected function dataProcessingCallback(string $string): Collection
     {
         try {
-            $data     = \qp($string);
-            $items    = $data->find('item');
+            $data  = \qp($string);
+            $items = $data->find('item');
+            if (!is_countable($items)) {
+                return new Collection();
+            }
             $lastPub  = $this->getLastRSS();
             $newest   = $lastPub;
             $newItems = [];
             foreach ($items as $item) {
-                $published = new \Carbon\Carbon($item->find('pubDate')->text());
+                $published = new Carbon($item->find('pubDate')->text());
                 if ($published <= $lastPub) {
                     continue;
                 }
@@ -106,7 +110,7 @@ class RSSProcessor
         }
     }
 
-    private function dataPublishingCallback(object $item): bool
+    protected function dataPublishingCallback(object $item): bool
     {
         try {
             $embed = new MessageEmbed();
@@ -123,7 +127,7 @@ class RSSProcessor
         return true;
     }
 
-    private function getLastRSS(): Carbon
+    protected function getLastRSS(): Carbon
     {
         $qb  = $this->huntress->db->createQueryBuilder();
         $qb->select("*")->from("rss")->where('`id` = ?')->setParameter(0, $this->id, "string");
@@ -134,14 +138,22 @@ class RSSProcessor
         return Carbon::createFromTimestamp(0);
     }
 
-    private function setLastRSS(Carbon $time)
+    protected function setLastRSS(Carbon $time)
     {
+        if ($this->getLastRSS() >= $time) {
+            return;
+        }
         $query = $this->huntress->db->prepare('INSERT INTO rss (`id`, `lastUpdate`) VALUES(?, ?) '
         . 'ON DUPLICATE KEY UPDATE `lastUpdate` = VALUES(`lastUpdate`);
         ', ['string', 'datetime']);
         $query->bindValue(1, $this->id);
-        $query->bindValue(2, max($time, $this->getLastRSS()));
+        $query->bindValue(2, $time);
         $query->execute();
+    }
+
+    public function sortObjects($a, $b): bool
+    {
+        return $a->date <=> $b->date;
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -149,7 +161,7 @@ class RSSProcessor
         $t = $schema->createTable("rss");
         $t->addColumn("id", "string", ['length' => 255, 'customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t->addColumn("lastUpdate", "datetime");
-        $t->addIndex(["id"]);
+        $t->setPrimaryKey(["id"]);
     }
 
     public static function register(Huntress $bot)
