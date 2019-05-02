@@ -31,9 +31,9 @@ class PCT implements \Huntress\PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addURLEvent("https://forums.spacebattles.com/forums/worm.115/", 30, [self::class, "sbHell"]);
-        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormfanfic/new.json", 30, [self::class, "theVolcano"]);
         $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']));
+        $bot->eventManager->addURLEvent("https://forums.spacebattles.com/forums/worm.115/", 30, [self::class, "sbHell"]);
+        new \Huntress\RedditProcessor($bot, "theVolcano", "wormfanfic", 30, 542263101559668736);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
@@ -271,55 +271,6 @@ class PCT implements \Huntress\PluginInterface
                 $query->bindValue(4, $x->title);
                 $query->execute();
             }
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
-            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
-        }
-    }
-
-    public static function theVolcano(string $string, Huntress $bot)
-    {
-        try {
-            if (self::isTestingClient()) {
-                $bot->log->debug("Not firing " . __METHOD__);
-                return;
-            }
-            $items    = json_decode($string)->data->children;
-            $lastPub  = self::getLastRSS();
-            $newest   = $lastPub;
-            $newItems = [];
-            foreach ($items as $item) {
-                $published = (int) $item->data->created_utc;
-                if ($published <= $lastPub) {
-                    continue;
-                }
-                $newest     = max($newest, $published);
-                $newItems[] = (object) [
-                    'title'    => $item->data->title,
-                    'link'     => "https://reddit.com" . $item->data->permalink,
-                    'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
-                    'category' => $item->data->link_flair_text ?? "Unflaired",
-                    'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                    'author'   => $item->data->author,
-                ];
-            }
-            foreach ($newItems as $item) {
-                if (mb_strlen($item->body) > 512) {
-                    $item->body = substr($item->body, 0, 509) . "...";
-                }
-                if (mb_strlen($item->title) > 256) {
-                    $item->body = substr($item->title, 0, 253) . "...";
-                }
-                $channel = $bot->channels->get(542263101559668736);
-                $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
-                $channel->send("", ['embed' => $embed]);
-            }
-            $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
-            . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
-            $query->bindValue(1, "rssPublished");
-            $query->bindValue(2, $newest);
-            $query->execute();
         } catch (\Throwable $e) {
             \Sentry\captureException($e);
             $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
