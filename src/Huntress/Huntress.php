@@ -40,6 +40,11 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
     public $eventManager;
 
     /**
+     * @var PermissionManager
+     */
+    // public $permissionManager;
+
+    /**
      *
      * @var \Doctrine\DBAL\Connection
      */
@@ -51,6 +56,7 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
         $this->config       = $config;
         $this->eventManager = new EventManager($this);
         $this->registerBuiltinHooks();
+        // $this->permissionManager = new PermissionManager($this);
 
         parent::__construct(['shardCount' => 1], $loop);
 
