@@ -151,7 +151,7 @@ class RSSProcessor
         $query->execute();
     }
 
-    public function sortObjects($a, $b): bool
+    public function sortObjects($a, $b): int
     {
         return $a->date <=> $b->date;
     }
