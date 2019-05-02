@@ -244,8 +244,8 @@ class WormRP implements \Huntress\PluginInterface
             if (count($args) < 2) {
                 return self::error($message, "Error", "usage: `!character Character Name`");
             }
-            $char = urlencode(trim(str_replace($args[0], "", $message->content)));
-            $url  = "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . $char . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image";
+            $char = trim(str_replace($args[0], "", $message->content));
+            $url  = "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . urlencode($char) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image";
             return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
                 $items = json_decode($string)->query->results;
                 if (count($items) > 0) {
@@ -267,11 +267,11 @@ class WormRP implements \Huntress\PluginInterface
                     }
                 } else {
                     // no results found on the wiki, use reddit backup.
-                    $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . $char . "&sort=relevance&restrict_sr=on&t=all";
-                    return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message) {
+                    $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode($char) . "&sort=relevance&restrict_sr=on&t=all";
+                    return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
                         $items = json_decode($string)->data->children;
                         foreach ($items as $item) {
-                            return $message->channel->send("I didn't find anything on the WormRP wiki, but reddit gave me this: https://reddit.com" . $item->data->permalink . "\n*If this is your character, please port them over to the wiki when you have time!*");
+                            return $message->channel->send("I didn't find anything on the WormRP wiki, but reddit gave me this: https://reddit.com" . $item->data->permalink . "\n*If this is your character, please port them over to the wiki when you have time with this link: <https://syl.ae/wormrpwiki.php?name=" . rawurlencode($char) . ">*");
                         }
                         return $message->channel->send("I didn't find anything on the wiki or reddit :sob:");
                     });
