@@ -10,6 +10,7 @@ namespace Huntress\Plugin;
 
 use \Huntress\Huntress;
 use \React\Promise\ExtendedPromiseInterface as Promise;
+use \Huntress\EventListener;
 
 /**
  * Simple builtin to show user information
