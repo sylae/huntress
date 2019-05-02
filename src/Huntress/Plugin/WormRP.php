@@ -10,6 +10,8 @@ namespace Huntress\Plugin;
 
 use \Huntress\Huntress;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use \CharlotteDunois\Yasmin\Models\MessageEmbed;
+use \Huntress\EventListener;
 
 /**
  * Simple builtin to show user information
@@ -22,10 +24,10 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function register(Huntress $bot)
     {
+        $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']));
         $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollActiveCheck"])->setPeriodic(10));
-        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormrp/new.json", 30, [self::class, "pollAnnouncer"]);
         $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormrp/comments.json", 30, [self::class, "pollComments"]);
-        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        self::setupEventAnnouncer($bot); // shuffling off there since it has an anonymous class and is a bit of a mess.
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
         $bot->on("messageReactionAdd", [self::class, "reportHandler"]);
@@ -51,79 +53,57 @@ class WormRP implements \Huntress\PluginInterface
         $t3->setPrimaryKey(["redditName"]);
     }
 
-    /**
-     * Adapted from Ligrev code by Christoph Burschka <christoph@burschka.de>
-     */
-    public static function pollAnnouncer(string $string, Huntress $bot)
+    public static function setupEventAnnouncer(Huntress $bot)
     {
-        try {
-            if (self::isTestingClient()) {
-                $bot->log->debug("Not firing " . __METHOD__);
-                return;
-            }
+        new class ($bot, "wormrpPosts", "wormrp", 30, 118981144464195584) extends \Huntress\RedditProcessor {
 
-            $items = json_decode($string)->data->children;
-            if (!is_countable($items)) {
-                return;
+            protected function dataPublishingCallback(object $item): bool
+            {
+                try {
+                    if (mb_strlen($item->body) > 500) {
+                        $item->body = substr($item->body, 0, 500) . "...";
+                    }
+                    if (mb_strlen($item->title) > 250) {
+                        $item->body = substr($item->title, 0, 250) . "...";
+                    }
+
+                    switch ($item->category) {
+                        case "Character":
+                        case "Equipment":
+                        case "Lore":
+                        case "Group":
+                            $channel = 386943351062265888; // the_list
+                            break;
+                        case "Meta":
+                            $channel = 118981144464195584; // general
+                            break;
+                        case "Event":
+                        case "Patrol":
+                        case "Non-Canon":
+                        default:
+                            $channel = 409043591881687041; // events
+                    }
+
+                    $embed = new MessageEmbed();
+                    $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
+                    ->setTimestamp($item->date->timestamp);
+
+                    $redditUser = WormRP::fetchAccount($this->huntress->channels->get($channel)->guild, $item->author);
+                    if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+                        $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL(), "https://reddit.com/user/" . $item->author);
+                    } else {
+                        $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
+                    }
+
+                    $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+                } catch (\Throwable $e) {
+                    \Sentry\captureException($e);
+                    $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+                    return false;
+                }
+                return true;
             }
-            $lastPub  = self::getLastRSS();
-            $newest   = $lastPub;
-            $newItems = [];
-            foreach ($items as $item) {
-                $published = (int) $item->data->created_utc;
-                if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
-                    continue;
-                }
-                $newest     = max($newest, $published);
-                $newItems[] = (object) [
-                    'title'    => $item->data->title,
-                    'link'     => "https://reddit.com" . $item->data->permalink,
-                    'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
-                    'category' => $item->data->link_flair_text,
-                    'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                    'author'   => $item->data->author,
-                ];
-            }
-            foreach ($newItems as $item) {
-                if (mb_strlen($item->body) > 512) {
-                    $item->body = substr($item->body, 0, 509) . "...";
-                }
-                switch ($item->category) {
-                    case "Character":
-                    case "Equipment":
-                    case "Lore":
-                    case "Group":
-                        $channel = 386943351062265888; // the_list
-                        break;
-                    case "Meta":
-                        $channel = 118981144464195584; // general
-                        break;
-                    case "Event":
-                    case "Patrol":
-                    case "Non-Canon":
-                    default:
-                        $channel = 409043591881687041; // events
-                }
-                $channel    = $bot->channels->get($channel);
-                $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
-                $redditUser = self::fetchAccount($channel->guild, $item->author);
-                if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
-                    $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL());
-                } else {
-                    $embed->setAuthor($item->author);
-                }
-                $channel->send("", ['embed' => $embed]);
-            }
-            $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_config (`key`, `value`) VALUES(?, ?) '
-            . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
-            $query->bindValue(1, "rssPublished");
-            $query->bindValue(2, $newest);
-            $query->execute();
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
-            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
-        }
+        };
     }
 
     public static function pollComments(string $string, Huntress $bot)
@@ -166,7 +146,6 @@ class WormRP implements \Huntress\PluginInterface
                 $redd[$redditor['user']] = ((new \Carbon\Carbon($redditor['lastSubActivity'] ?? "1990-01-01")) >= $cutoff);
             }
 
-            // filter() is failing due to an upstream bug.
             $curr_actives = $bot->guilds->get(118981144464195584)->members->filter(function ($v, $k) {
                 return $v->roles->has(492933723340144640);
             });
@@ -291,11 +270,9 @@ class WormRP implements \Huntress\PluginInterface
         $guild  = $reaction->message->guild;
         $member = $guild->members->get($user->id);
 
-        $url = "https://discordapp.com/channels/{$guild->id}/{$reaction->message->channel->id}/{$reaction->message->id}";
-
-        $embed = self::easyEmbed($reaction->message);
-        $embed->setTitle("REPORTED MESSAGE")->setDescription($reaction->message->content)
-        ->setFooter($reaction->message->author->tag, $reaction->message->author->getDisplayAvatarURL())->setColor(0xcc0000)
+        $embed = new MessageEmbed();
+        $embed->setDescription($reaction->message->content)->setColor(0xcc0000)
+        ->setAuthor($reaction->message->author->tag, $reaction->message->author->getDisplayAvatarURL())
         ->setTimestamp($reaction->message->createdTimestamp);
 
         if (count($reaction->message->attachments) > 0) {
@@ -306,22 +283,11 @@ class WormRP implements \Huntress\PluginInterface
             $embed->addField("Attachments", implode("\n", $att));
         }
 
-        $guild->channels->get(501228539744354324)->send("**REPORTED MESSAGE** from <@{$member->id}> in <#{$reaction->message->channel->id}> - $url", ['embed' => $embed]);
+        $guild->channels->get(501228539744354324)->send("**REPORTED MESSAGE** - reported by {$member->displayName} in {$reaction->message->channel} - " . $reaction->message->getJumpURL(), ['embed' => $embed]);
         return $reaction->remove($member->user);
     }
 
-    private static function getLastRSS(): int
-    {
-        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("*")->from("wormrp_config")->where('`key` = ?')->setParameter(0, 'rssPublished', "string");
-        $res = $qb->execute()->fetchAll();
-        foreach ($res as $data) {
-            return $data['value'];
-        }
-        return 0;
-    }
-
-    private static function fetchAccount(\CharlotteDunois\Yasmin\Models\Guild $guild, string $redditName): ?\CharlotteDunois\Yasmin\Models\GuildMember
+    public static function fetchAccount(\CharlotteDunois\Yasmin\Models\Guild $guild, string $redditName): ?\CharlotteDunois\Yasmin\Models\GuildMember
     {
         $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
         $qb->select("*")->from("wormrp_users")->where('`redditName` = ?')->setParameter(0, $redditName, "string");
