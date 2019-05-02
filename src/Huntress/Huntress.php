@@ -81,6 +81,7 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
                 case "raw":
                 case "reconnect":
                 case "disconnect":
+                case "presenceUpdate": // jesus god stop spamming this
                     continue 2;
                 case "error":
                     $handler = [$this, 'errorHandler'];
