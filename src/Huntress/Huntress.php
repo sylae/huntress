@@ -86,12 +86,12 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
                     $handler = [$this, 'errorHandler'];
                     break;
                 case "debug":
-                    $handler = function($msg) {
+                    $handler = function ($msg) {
                         $this->log->debug("[yasmin] " . $msg);
                     };
                     break;
                 default:
-                    $handler = function(...$args) use ($method) {
+                    $handler = function (...$args) use ($method) {
                         return $this->eventManager->yasminEventHandler($method->name, $args);
                     };
                     break;

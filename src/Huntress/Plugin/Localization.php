@@ -42,7 +42,7 @@ class Localization implements \Huntress\PluginInterface
             $args = self::_split($message->content);
             $now  = \Carbon\Carbon::now();
             if (count($args) > 1) {
-                $query  = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO locale (user, timezone) VALUES(?, ?) '
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO locale (user, timezone) VALUES(?, ?) '
                 . 'ON DUPLICATE KEY UPDATE timezone=VALUES(timezone);', ['integer', 'string']);
                 $query->bindValue(1, $message->author->id);
                 $query->bindValue(2, $args[1]);
@@ -53,7 +53,7 @@ class Localization implements \Huntress\PluginInterface
             }
             $tz     = new \Huntress\UserLocale($message->author);
             $now_tz = $tz->applyTimezone($now);
-            return self::send($message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>", $tz->localeSandbox(function() use ($now_tz) {
+            return self::send($message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>", $tz->localeSandbox(function () use ($now_tz) {
                 return $now_tz->toDayDateTimeString();
             })));
         } catch (\Throwable $e) {
