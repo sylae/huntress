@@ -33,7 +33,7 @@ class RedditProcessor extends RSSProcessor
             if (!is_countable($items)) {
                 return new Collection([]);
             }
-            $lastPub  = self::getLastRSS();
+            $lastPub  = $this->getLastRSS();
             $newest   = $lastPub;
             $newItems = [];
             foreach ($items as $item) {
@@ -55,6 +55,7 @@ class RedditProcessor extends RSSProcessor
         } catch (\Throwable $e) {
             \Sentry\captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            return new Collection();
         }
     }
 

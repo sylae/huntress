@@ -107,6 +107,7 @@ class RSSProcessor
         } catch (\Throwable $e) {
             \Sentry\captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            return new Collection();
         }
     }
 
