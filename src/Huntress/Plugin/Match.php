@@ -381,7 +381,7 @@ class Match implements \Huntress\PluginInterface
                                         if (isset($cheaters[$user->id])) {
                                             continue;
                                         } else {
-                                            $reactions[$seenUsers[$user->id]] --;
+                                            $reactions[$seenUsers[$user->id]]--;
                                             $cheaters[$user->id] = true;
                                         }
                                     } else {
@@ -389,7 +389,7 @@ class Match implements \Huntress\PluginInterface
                                             $reactions[$reactionID] = 0;
                                         }
 
-                                        $reactions[$reactionID] ++;
+                                        $reactions[$reactionID]++;
                                         $seenUsers[$user->id] = $reactionID;
                                     }
                                 }

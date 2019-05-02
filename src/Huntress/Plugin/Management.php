@@ -39,7 +39,7 @@ class Management implements \Huntress\PluginInterface
 
     public static function invite(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
-        return $bot->generateOAuthInvite()->then(function($i) use ($message) {
+        return $bot->generateOAuthInvite()->then(function ($i) use ($message) {
             self::send($message->channel, sprintf("Use the following URL to add this Huntress instance to your server!\n<%s>", $i));
         });
     }
