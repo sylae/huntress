@@ -9,8 +9,8 @@
 namespace Huntress\Plugin;
 
 use \Huntress\Huntress;
+use \Huntress\EventListener;
 use \React\Promise\ExtendedPromiseInterface as Promise;
-use CharlotteDunois\Yasmin\Utils\URLHelpers;
 
 /**
  * Simple builtin to show user information
@@ -32,8 +32,8 @@ class PCT implements \Huntress\PluginInterface
     public static function register(Huntress $bot)
     {
         $bot->eventManager->addURLEvent("https://forums.spacebattles.com/forums/worm.115/", 30, [self::class, "sbHell"]);
-        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormfanfic/new.json", 30, [self::class, "theVolvano"]);
-        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormfanfic/new.json", 30, [self::class, "theVolcano"]);
+        $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']));
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
