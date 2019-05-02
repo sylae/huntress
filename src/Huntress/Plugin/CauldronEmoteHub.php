@@ -145,7 +145,7 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             }
             $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
 
-            return URLHelpers::resolveURLToData($url)->then(function(string $string) use ($message, $emotes) {
+            return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $emotes) {
                 try {
                     $file = "/tmp/huntressEmote." . time() . "." . ($emotes[0]['animated'] ? 'gif' : 'png');
                     file_put_contents($file, $string);
