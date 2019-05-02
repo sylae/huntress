@@ -50,6 +50,7 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
         $this->log          = $this->setupLogger();
         $this->config       = $config;
         $this->eventManager = new EventManager($this);
+        $this->registerBuiltinHooks();
 
         parent::__construct(['shardCount' => 1], $loop);
 
@@ -119,6 +120,11 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
         $this->log->info("Logged in as {$this->user->tag} ({$this->user->id})");
         $this->eventManager->initializePeriodics();
         $this->emit(PluginInterface::PLUGINEVENT_READY, $this);
+    }
+
+    private function registerBuiltinHooks()
+    {
+        RSSProcessor::register($this);
     }
 
     public function messageHandler(\CharlotteDunois\Yasmin\Models\Message $message)

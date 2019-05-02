@@ -25,8 +25,9 @@ class NewHorizon implements \Huntress\PluginInterface
         $bot->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
         $bot->on("guildMemberAdd", [self::class, "guildMemberAddHandler"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "_NHInternalSetWelcomeMessage", [self::class, "setWelcome"]);
-        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
-        $bot->on(self::PLUGINEVENT_READY, [self::class, "poll"]);
+        $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']));
+        // $rss            = new \Huntress\RSSProcessor($bot, 'NewHorizonRSS', 'https://ayin.earth/forum/index.php?action=.xml;type=rss2', 60, 479296410647527425);
+        // $rss->itemColor = 0xffd22b;
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -35,50 +36,6 @@ class NewHorizon implements \Huntress\PluginInterface
         $t->addColumn("key", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t->addColumn("value", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
         $t->setPrimaryKey(["key"]);
-    }
-
-    /**
-     * Adapted from Ligrev code by Christoph Burschka <christoph@burschka.de>
-     */
-    public static function poll(Huntress $bot)
-    {
-        return; // project is inactive, disable this for now.
-        $bot->loop->addPeriodicTimer(60, function() use ($bot) {
-            if (php_uname('s') == "Windows NT") {
-                return null; // don't run on testing because oof
-            }
-            return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData("https://ayin.earth/forum/index.php?action=.xml;type=rss2")->then(function(string $string) use ($bot) {
-
-                $data     = \qp($string);
-                $items    = $data->find('item');
-                $lastPub  = self::getLastRSS();
-                $newest   = $lastPub;
-                $newItems = [];
-                foreach ($items as $item) {
-                    $published  = strtotime($item->find('pubDate')->text());
-                    if ($published <= $lastPub || stripos($item->find('title')->text(), "Re:") === 0) // temporarily showing replies too :o
-                        continue;
-                    $newest     = max($newest, $published);
-                    $newItems[] = (object) [
-                        'title'    => $item->find('title')->text(),
-                        'link'     => $item->find('link')->text(),
-                        'date'     => (new \Carbon\Carbon($item->find('pubDate')->text())),
-                        'category' => $item->find('category')->text(),
-                        'body'     => (new \League\HTMLToMarkdown\HtmlConverter(['strip_tags' => true]))->convert($item->find('description')->text()),
-                    ];
-                }
-                foreach ($newItems as $item) {
-                    $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                    $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setColor(0xffd22b)->setFooter($item->category, "https://ayin.earth/img/nh3_s.png");
-                    $bot->channels->get("479296410647527425")->send("", ['embed' => $embed]);
-                }
-                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO nh_config (`key`, `value`) VALUES(?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
-                $query->bindValue(1, "rssPublished");
-                $query->bindValue(2, $newest);
-                $query->execute();
-            });
-        });
     }
 
     public static function setWelcome(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
