@@ -267,7 +267,7 @@ class WormRP implements \Huntress\PluginInterface
                     }
                 } else {
                     // no results found on the wiki, use reddit backup.
-                    $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode($char) . "&sort=relevance&restrict_sr=on&t=all";
+                    $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode($char) . "&sort=relevance&restrict_sr=on&t=all&include_over_18=on";
                     return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
                         $items = json_decode($string)->data->children;
                         foreach ($items as $item) {
