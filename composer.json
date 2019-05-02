@@ -3,7 +3,7 @@
     "prefer-stable": true,
     "require": {
         "monolog/monolog": "^1.24",
-        "nesbot/carbon": "^2.16",
+        "nesbot/carbon": "^2.17",
         "league/html-to-markdown": "^4.8",
         "doctrine/dbal": "^2.9",
         "ulrichsg/getopt-php": "^3.2",
