@@ -328,15 +328,4 @@ class PCT implements \Huntress\PluginInterface
         }
         return false;
     }
-
-    private static function getLastRSS(): int
-    {
-        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("*")->from("pct_config")->where('`key` = ?')->setParameter(0, 'rssPublished', "string");
-        $res = $qb->execute()->fetchAll();
-        foreach ($res as $data) {
-            return $data['value'];
-        }
-        return 0;
-    }
 }
