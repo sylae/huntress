@@ -31,8 +31,8 @@ class PCT implements \Huntress\PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "sbHell"])->setPeriodic(60));
-        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "theVolcano"])->setPeriodic(60));
+        $bot->eventManager->addURLEvent("https://forums.spacebattles.com/forums/worm.115/", 30, [self::class, "sbHell"]);
+        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormfanfic/new.json", 30, [self::class, "theVolvano"]);
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
@@ -191,143 +191,139 @@ class PCT implements \Huntress\PluginInterface
         }
     }
 
-    public static function sbHell(Huntress $bot)
+    public static function sbHell(string $string, Huntress $bot)
     {
-        if (self::isTestingClient()) {
-            $bot->log->debug("Not firing " . __METHOD__);
-            return;
-        }
-        return URLHelpers::resolveURLToData("https://forums.spacebattles.com/forums/worm.115/")->then(function (string $string) use ($bot) {
-            try {
-                $data  = \html5qp($string);
-                $items = $data->find('li.discussionListItem');
-                foreach ($items as $item) {
-                    $x = (object) [
-                        'id'         => (int) str_replace("thread-", "", $item->attr("id")),
-                        'title'      => trim($item->find('h3')->text()),
-                        'threadTime' => self::unfuckDates($item->find(".startDate .DateTime")),
-                        'replyTime'  => self::unfuckDates($item->find(".lastPost .DateTime")),
-                        'author'     => [
-                            'name' => $item->find('.posterDate a.username')->text(),
-                            'av'   => "https://forums.spacebattles.com/" . $item->find('.posterAvatar img')->attr("src"),
-                            'url'  => "https://forums.spacebattles.com/" . $item->find('.posterDate a.username')->attr("href"),
-                        ],
-                        'replier'    => [
-                            'name' => $item->find('.lastPost a.username')->text(),
-                            'av'   => null,
-                        ],
-                        'numReplies' => (int) trim($item->find('.stats .major dd')->text()),
-                        'numViews'   => (int) str_replace(",", "", $item->find('.stats .minor dd')->text()),
-                        'wordcount'  => str_replace("Word Count: ", "", $item->find(".posterDate a.OverlayTrigger")->text()),
-                    ];
+        try {
+            if (self::isTestingClient()) {
+                $bot->log->debug("Not firing " . __METHOD__);
+                return;
+            }
+            $data  = \html5qp($string);
+            $items = $data->find('li.discussionListItem');
+            foreach ($items as $item) {
+                $x = (object) [
+                    'id'         => (int) str_replace("thread-", "", $item->attr("id")),
+                    'title'      => trim($item->find('h3')->text()),
+                    'threadTime' => self::unfuckDates($item->find(".startDate .DateTime")),
+                    'replyTime'  => self::unfuckDates($item->find(".lastPost .DateTime")),
+                    'author'     => [
+                        'name' => $item->find('.posterDate a.username')->text(),
+                        'av'   => "https://forums.spacebattles.com/" . $item->find('.posterAvatar img')->attr("src"),
+                        'url'  => "https://forums.spacebattles.com/" . $item->find('.posterDate a.username')->attr("href"),
+                    ],
+                    'replier'    => [
+                        'name' => $item->find('.lastPost a.username')->text(),
+                        'av'   => null,
+                    ],
+                    'numReplies' => (int) trim($item->find('.stats .major dd')->text()),
+                    'numViews'   => (int) str_replace(",", "", $item->find('.stats .minor dd')->text()),
+                    'wordcount'  => str_replace("Word Count: ", "", $item->find(".posterDate a.OverlayTrigger")->text()),
+                ];
 
-                    if (!self::alreadyPosted($x)) {
-                        // sbHell mode if it's a new topic
-                        $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                        $embed->setTitle($x->title)->setColor(0x00ff00)
-                        ->setURL("https://forums.spacebattles.com/threads/{$x->id}/")
-                        ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
-                        ->addField("Created", $x->threadTime->toFormattedDateString(), true)
-                        ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies), number_format(ceil($x->numReplies / 25))), true)
-                        ->addField("Views", number_format($x->numViews), true)
-                        ->setFooter("Last reply")
-                        ->setTimestamp($x->replyTime->timestamp);
+                if (!self::alreadyPosted($x)) {
+                    // sbHell mode if it's a new topic
+                    $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                    $embed->setTitle($x->title)->setColor(0x00ff00)
+                    ->setURL("https://forums.spacebattles.com/threads/{$x->id}/")
+                    ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
+                    ->addField("Created", $x->threadTime->toFormattedDateString(), true)
+                    ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies), number_format(ceil($x->numReplies / 25))), true)
+                    ->addField("Views", number_format($x->numViews), true)
+                    ->setFooter("Last reply")
+                    ->setTimestamp($x->replyTime->timestamp);
 
-                        if (mb_strlen($x->wordcount) > 0) {
-                            $embed->addField("Wordcount", $x->wordcount, true);
-                        }
-                        $bot->channels->get(514258427258601474)->send("", ['embed' => $embed]);
-                    } else {
-                        // gaywatch
-                        if (self::isGaywatch($x) && self::lastPost($x) < $x->replyTime) {
-                            if ($x->author['name'] == $x->replier['name']) {
-                                // op update
-                                $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                                $embed->setTitle($x->title)->setColor(0x00ff00)
-                                ->setURL("https://forums.spacebattles.com/threads/{$x->id}/unread")
-                                ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
-                                ->addField("Created", $x->threadTime->toFormattedDateString(), true)
-                                ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies), number_format(ceil($x->numReplies / 25))), true)
-                                ->addField("Views", number_format($x->numViews), true)
-                                ->setFooter("Last reply")
-                                ->setTimestamp($x->replyTime->timestamp);
+                    if (mb_strlen($x->wordcount) > 0) {
+                        $embed->addField("Wordcount", $x->wordcount, true);
+                    }
+                    $bot->channels->get(514258427258601474)->send("", ['embed' => $embed]);
+                } else {
+                    // gaywatch
+                    if (self::isGaywatch($x) && self::lastPost($x) < $x->replyTime) {
+                        if ($x->author['name'] == $x->replier['name']) {
+                            // op update
+                            $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                            $embed->setTitle($x->title)->setColor(0x00ff00)
+                            ->setURL("https://forums.spacebattles.com/threads/{$x->id}/unread")
+                            ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
+                            ->addField("Created", $x->threadTime->toFormattedDateString(), true)
+                            ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies), number_format(ceil($x->numReplies / 25))), true)
+                            ->addField("Views", number_format($x->numViews), true)
+                            ->setFooter("Last reply")
+                            ->setTimestamp($x->replyTime->timestamp);
 
-                                if (mb_strlen($x->wordcount) > 0) {
-                                    $embed->addField("Wordcount", $x->wordcount, true);
-                                }
-                                $bot->channels->get(540449157320802314)->send("<@&540465395576864789>: {$x->author['name']} has updated *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>", ['embed' => $embed]);
-                            } else {
-                                // not op update
-                                $bot->channels->get(540449157320802314)->send("SB member {$x->replier['name']} has replied to *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>");
+                            if (mb_strlen($x->wordcount) > 0) {
+                                $embed->addField("Wordcount", $x->wordcount, true);
                             }
+                            $bot->channels->get(540449157320802314)->send("<@&540465395576864789>: {$x->author['name']} has updated *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>", ['embed' => $embed]);
+                        } else {
+                            // not op update
+                            $bot->channels->get(540449157320802314)->send("SB member {$x->replier['name']} has replied to *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>");
                         }
                     }
-
-                    // push to db
-                    $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `title`) VALUES(?, ?, ?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`), `timeTopicPost`=VALUES(`timeTopicPost`), `title`=VALUES(`title`);', ['string', 'datetime', 'datetime', 'string']);
-                    $query->bindValue(1, $x->id);
-                    $query->bindValue(2, $x->threadTime);
-                    $query->bindValue(3, $x->replyTime);
-                    $query->bindValue(4, $x->title);
-                    $query->execute();
                 }
-            } catch (\Throwable $e) {
-                \Sentry\captureException($e);
-                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+
+                // push to db
+                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `title`) VALUES(?, ?, ?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`), `timeTopicPost`=VALUES(`timeTopicPost`), `title`=VALUES(`title`);', ['string', 'datetime', 'datetime', 'string']);
+                $query->bindValue(1, $x->id);
+                $query->bindValue(2, $x->threadTime);
+                $query->bindValue(3, $x->replyTime);
+                $query->bindValue(4, $x->title);
+                $query->execute();
             }
-        });
+        } catch (\Throwable $e) {
+            \Sentry\captureException($e);
+            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
     }
 
-    public static function theVolcano(Huntress $bot)
+    public static function theVolcano(string $string, Huntress $bot)
     {
-        if (self::isTestingClient()) {
-            $bot->log->debug("Not firing " . __METHOD__);
-            return;
-        }
-        return URLHelpers::resolveURLToData("https://www.reddit.com/r/wormfanfic/new.json")->then(function (string $string) use ($bot) {
-            try {
-                $items    = json_decode($string)->data->children;
-                $lastPub  = self::getLastRSS();
-                $newest   = $lastPub;
-                $newItems = [];
-                foreach ($items as $item) {
-                    $published = (int) $item->data->created_utc;
-                    if ($published <= $lastPub) {
-                        continue;
-                    }
-                    $newest     = max($newest, $published);
-                    $newItems[] = (object) [
-                        'title'    => $item->data->title,
-                        'link'     => "https://reddit.com" . $item->data->permalink,
-                        'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
-                        'category' => $item->data->link_flair_text ?? "Unflaired",
-                        'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                        'author'   => $item->data->author,
-                    ];
-                }
-                foreach ($newItems as $item) {
-                    if (mb_strlen($item->body) > 512) {
-                        $item->body = substr($item->body, 0, 509) . "...";
-                    }
-                    if (mb_strlen($item->title) > 256) {
-                        $item->body = substr($item->title, 0, 253) . "...";
-                    }
-                    $channel = $bot->channels->get(542263101559668736);
-                    $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                    $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
-                    $channel->send("", ['embed' => $embed]);
-                }
-                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
-                $query->bindValue(1, "rssPublished");
-                $query->bindValue(2, $newest);
-                $query->execute();
-            } catch (\Throwable $e) {
-                \Sentry\captureException($e);
-                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        try {
+            if (self::isTestingClient()) {
+                $bot->log->debug("Not firing " . __METHOD__);
+                return;
             }
-        });
+            $items    = json_decode($string)->data->children;
+            $lastPub  = self::getLastRSS();
+            $newest   = $lastPub;
+            $newItems = [];
+            foreach ($items as $item) {
+                $published = (int) $item->data->created_utc;
+                if ($published <= $lastPub) {
+                    continue;
+                }
+                $newest     = max($newest, $published);
+                $newItems[] = (object) [
+                    'title'    => $item->data->title,
+                    'link'     => "https://reddit.com" . $item->data->permalink,
+                    'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
+                    'category' => $item->data->link_flair_text ?? "Unflaired",
+                    'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
+                    'author'   => $item->data->author,
+                ];
+            }
+            foreach ($newItems as $item) {
+                if (mb_strlen($item->body) > 512) {
+                    $item->body = substr($item->body, 0, 509) . "...";
+                }
+                if (mb_strlen($item->title) > 256) {
+                    $item->body = substr($item->title, 0, 253) . "...";
+                }
+                $channel = $bot->channels->get(542263101559668736);
+                $embed   = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
+                $channel->send("", ['embed' => $embed]);
+            }
+            $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO pct_config (`key`, `value`) VALUES(?, ?) '
+            . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
+            $query->bindValue(1, "rssPublished");
+            $query->bindValue(2, $newest);
+            $query->execute();
+        } catch (\Throwable $e) {
+            \Sentry\captureException($e);
+            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
     }
 
     /**
