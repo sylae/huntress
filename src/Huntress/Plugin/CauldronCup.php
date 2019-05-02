@@ -136,10 +136,10 @@ NOTE;
             'type'   => "text",
             'parent' => 391049778286559253,
         ], "Created on behalf of {$message->author->tag} from {$message->id}")->then(function (\CharlotteDunois\Yasmin\Models\TextChannel $channel) use ($message, $getOpt) {
-            $channel->send(sprintf(self::NOTE_CCUP, $getOpt->getOperand("genre"), $getOpt->getOperand("theme")));
-            return self::send($message->channel, "<#{$channel->id}> :ok_hand:")->then(function (Message $m) {
+            $channel->send(sprintf(self::NOTE_CCUP, $getOpt->getOperand("genre"), $getOpt->getOperand("theme")))->then(function (Message $m) {
                 return $m->pin();
             });
+            return self::send($message->channel, "<#{$channel->id}> :ok_hand:");
         }, function ($error) use ($message) {
             self::error($message, "Error", json_encode($error));
         });
