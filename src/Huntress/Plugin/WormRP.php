@@ -22,9 +22,9 @@ class WormRP implements \Huntress\PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollAnnouncer"])->setPeriodic(30));
-        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollComments"])->setPeriodic(30));
         $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollActiveCheck"])->setPeriodic(10));
+        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormrp/new.json", 30, [self::class, "pollAnnouncer"]);
+        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormrp/comments.json", 30, [self::class, "pollComments"]);
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
@@ -54,99 +54,102 @@ class WormRP implements \Huntress\PluginInterface
     /**
      * Adapted from Ligrev code by Christoph Burschka <christoph@burschka.de>
      */
-    public static function pollAnnouncer(Huntress $bot)
+    public static function pollAnnouncer(string $string, Huntress $bot)
     {
-        if (self::isTestingClient()) {
-            $bot->log->debug("Not firing " . __METHOD__);
-            return;
-        }
-        return URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/new.json")->then(function(string $string) use ($bot) {
-            try {
-                $items    = json_decode($string)->data->children;
-                $lastPub  = self::getLastRSS();
-                $newest   = $lastPub;
-                $newItems = [];
-                foreach ($items as $item) {
-                    $published = (int) $item->data->created_utc;
-                    if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
-                        continue;
-                    }
-                    $newest     = max($newest, $published);
-                    $newItems[] = (object) [
-                        'title'    => $item->data->title,
-                        'link'     => "https://reddit.com" . $item->data->permalink,
-                        'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
-                        'category' => $item->data->link_flair_text,
-                        'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                        'author'   => $item->data->author,
-                    ];
-                }
-                foreach ($newItems as $item) {
-                    if (mb_strlen($item->body) > 512) {
-                        $item->body = substr($item->body, 0, 509) . "...";
-                    }
-                    switch ($item->category) {
-                        case "Character":
-                        case "Equipment":
-                        case "Lore":
-                        case "Group":
-                            $channel = 386943351062265888; // the_list
-                            break;
-                        case "Meta":
-                            $channel = 118981144464195584; // general
-                            break;
-                        case "Event":
-                        case "Patrol":
-                        case "Non-Canon":
-                        default:
-                            $channel = 409043591881687041; // events
-                    }
-                    $channel    = $bot->channels->get($channel);
-                    $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                    $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
-                    $redditUser = self::fetchAccount($channel->guild, $item->author);
-                    if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
-                        $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL());
-                    } else {
-                        $embed->setAuthor($item->author);
-                    }
-                    $channel->send("", ['embed' => $embed]);
-                }
-                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_config (`key`, `value`) VALUES(?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
-                $query->bindValue(1, "rssPublished");
-                $query->bindValue(2, $newest);
-                $query->execute();
-            } catch (\Throwable $e) {
-                \Sentry\captureException($e);
-                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        try {
+            if (self::isTestingClient()) {
+                $bot->log->debug("Not firing " . __METHOD__);
+                return;
             }
-        });
+
+            $items = json_decode($string)->data->children;
+            if (!is_countable($items)) {
+                return;
+            }
+            $lastPub  = self::getLastRSS();
+            $newest   = $lastPub;
+            $newItems = [];
+            foreach ($items as $item) {
+                $published = (int) $item->data->created_utc;
+                if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
+                    continue;
+                }
+                $newest     = max($newest, $published);
+                $newItems[] = (object) [
+                    'title'    => $item->data->title,
+                    'link'     => "https://reddit.com" . $item->data->permalink,
+                    'date'     => \Carbon\Carbon::createFromTimestamp($item->data->created_utc),
+                    'category' => $item->data->link_flair_text,
+                    'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
+                    'author'   => $item->data->author,
+                ];
+            }
+            foreach ($newItems as $item) {
+                if (mb_strlen($item->body) > 512) {
+                    $item->body = substr($item->body, 0, 509) . "...";
+                }
+                switch ($item->category) {
+                    case "Character":
+                    case "Equipment":
+                    case "Lore":
+                    case "Group":
+                        $channel = 386943351062265888; // the_list
+                        break;
+                    case "Meta":
+                        $channel = 118981144464195584; // general
+                        break;
+                    case "Event":
+                    case "Patrol":
+                    case "Non-Canon":
+                    default:
+                        $channel = 409043591881687041; // events
+                }
+                $channel    = $bot->channels->get($channel);
+                $embed      = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+                $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category)->setAuthor($item->author);
+                $redditUser = self::fetchAccount($channel->guild, $item->author);
+                if ($redditUser instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+                    $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL());
+                } else {
+                    $embed->setAuthor($item->author);
+                }
+                $channel->send("", ['embed' => $embed]);
+            }
+            $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_config (`key`, `value`) VALUES(?, ?) '
+            . 'ON DUPLICATE KEY UPDATE `value`=VALUES(`value`);', ['string', 'integer']);
+            $query->bindValue(1, "rssPublished");
+            $query->bindValue(2, $newest);
+            $query->execute();
+        } catch (\Throwable $e) {
+            \Sentry\captureException($e);
+            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
     }
 
-    public static function pollComments(Huntress $bot)
+    public static function pollComments(string $string, Huntress $bot)
     {
-        return URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/comments.json")->then(function(string $string) use ($bot) {
-            try {
-                $items = json_decode($string)->data->children;
-                $users = [];
-                foreach ($items as $item) {
-                    $published                  = $item->data->created_utc;
-                    $users[$item->data->author] = [max($published, $users[$item->data->author][0] ?? 0), $item->data->author_flair_text ?? null];
-                }
-                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`, `flair`) VALUES(?, ?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=VALUES(`lastSubActivity`), `flair`=VALUES(`flair`);', ['string', 'datetime', 'string']);
-                foreach ($users as $name => $data) {
-                    $query->bindValue(1, $name);
-                    $query->bindValue(2, \Carbon\Carbon::createFromTimestamp($data[0]));
-                    $query->bindValue(3, $data[1]);
-                    $query->execute();
-                }
-            } catch (\Throwable $e) {
-                \Sentry\captureException($e);
-                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        try {
+            $items = json_decode($string)->data->children;
+            if (!is_countable($items)) {
+                return;
             }
-        });
+            $users = [];
+            foreach ($items as $item) {
+                $published                  = $item->data->created_utc;
+                $users[$item->data->author] = [max($published, $users[$item->data->author][0] ?? 0), $item->data->author_flair_text ?? null];
+            }
+            $query = $bot->db->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`, `flair`) VALUES(?, ?, ?) '
+            . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=VALUES(`lastSubActivity`), `flair`=VALUES(`flair`);', ['string', 'datetime', 'string']);
+            foreach ($users as $name => $data) {
+                $query->bindValue(1, $name);
+                $query->bindValue(2, \Carbon\Carbon::createFromTimestamp($data[0]));
+                $query->bindValue(3, $data[1]);
+                $query->execute();
+            }
+        } catch (\Throwable $e) {
+            \Sentry\captureException($e);
+            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
     }
 
     public static function pollActiveCheck(Huntress $bot)

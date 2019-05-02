@@ -10,6 +10,7 @@ namespace Huntress;
 
 use CharlotteDunois\Collect\Collection;
 use React\Promise\PromiseInterface as Promise;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
 
 /**
  * Description of EventManager
@@ -67,6 +68,25 @@ class EventManager
         $this->events->set($id, $listener);
         $this->huntress->log->debug("[HEM] Added event $id");
         return $id;
+    }
+
+    public function addURLEvent(string $url, int $interval, callable $callable): int
+    {
+        return $this->addEventListener(EventListener::new()->setCallback(function (Huntress $bot) use ($url, $callable) {
+            try {
+                return URLHelpers::resolveURLToData($url)->then(function (string $data) use ($bot, $callable) {
+                    try {
+                        return $callable($data, $bot);
+                    } catch (\Throwable $e) {
+                        \Sentry\captureException($e);
+                        $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+                    }
+                });
+            } catch (\Throwable $e) {
+                \Sentry\captureException($e);
+                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+            }
+        })->setPeriodic($interval));
     }
 
     private function getEventID(): int

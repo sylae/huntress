@@ -39,6 +39,12 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
      */
     public $eventManager;
 
+    /**
+     *
+     * @var \Doctrine\DBAL\Connection
+     */
+    public $db;
+
     public function __construct(array $config, \React\EventLoop\LoopInterface $loop)
     {
         $this->log          = $this->setupLogger();
@@ -54,7 +60,9 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
                 $class::register($this);
             }
         }
+
         DatabaseFactory::make($this);
+        $this->db = DatabaseFactory::get();
 
         // legacy handlers
         $this->on('ready', [$this, 'readyHandler']);
