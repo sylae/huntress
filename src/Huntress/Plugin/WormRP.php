@@ -57,6 +57,39 @@ class WormRP implements \Huntress\PluginInterface
     {
         new class ($bot, "wormrpPosts", "wormrp", 30, 118981144464195584) extends \Huntress\RedditProcessor {
 
+            protected function dataProcessingCallback(string $string): Collection
+            {
+                try {
+                    $items = json_decode($string)->data->children;
+                    if (!is_countable($items)) {
+                        return new Collection([]);
+                    }
+                    $lastPub  = $this->getLastRSS();
+                    $newest   = $lastPub;
+                    $newItems = [];
+                    foreach ($items as $item) {
+                        $published = Carbon::createFromTimestamp($item->data->created_utc);
+                        if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
+                            continue;
+                        }
+                        $newest     = max($newest, $published);
+                        $newItems[] = (object) [
+                            'title'    => $item->data->title,
+                            'link'     => "https://www.reddit.com" . $item->data->permalink,
+                            'date'     => $published,
+                            'category' => $item->data->link_flair_text ?? "Unflaired",
+                            'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
+                            'author'   => $item->data->author,
+                        ];
+                    }
+                    return new Collection($newItems);
+                } catch (\Throwable $e) {
+                    \Sentry\captureException($e);
+                    $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+                    return new Collection();
+                }
+            }
+
             protected function dataPublishingCallback(object $item): bool
             {
                 try {
