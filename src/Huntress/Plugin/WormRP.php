@@ -12,6 +12,7 @@ use \Huntress\Huntress;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use \CharlotteDunois\Yasmin\Models\MessageEmbed;
 use \Huntress\EventListener;
+use \CharlotteDunois\Collect\Collection;
 
 /**
  * Simple builtin to show user information
