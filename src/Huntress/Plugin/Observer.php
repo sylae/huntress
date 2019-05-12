@@ -30,6 +30,8 @@ class Observer implements \Huntress\PluginInterface
         $bot->on("messageDeleteRaw", [self::class, "rawHandler"]);
         $bot->on("messageDeleteRawBulk", [self::class, "rawHandler"]);
         $bot->on("messageReactionAdd", [self::class, "reportHandler"]);
+        $bot->on("guildMemberAdd", [self::class, "joinHandler"]);
+        $bot->on("guildMemberRemove", [self::class, "leaveHandler"]);
 
         $eh = \Huntress\EventListener::new()
         ->addCommand("observer")
@@ -147,6 +149,76 @@ class Observer implements \Huntress\PluginInterface
         } catch (\Throwable $e) {
             \Sentry\captureException($e);
             $reaction->client->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
+    }
+
+    public static function joinHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?Promise
+    {
+        try {
+            $info = self::getInfo($member->guild);
+
+            if (is_null($info) || !$member->guild->channels->has($info['idChannel'] ?? null)) {
+                return null;
+            }
+
+            $joined = \Carbon\Carbon::createFromTimestamp($member->user->createdTimestamp);
+
+            $embed = new MessageEmbed();
+            $embed->setAuthor($member->user->tag)->setTimestamp(time())
+            ->setColor(0x7bf43)->setThumbnail($member->user->getDisplayAvatarURL())
+            ->addField("Name", "{$member} ({$member->user->tag})", true)
+            ->addField("ID", $member->id, true)
+            ->addField("Joined Discord", $joined->toCookieString(), true)
+            ->addField("Member #", $member->guild->members->count(), true);
+
+            $msg = "👋 Member joined";
+            return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
+        } catch (\Throwable $e) {
+            \Sentry\captureException($e);
+            $member->client->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
+    }
+
+    public static function leaveHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?Promise
+    {
+        try {
+            $info = self::getInfo($member->guild);
+
+            if (is_null($info) || !$member->guild->channels->has($info['idChannel'] ?? null)) {
+                return null;
+            }
+
+            $embed = new MessageEmbed();
+            $embed->setAuthor($member->user->tag)->setTimestamp(time())
+            ->setColor(0xbf2222)->setThumbnail($member->user->getDisplayAvatarURL())
+            ->addField("Name", "{$member} ({$member->user->tag})", true)
+            ->addField("ID", $member->id, true);
+
+            $ur = [];
+            foreach ($member->roles->sortCustom(function ($a, $b) {
+                return $b->position <=> $a->position;
+            }) as $id => $role) {
+                if ($role->id == $member->guild->id) {
+                    continue;
+                }
+                $ur[] = "<@&{$id}>";
+            }
+            if (count($ur) == 0) {
+                $ur[] = "<no roles>";
+            }
+
+            $roles     = \CharlotteDunois\Yasmin\Utils\MessageHelpers::splitMessage(implode("\n", $ur), ['maxLength' => 1024]);
+            $firstRole = true;
+            foreach ($roles as $role) {
+                $embed->addField($firstRole ? "Roles" : "Roles (cont.)", $role);
+                $firstRole = false;
+            }
+
+            $msg = "💨 Member left (or was banned)";
+            return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
+        } catch (\Throwable $e) {
+            \Sentry\captureException($e);
+            $member->client->log->addWarning($e->getMessage(), ['exception' => $e]);
         }
     }
 
