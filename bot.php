@@ -14,9 +14,13 @@ require_once __DIR__ . "/config.php";
 $loop = \React\EventLoop\Factory::create();
 \CharlotteDunois\Yasmin\Utils\URLHelpers::setLoop($loop);
 
-$builder   = \Sentry\ClientBuilder::create($config['sentry']);
-$transport = new SentryTransport($builder->getOptions(), $loop);
-$client    = $builder->setTransport($transport)->getClient();
+$builder = \Sentry\ClientBuilder::create($config['sentry']);
+if (php_uname('s') == "Windows NT") {
+    $transport = new \Sentry\Transport\NullTransport();
+} else {
+    $transport = new SentryTransport($builder->getOptions(), $loop);
+}
+$client = $builder->setTransport($transport)->getClient();
 \Sentry\State\Hub::setCurrent((new \Sentry\State\Hub($client)));
 
 set_exception_handler(function (\Throwable $e) {
