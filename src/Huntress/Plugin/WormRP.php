@@ -27,9 +27,13 @@ class WormRP implements \Huntress\PluginInterface
     public static function register(Huntress $bot)
     {
         $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']));
-        $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollActiveCheck"])->setPeriodic(10));
-        $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormrp/comments.json", 30, [self::class, "pollComments"]);
-        self::setupEventAnnouncer($bot); // shuffling off there since it has an anonymous class and is a bit of a mess.
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not adding RSS event on testing.");
+        } else {
+            self::setupEventAnnouncer($bot); // shuffling off there since it has an anonymous class and is a bit of a mess.
+            $bot->eventManager->addURLEvent("https://www.reddit.com/r/wormrp/comments.json", 30, [self::class, "pollComments"]);
+            $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollActiveCheck"])->setPeriodic(10));
+        }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
         $bot->on("messageReactionAdd", [self::class, "reportHandler"]);

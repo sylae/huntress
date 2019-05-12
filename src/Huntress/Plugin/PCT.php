@@ -32,8 +32,12 @@ class PCT implements \Huntress\PluginInterface
     public static function register(Huntress $bot)
     {
         $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']));
-        $bot->eventManager->addURLEvent("https://forums.spacebattles.com/forums/worm.115/", 30, [self::class, "sbHell"]);
-        new \Huntress\RedditProcessor($bot, "theVolcano", "wormfanfic", 30, 542263101559668736);
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not adding RSS event on testing.");
+        } else {
+            $bot->eventManager->addURLEvent("https://forums.spacebattles.com/forums/worm.115/", 30, [self::class, "sbHell"]);
+            new \Huntress\RedditProcessor($bot, "theVolcano", "wormfanfic", 30, 542263101559668736);
+        }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
