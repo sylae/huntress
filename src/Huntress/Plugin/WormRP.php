@@ -9,6 +9,7 @@
 namespace Huntress\Plugin;
 
 use \Huntress\Huntress;
+use \Huntress\EventData;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use \CharlotteDunois\Yasmin\Models\MessageEmbed;
 use \Huntress\EventListener;
@@ -35,7 +36,12 @@ class WormRP implements \Huntress\PluginInterface
             $bot->eventManager->addEventListener(\Huntress\EventListener::new()->setCallback([self::class, "pollActiveCheck"])->setPeriodic(10));
         }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "character", [self::class, "lookupHandler"]);
+
+        $eh = \Huntress\EventListener::new()
+        ->addCommand("character")
+        ->addGuild(118981144464195584)
+        ->setCallback([self::class, "lookupHandler"]);
+        $bot->eventManager->addEventListener($eh);
     }
 
     public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
@@ -251,52 +257,70 @@ class WormRP implements \Huntress\PluginInterface
         }
     }
 
-    public static function lookupHandler(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?\React\Promise\ExtendedPromiseInterface
+    public static function lookupHandler(EventData $data): ?\React\Promise\ExtendedPromiseInterface
     {
-        if ($message->guild->id != 118981144464195584) {
-            return null;
-        }
         try {
-            $args = self::_split($message->content);
+            $args = self::_split($data->message->content);
             if (count($args) < 2) {
-                return self::error($message, "Error", "usage: `!character Character Name`");
+                return self::error($data->message, "Error", "usage: `!character Character Name`");
             }
-            $char = trim(str_replace($args[0], "", $message->content));
-            $url  = "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . urlencode($char) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image";
-            return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
-                $items = json_decode($string)->query->results;
-                if (count($items) > 0) {
-                    foreach ($items as $item) {
-                        key($item);
-                        $item  = current($item);
-                        $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-                        $embed->setTitle($item->fulltext);
-                        $embed->setURL($item->fullurl);
-                        $embed->addField("Known as", implode(", ", $item->printouts->Identity ?? ['Unkown']));
-                        $embed->addField("Player", implode("\n", $item->printouts->Author ?? ['Unkown']), true);
-                        $embed->addField("Status", implode("\n", $item->printouts->Status ?? ['Unkown']), true);
-                        $embed->addField("Alignment", implode("\n", $item->printouts->Alignment ?? ['Unkown']), true);
-                        $embed->addField("Affiliation", implode("\n", $item->printouts->Affiliation ?? ['Unkown']), true);
-                        if (count($item->printouts->{'Meta element og-image'}) > 0) {
-                            $embed->setThumbnail($item->printouts->{'Meta element og-image'}[0]);
-                        }
-                        $message->channel->send("", ['embed' => $embed]);
-                    }
-                } else {
-                    // no results found on the wiki, use reddit backup.
-                    $url = "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode($char) . "&sort=relevance&restrict_sr=on&t=all&include_over_18=on";
-                    return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $char) {
-                        $items = json_decode($string)->data->children;
-                        foreach ($items as $item) {
-                            return $message->channel->send("I didn't find anything on the WormRP wiki, but reddit gave me this: https://reddit.com" . $item->data->permalink . "\n*If this is your character, please port them over to the wiki when you have time with this link: <https://syl.ae/wormrpwiki.php?name=" . rawurlencode($char) . ">*");
-                        }
-                        return $message->channel->send("I didn't find anything on the wiki or reddit :sob:");
-                    });
+            $char = trim(str_replace($args[0], "", $data->message->content)); // todo: do this better
+
+            return \React\Promise\all([
+                'wiki'   => URLHelpers::resolveURLToData("https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . urlencode($char) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image"),
+                'reddit' => URLHelpers::resolveURLToData("https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode($char) . "&sort=relevance&restrict_sr=on&t=all&include_over_18=on")
+            ])->then(function ($results) use ($char, $data) {
+                $wiki = self::lookupWiki($results['wiki'], $char);
+                if (count($wiki) > 0) {
+                    return \React\Promise\all(array_map(function($embed) use ($data) {
+                        return $data->message->channel->send("", ['embed' => $embed]);
+                    }, $wiki));
                 }
+
+                $reddit = self::lookupReddit($results['reddit'], $char);
+                if (!is_null($reddit)) {
+                    return $data->message->channel->send($reddit);
+                }
+
+                return $data->message->channel->send("I didn't find anything on the wiki or reddit :sob:");
             });
         } catch (\Throwable $e) {
-            return self::exceptionHandler($message, $e, true);
+            return self::exceptionHandler($data->message, $e, true);
         }
+    }
+
+    private static function lookupWiki(string $string, string $char): array
+    {
+        $items = json_decode($string)->query->results;
+        $res   = [];
+        foreach ($items as $item) {
+            key($item);
+            $item  = current($item);
+            $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
+            $embed->setTitle($item->fulltext);
+            $embed->setURL($item->fullurl);
+            $embed->addField("Known as", implode(", ", $item->printouts->Identity ?? ['Unkown']));
+            $embed->addField("Player", implode("\n", $item->printouts->Author ?? ['Unkown']), true);
+            $embed->addField("Status", implode("\n", $item->printouts->Status ?? ['Unkown']), true);
+            $embed->addField("Alignment", implode("\n", $item->printouts->Alignment ?? ['Unkown']), true);
+            $embed->addField("Affiliation", implode("\n", $item->printouts->Affiliation ?? ['Unkown']), true);
+            if (count($item->printouts->{'Meta element og-image'}) > 0) {
+                $embed->setThumbnail($item->printouts->{'Meta element og-image'}[0]);
+            }
+            $res[] = $embed;
+        }
+        return $res;
+    }
+
+    private static function lookupReddit(string $string, string $char): ?string
+    {
+        $items = json_decode($string)->data->children;
+        foreach ($items as $item) {
+            return "I didn't find anything on the WormRP wiki, but reddit gave me this: https://www.reddit.com" . $item->data->permalink .
+            "\n*If this is your character, please port them over to the wiki when you have time with this link: <https://syl.ae/wormrpwiki.php?name=" .
+            rawurlencode($char) . ">*";
+        }
+        return null;
     }
 
     public static function fetchAccount(\CharlotteDunois\Yasmin\Models\Guild $guild, string $redditName): ?\CharlotteDunois\Yasmin\Models\GuildMember
