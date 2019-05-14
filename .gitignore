@@ -3,3 +3,4 @@ config.php
 /vendor/
 /nbproject/private/
 /temp/
+.idea/workspace.xml
