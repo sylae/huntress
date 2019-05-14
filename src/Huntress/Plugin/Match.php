@@ -286,6 +286,7 @@ class Match implements \Huntress\PluginInterface
 
             $r   = [];
             $r[] = "__**Match {$info->title}**__ `" . Snowflake::format($info->idMatch) . "`";
+            $r[] = "Deadline: *" . $info->duedate->diffForHumans(Carbon::now(), true, false, 2) . "*";
             $r[] = "";
             $info->entries->each(function ($v, $k) use (&$r, $anon) {
                 if ($anon) {
