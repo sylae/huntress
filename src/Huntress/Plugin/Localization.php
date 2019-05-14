@@ -53,10 +53,11 @@ class Localization implements \Huntress\PluginInterface
             }
             $tz     = new \Huntress\UserLocale($message->author);
             $now_tz = $tz->applyTimezone($now);
-            return self::send($message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>", $tz->localeSandbox(function () use ($now_tz) {
-                return $now_tz->toDayDateTimeString();
-            })));
         } catch (\Throwable $e) {
+            return self::send($message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>",
+                $tz->localeSandbox(function () use ($now_tz) {
+                    return $now_tz->toDayDateTimeString();
+                })));
             return self::exceptionHandler($message, $e);
         }
     }

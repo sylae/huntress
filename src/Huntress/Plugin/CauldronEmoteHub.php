@@ -47,7 +47,8 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             try {
                 $args = self::_split($message->content);
                 if (count($args) < 3) {
-                    return self::error($message, "You dipshit :open_mouth:", "arg1 = guild id\narg2 = invite url\n\nhow hard can this be?");
+                    return self::error($message, "You dipshit :open_mouth:",
+                        "arg1 = guild id\narg2 = invite url\n\nhow hard can this be?");
                 }
 
                 $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO ceh_servers (guild, url) VALUES(?, ?) '
@@ -68,14 +69,16 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
         if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
             return self::unauthorized($message);
         } elseif (!$message->guild->me->permissions->has('MANAGE_EMOJIS')) {
-            return self::error($message, "Unauthorized!", "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
+            return self::error($message, "Unauthorized!",
+                "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
         } else {
             try {
                 $emotes = self::getEmotes($message->content);
                 if (count($emotes) != 1) {
                     return self::error($message, "Invalid Arguments", "Give me exactly one emote as an argument");
                 }
-                $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
+                $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'],
+                        ($emotes[0]['animated'] ? 'gif' : 'png'));
 
                 return $message->guild->createEmoji($url, $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message) {
                     return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
@@ -107,10 +110,10 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             });
             asort($x);
 
-            $s          = [];
+            $s = [];
             $guildcount = [];
             foreach (array_slice($x, 0, 50, true) as $code => $similarity) {
-                $emote   = $bot->emojis->resolve($code);
+                $emote = $bot->emojis->resolve($code);
                 $sim_str = ($similarity == 0) ? "perfect match" : "similarity $similarity";
 
                 $guildcount[$emote->guild->id] = true;
@@ -137,7 +140,8 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
         if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
             return self::unauthorized($message);
         } elseif (!$message->guild->me->permissions->has('MANAGE_EMOJIS')) {
-            return self::error($message, "Unauthorized!", "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
+            return self::error($message, "Unauthorized!",
+                "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
         } else {
             $emotes = self::getEmotes($message->content);
             if (count($emotes) != 1) {
@@ -158,7 +162,8 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                         return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
                     }, function ($e) use ($message, $file) {
                         unlink($file);
-                        return self::send($message->channel, "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
+                        return self::send($message->channel,
+                            "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
                     });
                 } catch (\Throwable $e) {
                     return self::exceptionHandler($message, $e, true);

@@ -23,14 +23,14 @@ class Ascalon implements \Huntress\PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $eh = \Huntress\EventListener::new()
-        ->addEvent("message")
-        ->addUser(198749794523545601)
-        ->addChannel(370727342076854302) // mast botspam
-        ->addChannel(368669692665004032) // mast roleplaying
-        ->addChannel(561118174322360322) // nash botspam
-        ->addChannel(570692417049591818) // wd portland gn-ideas
-        ->setCallback([self::class, "process"]);
+        $eh = EventListener::new()
+            ->addEvent("message")
+            ->addUser(198749794523545601)
+            ->addChannel(370727342076854302)// mast botspam
+            ->addChannel(368669692665004032)// mast roleplaying
+            ->addChannel(561118174322360322)// nash botspam
+            ->addChannel(570692417049591818)// wd portland gn-ideas
+            ->setCallback([self::class, "process"]);
         // @todo switch channel config over to HPM
 
         $bot->eventManager->addEventListener($eh);

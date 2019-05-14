@@ -36,14 +36,16 @@ class Evaluate implements \Huntress\PluginInterface
             return self::unauthorized($message);
         } else {
             try {
-                $args     = self::_split($message->content);
-                $msg      = str_replace($args[0], "", $message->content);
-                $msg      = str_replace(['```php', '```'], "", $msg);
+                $args = self::_split($message->content);
+                $msg = str_replace($args[0], "", $message->content);
+                $msg = str_replace(['```php', '```'], "", $msg);
                 $response = eval(self::useClassesString() . $msg);
                 if (is_string($response)) {
                     return self::send($message->channel, $response, ['split' => true]);
                 } else {
-                    return self::send($message->channel, "```json" . PHP_EOL . json_encode($response, JSON_PRETTY_PRINT) . PHP_EOL . "```", ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
+                    return self::send($message->channel,
+                        "```json" . PHP_EOL . json_encode($response, JSON_PRETTY_PRINT) . PHP_EOL . "```",
+                        ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
                 }
             } catch (\Throwable $e) {
                 return self::exceptionHandler($message, $e, true, false);
@@ -53,7 +55,7 @@ class Evaluate implements \Huntress\PluginInterface
 
     private static function useClassesString(): string
     {
-        $x   = [];
+        $x = [];
         $x[] = PHP_EOL;
         foreach (self::USE_CLASSES as $class) {
             $x[] = "use $class;";

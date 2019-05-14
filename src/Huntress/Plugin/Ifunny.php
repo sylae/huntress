@@ -47,8 +47,9 @@ class Ifunny implements \Huntress\PluginInterface
                     $img->resizeCanvas(0, 20, 'top', true, 0x171719);
                     $img->insert('data/ifunny.png', 'bottom-right');
                     $jpg = (string) $img->encode('jpg', 10);
-                    $message->channel->send("Let me fix that for you, {$message->member->displayName}.", ['files' => [['name' => $att->filename . ".jpg", 'data' => $jpg]]]);
                 } catch (\Throwable $e) {
+                    $message->channel->send("Let me fix that for you, {$message->member->displayName}.",
+                        ['files' => [['name' => $att->filename . ".jpg", 'data' => $jpg]]]);
                     self::exceptionHandler($message, $e);
                 }
             });

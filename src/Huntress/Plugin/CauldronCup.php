@@ -61,18 +61,18 @@ NOTE;
     public static function register(Huntress $bot)
     {
         $eh = \Huntress\EventListener::new()
-        ->addCommand("ccup")
-        ->addGuild(385678357745893376)
-        ->setCallback([self::class, "cup"]);
+            ->addCommand("ccup")
+            ->addGuild(385678357745893376)
+            ->setCallback([self::class, "cup"]);
 
         $bot->eventManager->addEventListener($eh);
 
 
         $eh2 = \Huntress\EventListener::new()
-        ->addGuild(385678357745893376)
-        ->addChannel(567713466148716544)
-        ->addEvent("message")
-        ->setCallback([self::class, "reposter"]);
+            ->addGuild(385678357745893376)
+            ->addChannel(567713466148716544)
+            ->addEvent("message")
+            ->setCallback([self::class, "reposter"]);
 
         $bot->eventManager->addEventListener($eh2);
     }
@@ -96,18 +96,22 @@ NOTE;
             return self::unauthorized($data->message);
         }
         try {
-            $getOpt     = new GetOpt();
+            $getOpt = new GetOpt();
             $getOpt->set(GetOpt::SETTING_SCRIPT_NAME, '!ccup');
             $getOpt->set(GetOpt::SETTING_STRICT_OPERANDS, true);
-            $commands   = [];
-            $commands[] = Command::create('create', [self::class, 'create'])->setDescription('Create a match channel')->addOperands([
+            $commands = [];
+            $commands[] = Command::create('create',
+                [self::class, 'create'])->setDescription('Create a match channel')->addOperands([
                 (new Operand('genre', Operand::REQUIRED))->setValidation('is_string'),
                 (new Operand('theme', Operand::REQUIRED))->setValidation('is_string'),
             ]);
-            $commands[] = Command::create('summon', [self::class, 'summon'])->setDescription('Add a competitor to a match channel')->addOperands([
-                (new Operand('user', Operand::REQUIRED))->setValidation('is_string')->setDescription('The user you are adding, in a format Huntress can recognize.'),
+            $commands[] = Command::create('summon',
+                [self::class, 'summon'])->setDescription('Add a competitor to a match channel')->addOperands([
+                (new Operand('user',
+                    Operand::REQUIRED))->setValidation('is_string')->setDescription('The user you are adding, in a format Huntress can recognize.'),
             ]);
-            $commands[] = Command::create('steal', [self::class, 'steal'])->setDescription('Claim a syl.ae/words post')->addOperands([
+            $commands[] = Command::create('steal',
+                [self::class, 'steal'])->setDescription('Claim a syl.ae/words post')->addOperands([
                 (new Operand('title', Operand::REQUIRED))->setValidation('is_string'),
                 (new Operand('entry', Operand::REQUIRED))->setValidation('is_string'),
             ]);
@@ -132,8 +136,8 @@ NOTE;
     {
         $sf = \Huntress\Snowflake::format(\Huntress\Snowflake::generate());
         return $message->guild->createChannel([
-            'name'   => "ccup-secret-$sf",
-            'type'   => "text",
+            'name' => "ccup-secret-$sf",
+            'type' => "text",
             'parent' => 391049778286559253,
         ], "Created on behalf of {$message->author->tag} from {$message->id}")->then(function (\CharlotteDunois\Yasmin\Models\TextChannel $channel) use ($message, $getOpt) {
             $channel->send(sprintf(self::NOTE_CCUP, $getOpt->getOperand("genre"), $getOpt->getOperand("theme")))->then(function (Message $m) {

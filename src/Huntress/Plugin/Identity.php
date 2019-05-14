@@ -43,7 +43,10 @@ class Identity implements \Huntress\PluginInterface
                 'with a ball of yarn',
                 'RWBY: Grimm Eclipse',
             ];
-            $bot->user->setPresence(['status' => 'online', 'game' => ['name' => $opts[array_rand($opts)], 'type' => 0]]);
+            $bot->user->setPresence([
+                'status' => 'online',
+                'game' => ['name' => $opts[array_rand($opts)], 'type' => 0],
+            ]);
         });
     }
 }

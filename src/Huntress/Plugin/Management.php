@@ -40,7 +40,8 @@ class Management implements \Huntress\PluginInterface
     public static function invite(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
     {
         return $bot->generateOAuthInvite()->then(function ($i) use ($message) {
-            self::send($message->channel, sprintf("Use the following URL to add this Huntress instance to your server!\n<%s>", $i));
+            self::send($message->channel,
+                sprintf("Use the following URL to add this Huntress instance to your server!\n<%s>", $i));
         });
     }
 
@@ -50,8 +51,9 @@ class Management implements \Huntress\PluginInterface
             return self::unauthorized($message);
         } else {
             try {
-                return self::send($message->channel, "```" . PHP_EOL . self::gitPull() . "```", ['split' => ['before' => '```' . PHP_EOL, 'after' => '```']]);
             } catch (\Throwable $e) {
+                return self::send($message->channel, "```" . PHP_EOL . self::gitPull() . "```",
+                    ['split' => ['before' => '```' . PHP_EOL, 'after' => '```']]);
                 return self::exceptionHandler($message, $e, true);
             }
         }
@@ -74,7 +76,9 @@ class Management implements \Huntress\PluginInterface
             $embed->addField("Guilds / Channels / Users", implode(" / ", $count));
             $embed->addField("Huntress", self::gitVersion());
             $embed->addField("System", php_uname());
-            $embed->addField("Uptime", sprintf("%s - *(connected %s)*", self::$startupTime->diffForHumans(null, true, null, 2), self::$startupTime->toAtomString()));
+            $embed->addField("Uptime",
+                sprintf("%s - *(connected %s)*", self::$startupTime->diffForHumans(null, true, null, 2),
+                    self::$startupTime->toAtomString()));
             $embed->addField("Loaded Plugins", implode("\n", self::getPlugins()));
 
             $deps = "";
@@ -164,7 +168,7 @@ class Management implements \Huntress\PluginInterface
         $descriptorspec = [
             0 => ["pipe", "r"],
             1 => ["pipe", "w"],
-            2 => ["pipe", "w"]
+            2 => ["pipe", "w"],
         ];
         $pipes          = [];
         $process        = proc_open('composer show -D -f json', $descriptorspec, $pipes);
@@ -175,8 +179,8 @@ class Management implements \Huntress\PluginInterface
             fclose($pipes[1]);
             fclose($pipes[2]);
             proc_close($process);
-            $e      = json_decode($stdout, true)['installed'];
-            $r      = [];
+            $e = json_decode($stdout, true)['installed'];
+            $r = [];
             foreach ($e as $p) {
                 $r[$p['name']] = $p['version'];
             }
