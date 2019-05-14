@@ -140,7 +140,7 @@ class Match implements \Huntress\PluginInterface
             ->setParameter(2, $time, "datetime")
             ->setParameter(3, $title ?? "#$id", "text")
             ->execute();
-            $line1  = sprintf("Match \"%s\" has been added with a deadline of %s.", $title, $time->diffForHumans(Carbon::now(), true, false, 2));
+            $line1  = sprintf("Match \"%s\" has been added with a deadline of *%s*.", $title, $time->longRelativeToNowDiffForHumans(2));
             $line2  = sprintf("Add competitors using `!match addcompetitor %s <user> [<data>]`.", Snowflake::format($id));
             return self::send($message->channel, $line1 . PHP_EOL . $line2);
         } catch (\Throwable $e) {
