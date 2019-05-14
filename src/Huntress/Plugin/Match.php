@@ -286,7 +286,7 @@ class Match implements \Huntress\PluginInterface
 
             $r   = [];
             $r[] = "__**Match {$info->title}**__ `" . Snowflake::format($info->idMatch) . "`";
-            $r[] = "Deadline: *" . $info->duedate->diffForHumans(Carbon::now(), true, false, 2) . "*";
+            $r[] = "Deadline: *" . $info->duedate->longRelativeToNowDiffForHumans(2) . "*";
             $r[] = "";
             $info->entries->each(function ($v, $k) use (&$r, $anon) {
                 if ($anon) {
@@ -382,7 +382,7 @@ class Match implements \Huntress\PluginInterface
                                         if (isset($cheaters[$user->id])) {
                                             continue;
                                         } else {
-                                            $reactions[$seenUsers[$user->id]]--;
+                                            $reactions[$seenUsers[$user->id]] --;
                                             $cheaters[$user->id] = true;
                                         }
                                     } else {
@@ -390,7 +390,7 @@ class Match implements \Huntress\PluginInterface
                                             $reactions[$reactionID] = 0;
                                         }
 
-                                        $reactions[$reactionID]++;
+                                        $reactions[$reactionID] ++;
                                         $seenUsers[$user->id] = $reactionID;
                                     }
                                 }
