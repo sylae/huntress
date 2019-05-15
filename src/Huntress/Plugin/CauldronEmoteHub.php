@@ -8,19 +8,27 @@
 
 namespace Huntress\Plugin;
 
-use \CharlotteDunois\Yasmin\HTTP\APIEndpoints;
+use CharlotteDunois\Yasmin\HTTP\APIEndpoints;
+use CharlotteDunois\Yasmin\Models\Emoji;
+use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
-use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
+use Doctrine\DBAL\Schema\Schema;
+use Huntress\DatabaseFactory;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use Imagick;
+use React\Promise\ExtendedPromiseInterface as Promise;
+use Throwable;
 
 /**
  * Emoji management functions.
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class CauldronEmoteHub implements \Huntress\PluginInterface
+class CauldronEmoteHub implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
 
     public static function register(Huntress $bot)
     {
@@ -31,15 +39,15 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
 
-    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
+    public static function db(Schema $schema): void
     {
         $t = $schema->createTable("ceh_servers");
         $t->addColumn("guild", "bigint", ["unsigned" => true]);
-        $t->addColumn("url", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("url", "text", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->setPrimaryKey(["guild"]);
     }
 
-    public static function addInvite(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function addInvite(Huntress $bot, Message $message): ?Promise
     {
         if (is_null($message->member->roles->get(444432484114104321))) {
             return self::unauthorized($message);
@@ -51,20 +59,20 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                         "arg1 = guild id\narg2 = invite url\n\nhow hard can this be?");
                 }
 
-                $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO ceh_servers (guild, url) VALUES(?, ?) '
-                . 'ON DUPLICATE KEY UPDATE url=VALUES(url);', ['integer', 'string']);
+                $query = DatabaseFactory::get()->prepare('INSERT INTO ceh_servers (guild, url) VALUES(?, ?) '
+                    . 'ON DUPLICATE KEY UPDATE url=VALUES(url);', ['integer', 'string']);
                 $query->bindValue(1, $args[1]);
                 $query->bindValue(2, $args[2]);
                 $query->execute();
 
                 return self::send($message->channel, "Added! :triumph:");
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
         }
     }
 
-    public static function importmoji(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function importmoji(Huntress $bot, Message $message): ?Promise
     {
         if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
             return self::unauthorized($message);
@@ -80,18 +88,21 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                 $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'],
                         ($emotes[0]['animated'] ? 'gif' : 'png'));
 
-                return $message->guild->createEmoji($url, $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message) {
+                return $message->guild->createEmoji($url, $emotes[0]['name'])->then(function (
+                    Emoji $emote
+                ) use ($message) {
                     return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
                 }, function ($e) use ($message) {
-                    return self::send($message->channel, "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
+                    return self::send($message->channel,
+                        "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
                 });
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
         }
     }
 
-    public static function process(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function process(Huntress $bot, Message $message): ?Promise
     {
         try {
             $m = self::_split($message->content);
@@ -99,9 +110,10 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                 return self::error($message, "Missing Argument", "You need to tell me what to search for");
             }
             $code = $m[1];
-            $x    = [];
-            $bot->emojis->each(function (\CharlotteDunois\Yasmin\Models\Emoji $v, $k) use ($code, &$x) {
-                if ($v->requireColons && ($v->guild->name == "Cauldron Emote Hub" || stripos($v->guild->name, "CEH") !== false)) { // todo: do this better
+            $x = [];
+            $bot->emojis->each(function (Emoji $v, $k) use ($code, &$x) {
+                if ($v->requireColons && ($v->guild->name == "Cauldron Emote Hub" || stripos($v->guild->name,
+                            "CEH") !== false)) { // todo: do this better
                     $l = levenshtein($code, $v->name);
                     if (stripos($v->name, $code) !== false || $l < 3) {
                         $x[$k] = $l;
@@ -118,7 +130,8 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
 
                 $guildcount[$emote->guild->id] = true;
 
-                $s[] = sprintf("%s `%s` - Found on %s, %s", (string) $emote, $emote->name, $emote->guild->name, $sim_str);
+                $s[] = sprintf("%s `%s` - Found on %s, %s", (string) $emote, $emote->name, $emote->guild->name,
+                    $sim_str);
             }
             if (count($s) == 0) {
                 $s[] = "No results found matching `$code`";
@@ -130,12 +143,23 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             }
 
             return self::send($message->channel, implode(PHP_EOL, $s), ['split' => true]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
     }
 
-    public static function flopmoji(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    private static function getInvite(string $guildID)
+    {
+        $qb = DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("*")->from("ceh_servers")->where('guild = ?')->setParameter(0, $guildID, "integer");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return $data['url'];
+        }
+        return false;
+    }
+
+    public static function flopmoji(Huntress $bot, Message $message): ?Promise
     {
         if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
             return self::unauthorized($message);
@@ -147,17 +171,22 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
             if (count($emotes) != 1) {
                 return self::error($message, "Invalid Arguments", "Give me exactly one emote as an argument");
             }
-            $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'], ($emotes[0]['animated'] ? 'gif' : 'png'));
+            $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'],
+                    ($emotes[0]['animated'] ? 'gif' : 'png'));
 
             return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $emotes) {
                 try {
                     $file = "/tmp/huntressEmote." . time() . "." . ($emotes[0]['animated'] ? 'gif' : 'png');
                     file_put_contents($file, $string);
-                    $img  = new \Imagick($file);
+                    $img = new Imagick($file);
                     foreach ($img as $i) {
                         $i->flopImage();
                     }
-                    return $message->guild->createEmoji($img->getImagesBlob(), "r" . $emotes[0]['name'])->then(function (\CharlotteDunois\Yasmin\Models\Emoji $emote) use ($message, $file) {
+                    return $message->guild->createEmoji($img->getImagesBlob(),
+                        "r" . $emotes[0]['name'])->then(function (Emoji $emote) use (
+                        $message,
+                        $file
+                    ) {
                         unlink($file);
                         return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
                     }, function ($e) use ($message, $file) {
@@ -165,21 +194,10 @@ class CauldronEmoteHub implements \Huntress\PluginInterface
                         return self::send($message->channel,
                             "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
                     });
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     return self::exceptionHandler($message, $e, true);
                 }
             });
         }
-    }
-
-    private static function getInvite(string $guildID)
-    {
-        $qb  = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("*")->from("ceh_servers")->where('guild = ?')->setParameter(0, $guildID, "integer");
-        $res = $qb->execute()->fetchAll();
-        foreach ($res as $data) {
-            return $data['url'];
-        }
-        return false;
     }
 }

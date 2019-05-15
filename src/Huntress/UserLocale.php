@@ -9,6 +9,7 @@
 namespace Huntress;
 
 use Carbon\Carbon;
+use CharlotteDunois\Yasmin\Models\User;
 
 /**
  * Description of UserLocale
@@ -29,13 +30,14 @@ class UserLocale
      */
     public $locale;
 
-    public function __construct(\CharlotteDunois\Yasmin\Models\User $user)
+    public function __construct(User $user)
     {
-        $qb   = DatabaseFactory::get()->createQueryBuilder();
-        $data = $qb->select("*")->from("locale")->where("user = ?")->setParameter(0, $user->id, "integer")->execute()->fetchAll();
+        $qb = DatabaseFactory::get()->createQueryBuilder();
+        $data = $qb->select("*")->from("locale")->where("user = ?")->setParameter(0, $user->id,
+            "integer")->execute()->fetchAll();
         foreach ($data as $d) {
             $this->timezone = $d['timezone'];
-            $this->locale   = $d['locale'];
+            $this->locale = $d['locale'];
         }
     }
 

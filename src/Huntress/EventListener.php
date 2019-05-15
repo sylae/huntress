@@ -8,6 +8,15 @@
 
 namespace Huntress;
 
+use CharlotteDunois\Yasmin\Interfaces\ChannelInterface;
+use CharlotteDunois\Yasmin\Models\Guild;
+use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\RoleStorage;
+use CharlotteDunois\Yasmin\Models\User;
+use Exception;
+use InvalidArgumentException;
+
 /**
  * Description of EventListener
  *
@@ -71,7 +80,7 @@ class EventListener
 
     /**
      * Convenience function to allow easier chaining.
-     * @return \Huntress\EventListener
+     * @return EventListener
      */
     public static function new(): EventListener
     {
@@ -87,7 +96,7 @@ class EventListener
     public function getCallback(): callable
     {
         if (!is_callable($this->callable)) {
-            throw new \Exception("Callback on EventListener not set!");
+            throw new Exception("Callback on EventListener not set!");
         }
         return $this->callable;
     }
@@ -96,6 +105,27 @@ class EventListener
     {
         $this->addSnowflakeArg($id, $this->channels);
         return $this;
+    }
+
+    private function addSnowflakeArg($id, &$target): void
+    {
+        if (!$this->validateSnowflakeArg($id)) {
+            throw new InvalidArgumentException("Invalid event filter {$id}. Must be '*' or an ID.");
+        }
+        if (!in_array($id, $target)) {
+            $target[] = $id;
+        }
+    }
+
+    private function validateSnowflakeArg($snow): bool
+    {
+        if ($snow === "*") {
+            return true;
+        }
+        if (!is_int($snow) || $snow < 0) {
+            return false;
+        }
+        return true;
     }
 
     public function addGuild($id): EventListener
@@ -122,27 +152,18 @@ class EventListener
         return $this;
     }
 
-    public function setPeriodic(int $seconds): EventListener
-    {
-        if ($seconds < 1) {
-            throw new \InvalidArgumentException('$seconds must be at least 1.');
-        }
-        $this->addEvent("periodic");
-        $this->periodic = $seconds;
-        return $this;
-    }
-
     public function getPeriodic(): int
     {
         return $this->periodic;
     }
 
-    public function addCommand(string $command): EventListener
+    public function setPeriodic(int $seconds): EventListener
     {
-        $this->addEvent("message");
-        if (!in_array($command, $this->commands)) {
-            $this->commands[] = $command;
+        if ($seconds < 1) {
+            throw new InvalidArgumentException('$seconds must be at least 1.');
         }
+        $this->addEvent("periodic");
+        $this->periodic = $seconds;
         return $this;
     }
 
@@ -154,25 +175,13 @@ class EventListener
         return $this;
     }
 
-    private function addSnowflakeArg($id, &$target): void
+    public function addCommand(string $command): EventListener
     {
-        if (!$this->validateSnowflakeArg($id)) {
-            throw new \InvalidArgumentException("Invalid event filter {$id}. Must be '*' or an ID.");
+        $this->addEvent("message");
+        if (!in_array($command, $this->commands)) {
+            $this->commands[] = $command;
         }
-        if (!in_array($id, $target)) {
-            $target[] = $id;
-        }
-    }
-
-    private function validateSnowflakeArg($snow): bool
-    {
-        if ($snow === "*") {
-            return true;
-        }
-        if (!is_int($snow) || $snow < 0) {
-            return false;
-        }
-        return true;
+        return $this;
     }
 
     public function match(string $type, EventData $data = null): bool
@@ -187,40 +196,41 @@ class EventListener
         }
 
         if (count($this->commands) > 0) {
-            if (!is_string($data->command) || mb_strlen($data->command) < 1 || !$this->pass($data->command, $this->commands)) {
+            if (!is_string($data->command) || mb_strlen($data->command) < 1 || !$this->pass($data->command,
+                    $this->commands)) {
                 return false;
             }
         }
         if (count($this->channels) > 0) {
-            if ($data->channel instanceof \CharlotteDunois\Yasmin\Interfaces\ChannelInterface) {
+            if ($data->channel instanceof ChannelInterface) {
                 if (!$this->pass($data->channel->id, $this->channels)) {
                     return false;
                 }
             }
         }
         if (count($this->guilds) > 0) {
-            if ($data->guild instanceof \CharlotteDunois\Yasmin\Models\Guild) {
+            if ($data->guild instanceof Guild) {
                 if (!$this->pass($data->guild->id, $this->guilds)) {
                     return false;
                 }
             }
         }
         if (count($this->messages) > 0) {
-            if ($data->message instanceof \CharlotteDunois\Yasmin\Models\Message) {
+            if ($data->message instanceof Message) {
                 if (!$this->pass($data->message->id, $this->messages)) {
                     return false;
                 }
             }
         }
         if (count($this->users) > 0) {
-            if ($data->user instanceof \CharlotteDunois\Yasmin\Models\User || $data->user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+            if ($data->user instanceof User || $data->user instanceof GuildMember) {
                 if (!$this->pass($data->user->id, $this->users)) {
                     return false;
                 }
             }
         }
         if (count($this->roles) > 0) {
-            if ($data->user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+            if ($data->user instanceof GuildMember) {
                 if (!$this->passRoles($data->user->roles, $this->roles)) {
                     return false;
                 }
@@ -240,7 +250,7 @@ class EventListener
         return false;
     }
 
-    private function passRoles(\CharlotteDunois\Yasmin\Models\RoleStorage $needles, array $haystack): bool
+    private function passRoles(RoleStorage $needles, array $haystack): bool
     {
         if (in_array("*", $haystack) || count($haystack) == 0) {
             return true;

@@ -9,8 +9,16 @@
 namespace Huntress;
 
 use CharlotteDunois\Collect\Collection;
-use React\Promise\PromiseInterface as Promise;
+use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\MessageReaction;
+use CharlotteDunois\Yasmin\Models\Presence;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use Exception;
+use function React\Promise\all;
+use React\Promise\PromiseInterface as Promise;
+use function Sentry\captureException;
+use Throwable;
 
 /**
  * Description of EventManager
@@ -34,32 +42,30 @@ class EventManager
     public function __construct(Huntress $huntress)
     {
         $this->huntress = $huntress;
-        $this->events   = new Collection();
+        $this->events = new Collection();
         $this->huntress->log->addInfo("[HEM] Huntress EventManager initialized");
     }
 
-    public function fire(string $type, $data = null): Promise
+    public function addURLEvent(string $url, int $interval, callable $callable): int
     {
-        if ($data instanceof EventData) {
-            $events = $this->returnMatchingEvents($type, $data);
-        } else {
-            $events = $this->returnMatchingEvents($type);
-        }
-        $this->huntress->log->debug("[HEM] Found " . $events->count() . " matching events.");
-        $values = $events->map(function (EventListener $v, int $k) use ($data) {
-            if (is_null($data)) {
-                $data = $this->huntress;
+        return $this->addEventListener(EventListener::new()->setCallback(function (Huntress $bot) use (
+            $url,
+            $callable
+        ) {
+            try {
+                return URLHelpers::resolveURLToData($url)->then(function (string $data) use ($bot, $callable) {
+                    try {
+                        return $callable($data, $bot);
+                    } catch (Throwable $e) {
+                        captureException($e);
+                        $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+                    }
+                });
+            } catch (Throwable $e) {
+                captureException($e);
+                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
             }
-            return $v->getCallback()($data);
-        });
-        return \React\Promise\all($values);
-    }
-
-    private function returnMatchingEvents(string $type, EventData $data = null): Collection
-    {
-        return $this->events->filter(function ($v, $k) use ($type, $data) {
-            return $v->match($type, $data);
-        });
+        })->setPeriodic($interval));
     }
 
     public function addEventListener(EventListener $listener): int
@@ -68,25 +74,6 @@ class EventManager
         $this->events->set($id, $listener);
         $this->huntress->log->debug("[HEM] Added event $id");
         return $id;
-    }
-
-    public function addURLEvent(string $url, int $interval, callable $callable): int
-    {
-        return $this->addEventListener(EventListener::new()->setCallback(function (Huntress $bot) use ($url, $callable) {
-            try {
-                return URLHelpers::resolveURLToData($url)->then(function (string $data) use ($bot, $callable) {
-                    try {
-                        return $callable($data, $bot);
-                    } catch (\Throwable $e) {
-                        \Sentry\captureException($e);
-                        $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
-                    }
-                });
-            } catch (\Throwable $e) {
-                \Sentry\captureException($e);
-                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
-            }
-        })->setPeriodic($interval));
     }
 
     private function getEventID(): int
@@ -132,17 +119,17 @@ class EventManager
             case "channelPinsUpdate":
             case "channelUpdate":
                 // provides: guild channel
-                $data          = new EventData;
+                $data = new EventData;
                 $data->channel = $args[0];
-                $data->guild   = $args[0]->getGuild();
+                $data->guild = $args[0]->getGuild();
                 break;
             case "roleCreate":
             case "roleDelete":
             case "roleUpdate":
                 // provides: guild role
-                $data          = new EventData;
-                $data->role    = $args[0];
-                $data->guild   = $args[0]->guild;
+                $data = new EventData;
+                $data->role = $args[0];
+                $data->guild = $args[0]->guild;
                 break;
             case "message":
             case "messageDelete":
@@ -150,19 +137,19 @@ class EventManager
             case "messageReactionRemove":
             case "messageUpdate":
                 // provides: guild channel user message command
-                $data          = new EventData;
-                if ($args[0] instanceof \CharlotteDunois\Yasmin\Models\MessageReaction) {
+                $data = new EventData;
+                if ($args[0] instanceof MessageReaction) {
                     $message = $args[0]->message;
-                } elseif ($args[0] instanceof \CharlotteDunois\Yasmin\Models\Message) {
+                } elseif ($args[0] instanceof Message) {
                     $message = $args[0];
                 } else {
-                    throw new \Exception("Unknown argument type passed to eventHandler");
+                    throw new Exception("Unknown argument type passed to eventHandler");
                 }
-                $data->guild   = $message->guild;
+                $data->guild = $message->guild;
                 $data->channel = $message->channel;
-                $data->user    = $message->author;
+                $data->user = $message->author;
                 $data->message = $message;
-                $match         = [];
+                $match = [];
                 if (preg_match("/^!(\w+)(\s|$)/", $message->content, $match)) {
                     $data->command = $match[1];
                 }
@@ -175,11 +162,11 @@ class EventManager
             case "guildMemberUpdate":
                 // provides: guild user
                 $data = new EventData;
-                if ($args[0] instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
-                    $data->user  = $args[0];
+                if ($args[0] instanceof GuildMember) {
+                    $data->user = $args[0];
                     $data->guild = $args[0]->guild;
                 } else {
-                    $data->user  = $args[1];
+                    $data->user = $args[1];
                     $data->guild = $args[0];
                 }
                 break;
@@ -188,32 +175,56 @@ class EventManager
             case "guildUnavailable":
             case "guildUpdate":
                 // provides: guild
-                $data        = new EventData;
+                $data = new EventData;
                 $data->guild = $args[0];
                 break;
             case "presenceUpdate":
             case "userUpdate":
                 // provides: user
-                $data        = new EventData;
-                if ($args[0] instanceof \CharlotteDunois\Yasmin\Models\Presence) {
+                $data = new EventData;
+                if ($args[0] instanceof Presence) {
                     $data->user = $args[0]->user;
                 } else {
                     $data->user = $args[0];
                 }
                 break;
             case "voiceStateUpdate";
-                $data          = new EventData;
+                $data = new EventData;
                 // provides: guild channel user
-                $data->user    = $args[0];
-                $data->guild   = $args[0]->guild;
+                $data->user = $args[0];
+                $data->guild = $args[0]->guild;
                 $data->channel = $args[0]->voiceChannel;
                 break;
             case "ready":
             default:
-                $data          = null;
+                $data = null;
                 break;
         }
         $this->huntress->log->debug("[HEM] Received event $yasminType", ['data' => $data]);
         $this->fire($yasminType, $data);
+    }
+
+    public function fire(string $type, $data = null): Promise
+    {
+        if ($data instanceof EventData) {
+            $events = $this->returnMatchingEvents($type, $data);
+        } else {
+            $events = $this->returnMatchingEvents($type);
+        }
+        $this->huntress->log->debug("[HEM] Found " . $events->count() . " matching events.");
+        $values = $events->map(function (EventListener $v, int $k) use ($data) {
+            if (is_null($data)) {
+                $data = $this->huntress;
+            }
+            return $v->getCallback()($data);
+        });
+        return all($values);
+    }
+
+    private function returnMatchingEvents(string $type, EventData $data = null): Collection
+    {
+        return $this->events->filter(function ($v, $k) use ($type, $data) {
+            return $v->match($type, $data);
+        });
     }
 }

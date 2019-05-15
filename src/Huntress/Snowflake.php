@@ -8,6 +8,8 @@
 
 namespace Huntress;
 
+use InvalidArgumentException;
+
 /**
  * Description of HuntressSnowflake
  *
@@ -21,25 +23,17 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
      */
     const EPOCH = 1546300800;
 
-    public static function format(int $snow): string
-    {
-        return base_convert($snow, 10, 36);
-    }
-
-    public static function parse(string $snow): int
-    {
-        return (int) base_convert($snow, 36, 10);
-    }
-
     /**
      * Constructor.
-     * @param string|int  $snowflake
-     * @throws \InvalidArgumentException
+     *
+     * @param string|int $snowflake
+     *
+     * @throws InvalidArgumentException
      */
     public function __construct($snowflake)
     {
 
-        $snowflake   = (int) $snowflake;
+        $snowflake = (int) $snowflake;
         $this->value = $snowflake;
 
         $this->binary = str_pad(decbin($snowflake), 64, 0, STR_PAD_LEFT);
@@ -51,13 +45,25 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
 
 
         if ($this->timestamp < self::EPOCH || $this->increment < 0 || $this->increment >= 4) {
-            throw new \InvalidArgumentException('Invalid snow in snowflake');
+            throw new InvalidArgumentException('Invalid snow in snowflake');
         }
+    }
+
+    public static function format(int $snow): string
+    {
+        return base_convert($snow, 10, 36);
+    }
+
+    public static function parse(string $snow): int
+    {
+        return (int) base_convert($snow, 36, 10);
     }
 
     /**
      * Deconstruct a snowflake.
-     * @param string|int  $snowflake
+     *
+     * @param string|int $snowflake
+     *
      * @return Snowflake
      */
     public static function deconstruct($snowflake)
@@ -67,8 +73,10 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
 
     /**
      * Generates a new snowflake.
-     * @param int  $workerID   Valid values are in the range of 0-31.
-     * @param int  $processID  Valid values are in the range of 0-31.
+     *
+     * @param int $workerID  Valid values are in the range of 0-31.
+     * @param int $processID Valid values are in the range of 0-31.
+     *
      * @return int
      */
     public static function generate(int $workerID = 1, int $processID = 0): int
@@ -87,12 +95,13 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
             }
         } else {
             self::$incrementIndex = 0;
-            self::$incrementTime  = $time;
+            self::$incrementTime = $time;
         }
 
         $time = (string) $time - self::EPOCH;
 
-        $binary = str_pad(decbin(((int) $time)), 62, 0, STR_PAD_LEFT) . str_pad(decbin(self::$incrementIndex), 2, 0, STR_PAD_LEFT);
+        $binary = str_pad(decbin(((int) $time)), 62, 0, STR_PAD_LEFT) . str_pad(decbin(self::$incrementIndex), 2, 0,
+                STR_PAD_LEFT);
         return (int) bindec($binary);
     }
 }

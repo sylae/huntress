@@ -8,7 +8,18 @@
 
 namespace Huntress;
 
-use \Carbon\Carbon;
+use Carbon\Carbon;
+use CharlotteDunois\Yasmin\Interfaces\TextChannelInterface;
+use CharlotteDunois\Yasmin\Models\Guild;
+use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use Exception;
+use InvalidArgumentException;
+use League\HTMLToMarkdown\HtmlConverter;
+use React\Promise\ExtendedPromiseInterface;
+use function Sentry\captureException;
+use Throwable;
 
 /**
  *
@@ -29,22 +40,19 @@ trait PluginHelperTrait
         return $matches[2];
     }
 
-    public static function error(\CharlotteDunois\Yasmin\Models\Message $message, string $title, string $msg): \React\Promise\ExtendedPromiseInterface
-    {
-        $embed = self::easyEmbed($message);
-        $embed->setTitle("Error - " . $title)->setDescription(substr($msg, 0, 2048))->setColor(0xff8040);
-        return self::send($message->channel, "", ['embed' => $embed]);
-    }
-
-    public static function exceptionHandler(\CharlotteDunois\Yasmin\Models\Message $message, \Throwable $e, bool $showTrace = false, bool $sentry = true): \React\Promise\ExtendedPromiseInterface
-    {
+    public static function exceptionHandler(
+        Message $message,
+        Throwable $e,
+        bool $showTrace = false,
+        bool $sentry = true
+    ): ExtendedPromiseInterface {
         if ($sentry) {
-            \Sentry\captureException($e);
+            captureException($e);
         }
         $msg = $e->getFile() . ":" . $e->getLine() . PHP_EOL . PHP_EOL . $e->getMessage();
         if ($showTrace) {
-            $msg   .= PHP_EOL;
-            $len   = strlen($message) + 8;
+            $msg .= PHP_EOL;
+            $len = strlen($message) + 8;
             $trace = $e->getTraceAsString();
             if (strlen($trace) > 2048 - $len) {
                 $trace = substr($trace, 0, 2048 - $len - 3) . "...";
@@ -54,20 +62,41 @@ trait PluginHelperTrait
         return self::error($message, get_class($e), $msg);
     }
 
-    public static function unauthorized(\CharlotteDunois\Yasmin\Models\Message $message): \React\Promise\ExtendedPromiseInterface
-    {
+    public static function error(
+        Message $message,
+        string $title,
+        string $msg
+    ): ExtendedPromiseInterface {
+        $embed = self::easyEmbed($message);
+        $embed->setTitle("Error - " . $title)->setDescription(substr($msg, 0, 2048))->setColor(0xff8040);
+        return self::send($message->channel, "", ['embed' => $embed]);
+    }
+
+    public static function easyEmbed(Message $message
+    ): MessageEmbed {
+        $embed = new MessageEmbed();
+        return $embed->setTimestamp(time())
+            ->setAuthor($message->guild->me->nickname ?? $message->client->user->username,
+                $message->client->user->getDisplayAvatarURL());
+    }
+
+    public static function send(
+        TextChannelInterface $channel,
+        string $msg = "",
+        array $opts = []
+    ): ExtendedPromiseInterface {
+        return $channel->send($msg, $opts);
+    }
+
+    public static function unauthorized(Message $message
+    ): ExtendedPromiseInterface {
         return self::error($message, "Unauthorized!", "You are not permitted to use this command!");
     }
 
-    public static function easyEmbed(\CharlotteDunois\Yasmin\Models\Message $message): \CharlotteDunois\Yasmin\Models\MessageEmbed
-    {
-        $embed = new \CharlotteDunois\Yasmin\Models\MessageEmbed();
-        return $embed->setTimestamp(time())
-        ->setAuthor($message->guild->me->nickname ?? $message->client->user->username, $message->client->user->getDisplayAvatarURL());
-    }
-
-    public static function parseGuildUser(\CharlotteDunois\Yasmin\Models\Guild $guild, string $string): ?\CharlotteDunois\Yasmin\Models\GuildMember
-    {
+    public static function parseGuildUser(
+        Guild $guild,
+        string $string
+    ): ?GuildMember {
         $string = trim($string);
         if (mb_strlen($string) == 0) {
             return null;
@@ -76,7 +105,8 @@ trait PluginHelperTrait
             return $guild->members->resolve($matches[1]);
         }
         try {
-            return $guild->members->first(function (\CharlotteDunois\Yasmin\Models\GuildMember $val, $key) use ($string) {
+            return $guild->members->first(function (GuildMember $val, $key) use ($string
+            ) {
                 if ($val->nickname == $string) {
                     return true;
                 } elseif ($val->user->username . "#" . $val->user->discriminator == $string) {
@@ -87,35 +117,35 @@ trait PluginHelperTrait
                     return false;
                 }
             });
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return null;
         }
     }
 
     public static function htmlToMD(string $html): string
     {
-        $converter = new \League\HTMLToMarkdown\HtmlConverter();
+        $converter = new HtmlConverter();
         $converter->getConfig()->setOption('strip_tags', true);
         return $converter->convert($html);
     }
 
     public static function paginateToCode(string $code, string $lang = ""): array
     {
-        $lines   = explode("\n", $code);
+        $lines = explode("\n", $code);
         $payload = 2000 - 7 - mb_strlen($lang);
         $packets = [];
-        $pack    = "";
+        $pack = "";
 
         foreach ($lines as $line) {
             $len = mb_strlen($line) + 1;
             if ($len >= $payload) {
-                throw new \Exception("Single line cannot exceed message limit :v");
+                throw new Exception("Single line cannot exceed message limit :v");
             }
             if ($len + mb_strlen($pack) <= $payload) {
                 $pack .= $line . "\n";
             } else {
                 $packets[] = $pack;
-                $pack      = $line . "\n";
+                $pack = $line . "\n";
             }
         }
         $packets[] = $pack;
@@ -129,28 +159,25 @@ trait PluginHelperTrait
         return $r;
     }
 
-    public static function send(\CharlotteDunois\Yasmin\Interfaces\TextChannelInterface $channel, string $msg = "", array $opts = []): \React\Promise\ExtendedPromiseInterface
-    {
-        return $channel->send($msg, $opts);
-    }
-
-    public static function dump(\CharlotteDunois\Yasmin\Interfaces\TextChannelInterface $channel, $msg): \React\Promise\ExtendedPromiseInterface
-    {
+    public static function dump(
+        TextChannelInterface $channel,
+        $msg
+    ): ExtendedPromiseInterface {
         $pre = "```json" . PHP_EOL . json_encode($msg, JSON_PRETTY_PRINT) . PHP_EOL . "```";
         return self::send($channel, $pre, ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
     }
 
     public static function getEmotes(string $s): array
     {
-        $regex   = "/<(a?):(.*?):(\\d+)>/i";
+        $regex = "/<(a?):(.*?):(\\d+)>/i";
         $matches = [];
-        $r       = [];
+        $r = [];
         preg_match_all($regex, $s, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
             $r[] = [
                 'animated' => (bool) $match[1],
-                'name'     => $match[2],
-                'id'       => $match[3],
+                'name' => $match[2],
+                'id' => $match[3],
             ];
         }
         return $r;
@@ -167,7 +194,7 @@ trait PluginHelperTrait
 
     private static function isRelativeTime(string $r): bool
     {
-        $matches  = [];
+        $matches = [];
         $nmatches = 0;
         if (preg_match_all("/((\\d+)([ywdhm]))/i", $r, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
@@ -209,7 +236,7 @@ trait PluginHelperTrait
             }
             return $time;
         } else {
-            throw new \Exception("Could not parse relative time.");
+            throw new Exception("Could not parse relative time.");
         }
     }
 }

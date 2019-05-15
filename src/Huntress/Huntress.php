@@ -8,22 +8,37 @@
 
 namespace Huntress;
 
+use CharlotteDunois\Yasmin\Client;
+use CharlotteDunois\Yasmin\Models\Message;
+use Doctrine\DBAL\Connection;
+use Monolog\ErrorHandler;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Monolog\Processor\GitProcessor;
+use Monolog\Processor\IntrospectionProcessor;
+use Monolog\Registry;
+use React\EventLoop\LoopInterface;
+use ReflectionClass;
+use function Sentry\captureException;
+use Throwable;
+
 /**
  * This is the main Huntress class, mostly backend stuff tbh.
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Huntress extends \CharlotteDunois\Yasmin\Client
+class Huntress extends Client
 {
     /**
      *
-     * @var \Monolog\Logger
+     * @var Logger
      */
     public $log;
 
     /**
      *
-     * @var \React\EventLoop\LoopInterface
+     * @var LoopInterface
      */
     public $loop;
 
@@ -46,14 +61,14 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
 
     /**
      *
-     * @var \Doctrine\DBAL\Connection
+     * @var Connection
      */
     public $db;
 
-    public function __construct(array $config, \React\EventLoop\LoopInterface $loop)
+    public function __construct(array $config, LoopInterface $loop)
     {
-        $this->log          = $this->setupLogger();
-        $this->config       = $config;
+        $this->log = $this->setupLogger();
+        $this->config = $config;
         $this->eventManager = new EventManager($this);
         $this->registerBuiltinHooks();
         // $this->permissionManager = new PermissionManager($this);
@@ -62,7 +77,7 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
 
         $classes = get_declared_classes();
         foreach ($classes as $class) {
-            if ((new \ReflectionClass($class))->implementsInterface("Huntress\PluginInterface")) {
+            if ((new ReflectionClass($class))->implementsInterface("Huntress\PluginInterface")) {
                 $this->log->addInfo("Loading plugin $class");
                 $class::register($this);
             }
@@ -75,7 +90,7 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
         $this->on('ready', [$this, 'readyHandler']);
         $this->on('message', [$this, 'messageHandler']);
 
-        $yasminEvents = new \ReflectionClass('\CharlotteDunois\Yasmin\ClientEvents');
+        $yasminEvents = new ReflectionClass('\CharlotteDunois\Yasmin\ClientEvents');
         foreach ($yasminEvents->getMethods() as $method) {
             switch ($method->name) {
                 case "raw":
@@ -101,19 +116,24 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
         }
     }
 
-    private function setupLogger(): \Monolog\Logger
+    private function setupLogger(): Logger
     {
-        $l_console  = new \Monolog\Handler\StreamHandler(STDERR, $this->config['logLevel']);
-        $l_console->setFormatter(new \Monolog\Formatter\LineFormatter(null, null, true, true));
-        $l_template = new \Monolog\Logger("Bot");
+        $l_console = new StreamHandler(STDERR, $this->config['logLevel']);
+        $l_console->setFormatter(new LineFormatter(null, null, true, true));
+        $l_template = new Logger("Bot");
         $l_template->pushHandler($l_console);
-        \Monolog\ErrorHandler::register($l_template);
-        if ($this->config['logLevel'] == \Monolog\Logger::DEBUG) {
-            $l_template->pushProcessor(new \Monolog\Processor\IntrospectionProcessor());
-            $l_template->pushProcessor(new \Monolog\Processor\GitProcessor());
+        ErrorHandler::register($l_template);
+        if ($this->config['logLevel'] == Logger::DEBUG) {
+            $l_template->pushProcessor(new IntrospectionProcessor());
+            $l_template->pushProcessor(new GitProcessor());
         }
-        \Monolog\Registry::addLogger($l_template);
+        Registry::addLogger($l_template);
         return $l_template;
+    }
+
+    private function registerBuiltinHooks()
+    {
+        RSSProcessor::register($this);
     }
 
     public function start()
@@ -129,41 +149,36 @@ class Huntress extends \CharlotteDunois\Yasmin\Client
         $this->emit(PluginInterface::PLUGINEVENT_READY, $this);
     }
 
-    private function registerBuiltinHooks()
+    public function messageHandler(Message $message)
     {
-        RSSProcessor::register($this);
-    }
-
-    public function messageHandler(\CharlotteDunois\Yasmin\Models\Message $message)
-    {
-        $tag   = ($message->guild->name ?? false) ? $message->guild->name . " #" . $message->channel->name : "DM";
+        $tag = ($message->guild->name ?? false) ? $message->guild->name . " #" . $message->channel->name : "DM";
         $this->log->info('[' . $tag . '] ' . $message->author->tag . ': ' . $message->content);
-        $preg  = "/^!(\w+)(\s|$)/";
+        $preg = "/^!(\w+)(\s|$)/";
         $match = [];
         try {
             try {
                 $this->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
-            } catch (\Throwable $e) {
-                \Sentry\captureException($e);
+            } catch (Throwable $e) {
+                captureException($e);
                 $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
             }
             if (preg_match($preg, $message->content, $match)) {
                 try {
                     $this->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
-                } catch (\Throwable $e) {
-                    \Sentry\captureException($e);
+                } catch (Throwable $e) {
+                    captureException($e);
                     $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
                 }
             }
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $this->log->warning("Uncaught message processing exception!", ['exception' => $e]);
         }
     }
 
-    public function errorHandler(\Throwable $e)
+    public function errorHandler(Throwable $e)
     {
-        \Sentry\captureException($e);
+        captureException($e);
         $this->log->warning("Uncaught error!", ['exception' => $e]);
     }
 }

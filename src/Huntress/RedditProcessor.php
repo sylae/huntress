@@ -8,9 +8,11 @@
 
 namespace Huntress;
 
-use \Carbon\Carbon;
-use \CharlotteDunois\Collect\Collection;
-use \CharlotteDunois\Yasmin\Models\MessageEmbed;
+use Carbon\Carbon;
+use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use function Sentry\captureException;
+use Throwable;
 
 /**
  * Description of RedditProcessor
@@ -33,27 +35,27 @@ class RedditProcessor extends RSSProcessor
             if (!is_countable($items)) {
                 return new Collection([]);
             }
-            $lastPub  = $this->getLastRSS();
-            $newest   = $lastPub;
+            $lastPub = $this->getLastRSS();
+            $newest = $lastPub;
             $newItems = [];
             foreach ($items as $item) {
                 $published = Carbon::createFromTimestamp($item->data->created_utc);
                 if ($published <= $lastPub) {
                     continue;
                 }
-                $newest     = max($newest, $published);
+                $newest = max($newest, $published);
                 $newItems[] = (object) [
-                    'title'    => $item->data->title,
-                    'link'     => "https://www.reddit.com" . $item->data->permalink,
-                    'date'     => $published,
+                    'title' => $item->data->title,
+                    'link' => "https://www.reddit.com" . $item->data->permalink,
+                    'date' => $published,
                     'category' => $item->data->link_flair_text ?? "Unflaired",
-                    'body'     => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                    'author'   => $item->data->author,
+                    'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
+                    'author' => $item->data->author,
                 ];
             }
             return new Collection($newItems);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
@@ -70,10 +72,11 @@ class RedditProcessor extends RSSProcessor
             }
             $embed = new MessageEmbed();
             $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
-            ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
+                ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '',
+                    "https://reddit.com/user/" . $item->author);
             $this->huntress->channels->get($this->channel)->send("", ['embed' => $embed]);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
             return false;
         }

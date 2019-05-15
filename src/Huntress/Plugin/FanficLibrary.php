@@ -8,26 +8,35 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
+use Carbon\Carbon;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use Doctrine\DBAL\Schema\Schema;
+use Huntress\DatabaseFactory;
+use Huntress\Huntress;
+use Huntress\Library;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use React\Promise\ExtendedPromiseInterface as Promise;
+use Throwable;
 
 /**
  * Simple builtin to show user information
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class FanficLibrary implements \Huntress\PluginInterface
+class FanficLibrary implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
     /**
      *
-     * @var \Huntress\Library
+     * @var Library
      */
     static $library;
 
     /**
      *
-     * @var \Carbon\Carbon
+     * @var Carbon
      */
     static $lastUpdateTime;
 
@@ -40,15 +49,15 @@ class FanficLibrary implements \Huntress\PluginInterface
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
 
-    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
+    public static function db(Schema $schema): void
     {
         $t = $schema->createTable("fanfic");
         $t->addColumn("fid", "integer", ["unsigned" => true, "autoincrement" => true]);
-        $t->addColumn("title", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
-        $t->addColumn("author", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
-        $t->addColumn("authorurl", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
-        $t->addColumn("status", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
-        $t->addColumn("comments", "text", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("title", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("author", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("authorurl", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("status", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("comments", "text", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->addColumn("isSmut", "boolean");
         $t->addColumn("created", "datetime");
         $t->addColumn("modified", "datetime");
@@ -60,49 +69,56 @@ class FanficLibrary implements \Huntress\PluginInterface
         $t2 = $schema->createTable("fanfic_links");
         $t2->addColumn("lid", "integer", ["unsigned" => true, "autoincrement" => true]);
         $t2->addColumn("fid", "integer", ["unsigned" => true]);
-        $t2->addColumn("url", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t2->addColumn("url", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t2->setPrimaryKey(["lid"]);
 
         $t3 = $schema->createTable("fanfic_tags");
         $t3->addColumn("tid", "integer", ["unsigned" => true, "autoincrement" => true]);
         $t3->addColumn("fid", "integer", ["unsigned" => true]);
-        $t3->addColumn("tag", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t3->addColumn("tag", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t3->setPrimaryKey(["tid"]);
         $t3->addIndex(["fid"]);
     }
 
     public static function init(Huntress $bot)
     {
-        self::$library = new \Huntress\Library();
+        self::$library = new Library();
         if (file_exists("temp/fanficDB.json")) {
             self::update();
-            self::$lastUpdateTime = \Carbon\Carbon::createFromTimestamp(filemtime("temp/fanficDB.json"));
+            self::$lastUpdateTime = Carbon::createFromTimestamp(filemtime("temp/fanficDB.json"));
         } else {
             $bot->log->warning("fanficDB.json not found. Run !reloadfanfic :o");
         }
     }
 
-    public static function reload(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    private static function update(): void
+    {
+        self::$library->loadFanfic();
+    }
+
+    public static function reload(Huntress $bot, Message $message): ?Promise
     {
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
         } else {
             try {
-                return \CharlotteDunois\Yasmin\Utils\URLHelpers::resolveURLToData($bot->config['fanficURL'])->then(function (string $body) {
+                return URLHelpers::resolveURLToData($bot->config['fanficURL'])->then(function (
+                    string $body
+                ) {
                     file_put_contents("temp/fanficDB.json", "[" . str_replace("}\n{", "},\n{", $body . "]"));
                 })->then(function () use ($message) {
                     return self::send($message->channel, "File downloaded!");
                 })->then(function () {
                     self::update();
-                    self::$lastUpdateTime = \Carbon\Carbon::now();
+                    self::$lastUpdateTime = Carbon::now();
                 });
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 return self::exceptionHandler($message, $e);
             }
         }
     }
 
-    public static function find(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function find(Huntress $bot, Message $message): ?Promise
     {
         try {
             $args = self::_split($message->content);
@@ -112,8 +128,8 @@ class FanficLibrary implements \Huntress\PluginInterface
 
             $embed = self::easyEmbed($message);
             $embed->setTitle($v->title)
-            ->setDescription(self::htmlToMD((string) $v->comments))
-            ->setColor($user->getDisplayColor());
+                ->setDescription(self::htmlToMD((string) $v->comments))
+                ->setColor($user->getDisplayColor());
 
 
             if (mb_strlen(trim($v->cover ?? "")) > 0) {
@@ -143,68 +159,14 @@ class FanficLibrary implements \Huntress\PluginInterface
                 $embed->addField("Tags", implode(", ", $v->tags));
             }
             return self::send($message->channel, "", ['embed' => $embed]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
-    }
-
-    public static function lookup(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
-    {
-        try {
-            $time  = \Carbon\Carbon::createFromTimestampMs((int) round(microtime(true) * 1000));
-            $count = number_format(count(self::$library));
-            return self::send($message->channel, ":crystal_ball: Searching **$count** stories...")->then(function (\CharlotteDunois\Yasmin\Models\Message $sent) use ($message, $time) {
-                $args   = self::_split($message->content);
-                $search = trim(str_replace($args[0], "", $message->content));
-                $user   = $message->member;
-
-                $res = self::$library->titleSearch($search, 10);
-
-                $embed = self::easyEmbed($message);
-                $embed->setTitle("Browsing stories matching: `$search`")
-                ->setDescription("For more details, use `!find [FIC_NAME]`")
-                ->setColor($user->getDisplayColor());
-                foreach ($res as $k => $v) {
-                    $title = [];
-                    $data  = [];
-
-                    $title[] = "{$v->title}";
-                    if (mb_strlen(trim($v->author ?? "")) > 0) {
-                        $title[] = "*by {$v->author}*";
-                    }
-                    if (mb_strlen(trim($v->status ?? "")) > 0) {
-                        $title[] = "*({$v->status})*";
-                    }
-                    if ($v->words ?? 0 > 0) {
-                        $data[] = "*(" . number_format($v->words) . " words)*";
-                    }
-                    if (mb_strlen(trim($v->comments ?? "")) > 0) {
-                        $data[] = "*(" . self::htmlToMD((string) $v->comments) . ")*";
-                    }
-                    if (count($v->tags ?? []) > 0) {
-                        $data[] = "\n__Tagged__: " . implode(", ", $v->tags);
-                    }
-                    $data[] = "\n";
-
-                    $embed->addField(implode(" ", $title), implode(" ", $data));
-                }
-                $spent = number_format((\Carbon\Carbon::createFromTimestampMs((int) round(microtime(true) * 1000))->format("U.u") - $time->format("U.u")), 1);
-                $count = number_format(count(self::$library));
-                return $sent->edit("Searched **$count** records in {$spent} seconds.", ['embed' => $embed]);
-            });
-        } catch (\Throwable $e) {
-            return self::exceptionHandler($message, $e);
-        }
-    }
-
-    private static function update(): void
-    {
-        self::$library->loadFanfic();
     }
 
     private static function storyURL(string $url): string
     {
-        $regex   = "/https?\\:\\/\\/(.+?)\\//i";
+        $regex = "/https?\\:\\/\\/(.+?)\\//i";
         $matches = [];
         if (preg_match($regex, $url, $matches)) {
             switch ($matches[1]) {
@@ -231,5 +193,57 @@ class FanficLibrary implements \Huntress\PluginInterface
             return "[$tag]($url)";
         }
         return $url;
+    }
+
+    public static function lookup(Huntress $bot, Message $message): ?Promise
+    {
+        try {
+            $time = Carbon::createFromTimestampMs((int) round(microtime(true) * 1000));
+            $count = number_format(count(self::$library));
+            return self::send($message->channel, ":crystal_ball: Searching **$count** stories...")->then(function (
+                Message $sent
+            ) use ($message, $time) {
+                $args = self::_split($message->content);
+                $search = trim(str_replace($args[0], "", $message->content));
+                $user = $message->member;
+
+                $res = self::$library->titleSearch($search, 10);
+
+                $embed = self::easyEmbed($message);
+                $embed->setTitle("Browsing stories matching: `$search`")
+                    ->setDescription("For more details, use `!find [FIC_NAME]`")
+                    ->setColor($user->getDisplayColor());
+                foreach ($res as $k => $v) {
+                    $title = [];
+                    $data = [];
+
+                    $title[] = "{$v->title}";
+                    if (mb_strlen(trim($v->author ?? "")) > 0) {
+                        $title[] = "*by {$v->author}*";
+                    }
+                    if (mb_strlen(trim($v->status ?? "")) > 0) {
+                        $title[] = "*({$v->status})*";
+                    }
+                    if ($v->words ?? 0 > 0) {
+                        $data[] = "*(" . number_format($v->words) . " words)*";
+                    }
+                    if (mb_strlen(trim($v->comments ?? "")) > 0) {
+                        $data[] = "*(" . self::htmlToMD((string) $v->comments) . ")*";
+                    }
+                    if (count($v->tags ?? []) > 0) {
+                        $data[] = "\n__Tagged__: " . implode(", ", $v->tags);
+                    }
+                    $data[] = "\n";
+
+                    $embed->addField(implode(" ", $title), implode(" ", $data));
+                }
+                $spent = number_format((Carbon::createFromTimestampMs((int) round(microtime(true) * 1000))->format("U.u") - $time->format("U.u")),
+                    1);
+                $count = number_format(count(self::$library));
+                return $sent->edit("Searched **$count** records in {$spent} seconds.", ['embed' => $embed]);
+            });
+        } catch (Throwable $e) {
+            return self::exceptionHandler($message, $e);
+        }
     }
 }

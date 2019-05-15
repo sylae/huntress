@@ -8,20 +8,28 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
+use Carbon\Carbon;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Utils\Snowflake;
+use Exception;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use React\Promise\ExtendedPromiseInterface as Promise;
+use ReflectionClass;
+use Throwable;
 
 /**
  * Simple builtin to show user information
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Management implements \Huntress\PluginInterface
+class Management implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
     /**
      *
-     * @var \Carbon\Carbon
+     * @var Carbon
      */
     public static $startupTime;
 
@@ -33,11 +41,11 @@ class Management implements \Huntress\PluginInterface
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "huntress", [self::class, "info"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "invite", [self::class, "invite"]);
         $bot->on(self::PLUGINEVENT_READY, function () {
-            self::$startupTime = \Carbon\Carbon::now();
+            self::$startupTime = Carbon::now();
         });
     }
 
-    public static function invite(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function invite(Huntress $bot, Message $message): ?Promise
     {
         return $bot->generateOAuthInvite()->then(function ($i) use ($message) {
             self::send($message->channel,
@@ -45,13 +53,13 @@ class Management implements \Huntress\PluginInterface
         });
     }
 
-    public static function update(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function update(Huntress $bot, Message $message): ?Promise
     {
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
         } else {
             try {
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 return self::send($message->channel, "```" . PHP_EOL . self::gitPull() . "```",
                     ['split' => ['before' => '```' . PHP_EOL, 'after' => '```']]);
                 return self::exceptionHandler($message, $e, true);
@@ -59,7 +67,32 @@ class Management implements \Huntress\PluginInterface
         }
     }
 
-    public static function info(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    private static function gitPull(): string
+    {
+        $descriptorspec = [
+            0 => ["pipe", "r"],
+            1 => ["pipe", "w"],
+            2 => ["pipe", "w"],
+        ];
+        $pipes = [];
+        if (php_uname('s') == "Windows NT") {
+            $process = proc_open('sh -x update 2>&1', $descriptorspec, $pipes);
+        } else {
+            $process = proc_open('./update 2>&1', $descriptorspec, $pipes);
+        }
+        if (is_resource($process)) {
+            fclose($pipes[0]);
+            $stdout = trim(stream_get_contents($pipes[1]));
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
+            return $stdout;
+        } else {
+            throw new Exception("Could not init script");
+        }
+    }
+
+    public static function info(Huntress $bot, Message $message): ?Promise
     {
         try {
             $embed = self::easyEmbed($message);
@@ -88,68 +121,24 @@ class Management implements \Huntress\PluginInterface
             $embed->addField("Composer dependencies", $deps);
 
             return self::send($message->channel, "", ['embed' => $embed]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return self::exceptionHandler($message, $e, true);
         }
     }
 
-    public static function restart(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    private static function formatBytes(int $b): string
     {
-        if (!in_array($message->author->id, $bot->config['evalUsers'])) {
-            return self::unauthorized($message);
-        } else {
-            return self::send($message->channel, ":joy::gun:")->then(function () {
-                die();
-            }, function () {
-                die();
-            });
+        $units = ["bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
+        $c = 0;
+        $r = [];
+        foreach ($units as $k => $u) {
+            if (($b / pow(1024, $k)) >= 1) {
+                $r["bytes"] = $b / pow(1024, $k);
+                $r["units"] = $u;
+                $c++;
+            }
         }
-    }
-
-    public static function ping(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
-    {
-        try {
-            $message_tx = \Carbon\Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
-            $dstamp_tx  = \Carbon\Carbon::createFromTimestampMs((int) (\CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($message->id)->timestamp * 1000));
-            return self::send($message->channel, "Pong!")->then(function (\CharlotteDunois\Yasmin\Models\Message $message) use ($message_tx, $dstamp_tx) {
-                $message_rx = \Carbon\Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
-                $dstamp_rx  = \Carbon\Carbon::createFromTimestampMs((int) (\CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($message->id)->timestamp * 1000));
-
-                $v = [
-                    number_format(($message_rx->format("U.u") - $message_tx->format("U.u")) * 1000),
-                    number_format(($dstamp_rx->format("U.u") - $dstamp_tx->format("U.u")) * 1000),
-                ];
-
-                $message->edit(vsprintf("Pong!\n%sms ping (huntress-rx)\n%sms ping (msg-snowflake)", $v));
-            });
-        } catch (\Throwable $e) {
-            return self::exceptionHandler($message, $e);
-        }
-    }
-
-    private static function gitPull(): string
-    {
-        $descriptorspec = [
-            0 => ["pipe", "r"],
-            1 => ["pipe", "w"],
-            2 => ["pipe", "w"]
-        ];
-        $pipes          = [];
-        if (php_uname('s') == "Windows NT") {
-            $process = proc_open('sh -x update 2>&1', $descriptorspec, $pipes);
-        } else {
-            $process = proc_open('./update 2>&1', $descriptorspec, $pipes);
-        }
-        if (is_resource($process)) {
-            fclose($pipes[0]);
-            $stdout = trim(stream_get_contents($pipes[1]));
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            proc_close($process);
-            return $stdout;
-        } else {
-            throw new \Exception("Could not init script");
-        }
+        return number_format($r["bytes"], 2) . " " . $r["units"];
     }
 
     private static function gitVersion(): string
@@ -157,10 +146,21 @@ class Management implements \Huntress\PluginInterface
         exec("git diff --quiet HEAD", $null, $rv);
 
         $commit = trim(`git rev-parse HEAD`);
-        $tag    = $commit . ($rv == 1 ? "-modified" : "");
-        $url    = "https://github.com/sylae/huntress/commit/" . $commit;
+        $tag = $commit . ($rv == 1 ? "-modified" : "");
+        $url = "https://github.com/sylae/huntress/commit/" . $commit;
 
         return "[$tag]($url)";
+    }
+
+    private static function getPlugins(): array
+    {
+        $a = [];
+        foreach (get_declared_classes() as $class) {
+            if ((new ReflectionClass($class))->implementsInterface("Huntress\PluginInterface")) {
+                $a[] = $class;
+            }
+        }
+        return $a;
     }
 
     private static function composerPackages(): array
@@ -170,8 +170,8 @@ class Management implements \Huntress\PluginInterface
             1 => ["pipe", "w"],
             2 => ["pipe", "w"],
         ];
-        $pipes          = [];
-        $process        = proc_open('composer show -D -f json', $descriptorspec, $pipes);
+        $pipes = [];
+        $process = proc_open('composer show -D -f json', $descriptorspec, $pipes);
 
         if (is_resource($process)) {
             fclose($pipes[0]);
@@ -186,33 +186,43 @@ class Management implements \Huntress\PluginInterface
             }
             return $r;
         } else {
-            throw new \Exception("Could not init script");
+            throw new Exception("Could not init script");
         }
     }
 
-    private static function formatBytes(int $b): string
+    public static function restart(Huntress $bot, Message $message): ?Promise
     {
-        $units = ["bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
-        $c     = 0;
-        $r     = [];
-        foreach ($units as $k => $u) {
-            if (($b / pow(1024, $k)) >= 1) {
-                $r["bytes"] = $b / pow(1024, $k);
-                $r["units"] = $u;
-                $c++;
-            }
+        if (!in_array($message->author->id, $bot->config['evalUsers'])) {
+            return self::unauthorized($message);
+        } else {
+            return self::send($message->channel, ":joy::gun:")->then(function () {
+                die();
+            }, function () {
+                die();
+            });
         }
-        return number_format($r["bytes"], 2) . " " . $r["units"];
     }
 
-    private static function getPlugins(): array
+    public static function ping(Huntress $bot, Message $message): ?Promise
     {
-        $a = [];
-        foreach (get_declared_classes() as $class) {
-            if ((new \ReflectionClass($class))->implementsInterface("Huntress\PluginInterface")) {
-                $a[] = $class;
-            }
+        try {
+            $message_tx = Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
+            $dstamp_tx = Carbon::createFromTimestampMs((int) (Snowflake::deconstruct($message->id)->timestamp * 1000));
+            return self::send($message->channel, "Pong!")->then(function (
+                Message $message
+            ) use ($message_tx, $dstamp_tx) {
+                $message_rx = Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
+                $dstamp_rx = Carbon::createFromTimestampMs((int) (Snowflake::deconstruct($message->id)->timestamp * 1000));
+
+                $v = [
+                    number_format(($message_rx->format("U.u") - $message_tx->format("U.u")) * 1000),
+                    number_format(($dstamp_rx->format("U.u") - $dstamp_tx->format("U.u")) * 1000),
+                ];
+
+                $message->edit(vsprintf("Pong!\n%sms ping (huntress-rx)\n%sms ping (msg-snowflake)", $v));
+            });
+        } catch (Throwable $e) {
+            return self::exceptionHandler($message, $e);
         }
-        return $a;
     }
 }

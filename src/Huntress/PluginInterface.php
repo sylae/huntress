@@ -15,9 +15,9 @@ namespace Huntress;
 interface PluginInterface
 {
     const PLUGINEVENT_COMMAND_PREFIX = "huntress_command_";
-    const PLUGINEVENT_DB_SCHEMA      = "huntress_database_schema";
-    const PLUGINEVENT_MESSAGE        = "huntress_message";
-    const PLUGINEVENT_READY          = "huntress_ready";
+    const PLUGINEVENT_DB_SCHEMA = "huntress_database_schema";
+    const PLUGINEVENT_MESSAGE = "huntress_message";
+    const PLUGINEVENT_READY = "huntress_ready";
 
     public static function register(Huntress $bot);
 }

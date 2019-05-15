@@ -8,23 +8,42 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
-use \Huntress\EventListener;
-use \CharlotteDunois\Yasmin\Models\MessageEmbed;
+use Carbon\Carbon;
+use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\Guild;
+use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use CharlotteDunois\Yasmin\Models\MessageReaction;
+use CharlotteDunois\Yasmin\Models\TextChannel;
+use CharlotteDunois\Yasmin\Utils\MessageHelpers;
+use CharlotteDunois\Yasmin\Utils\Snowflake;
+use Doctrine\DBAL\Schema\Schema;
+use Huntress\EventData;
+use Huntress\EventListener;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use function React\Promise\all;
+use React\Promise\ExtendedPromiseInterface as Promise;
+use function Sentry\captureException;
+use Throwable;
 
 /**
  * Moderation logging and user reporting
  *
  * @author Keira Dueck <sylae@calref.net>
  */
-class Observer implements \Huntress\PluginInterface
+class Observer implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']));
+        $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([
+            self::class,
+            'db',
+        ]));
         $bot->on("messageDelete", [self::class, "observerHandler"]);
         $bot->on("messageDeleteBulk", [self::class, "observerHandlerBulk"]);
         $bot->on("messageDeleteRaw", [self::class, "rawHandler"]);
@@ -33,13 +52,13 @@ class Observer implements \Huntress\PluginInterface
         $bot->on("guildMemberAdd", [self::class, "joinHandler"]);
         $bot->on("guildMemberRemove", [self::class, "leaveHandler"]);
 
-        $eh = \Huntress\EventListener::new()
-        ->addCommand("observer")
-        ->setCallback([self::class, "config"]);
+        $eh = EventListener::new()
+            ->addCommand("observer")
+            ->setCallback([self::class, "config"]);
         $bot->eventManager->addEventListener($eh);
     }
 
-    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
+    public static function db(Schema $schema): void
     {
         $t1 = $schema->createTable("observer");
         $t1->addColumn("idGuild", "bigint", ["unsigned" => true]);
@@ -48,7 +67,7 @@ class Observer implements \Huntress\PluginInterface
         $t1->setPrimaryKey(["idGuild"]);
     }
 
-    public static function config(\Huntress\EventData $data)
+    public static function config(EventData $data)
     {
         if (!in_array($data->message->author->id, $data->message->client->config['evalUsers'])) {
             return self::unauthorized($data->messag);
@@ -65,19 +84,61 @@ class Observer implements \Huntress\PluginInterface
             // okay it must be an emote then
             self::setReport($data->message->guild, $args[1]);
             return $data->message->channel->send("`{$args[1]}` set as reporting emote for guild `{$data->message->guild->name}`");
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e);
         }
     }
 
-    public static function observerHandlerBulk(\CharlotteDunois\Collect\Collection $messages): Promise
+    private static function setMonitor(
+        Guild $guild,
+        TextChannel $channel
+    ) {
+        $query = $guild->client->db->prepare('INSERT INTO observer (`idGuild`, `idChannel`) VALUES(?, ?) '
+            . 'ON DUPLICATE KEY UPDATE `idChannel`=VALUES(`idChannel`);', ['integer', 'integer']);
+        $query->bindValue(1, $guild->id);
+        $query->bindValue(2, $channel->id);
+        $query->execute();
+
+        self::getInfo($guild, true);
+    }
+
+    private static function getInfo(Guild $guild, bool $forceRefresh = false): ?array
     {
-        return \React\Promise\all($messages->map(function (\CharlotteDunois\Yasmin\Models\Message $message) {
+        static $cache = [];
+
+        if (!$forceRefresh && array_key_exists($guild->id, $cache) && $cache[$guild->id][0] + 30 > time()) {
+            return $cache[$guild->id][1];
+        }
+
+        $qb = $guild->client->db->createQueryBuilder();
+        $qb->select("*")->from("observer")->where('`idGuild` = ?')->setParameter(0, $guild->id, "integer");
+        $res = $qb->execute()->fetchAll();
+        if (count($res) == 1) {
+            $cache[$guild->id] = [time(), $res[0]];
+            return $res[0];
+        }
+        return null;
+    }
+
+    private static function setReport(Guild $guild, int $emote)
+    {
+        $query = $guild->client->db->prepare('UPDATE observer SET `reportEmote` = ? where `idGuild` = ?;',
+            ['integer', 'integer']);
+        $query->bindValue(1, $emote);
+        $query->bindValue(2, $guild->id);
+        $query->execute();
+
+        self::getInfo($guild, true);
+    }
+
+    public static function observerHandlerBulk(Collection $messages): Promise
+    {
+        return all($messages->map(function (Message $message) {
             return self::observerHandler($message);
         })->all());
     }
 
-    public static function observerHandler(\CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function observerHandler(Message $message): ?Promise
     {
         try {
             $info = self::getInfo($message->guild);
@@ -90,13 +151,36 @@ class Observer implements \Huntress\PluginInterface
 
             $msg = "🗑 Message deleted - from {$message->channel}";
             return $message->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $message->client->log->addWarning($e->getMessage(), ['exception' => $e]);
         }
     }
 
-    public static function rawHandler(\CharlotteDunois\Yasmin\Models\TextChannel $channel, $messages): ?Promise
+    private static function embedMessage(
+        Message $message,
+        int $color = null
+    ): MessageEmbed {
+        $embed = new MessageEmbed();
+        $embed->setDescription($message->content)
+            ->setAuthor($message->author->tag, $message->author->getDisplayAvatarURL())
+            ->setTimestamp($message->createdTimestamp);
+
+        if (is_int($color)) {
+            $embed->setColor($color);
+        }
+
+        if (count($message->attachments) > 0) {
+            $att = [];
+            foreach ($message->attachments as $attach) {
+                $att[] = "{$attach->url} (" . number_format($attach->size) . " bytes)";
+            }
+            $embed->addField("Attachments", implode("\n", $att));
+        }
+        return $embed;
+    }
+
+    public static function rawHandler(TextChannel $channel, $messages): ?Promise
     {
         try {
             $info = self::getInfo($channel->guild);
@@ -111,20 +195,22 @@ class Observer implements \Huntress\PluginInterface
 
             $prom = [];
             foreach ($messages as $message) {
-                $snowflake = \Carbon\Carbon::createFromTimestamp(\CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($message)->timestamp)->toCookieString();
+                $snowflake = Carbon::createFromTimestamp(Snowflake::deconstruct($message)->timestamp)->toCookieString();
 
-                $msg    = "🗑 Uncached message deleted - from {$channel} with timestamp `{$snowflake}`.";
+                $msg = "🗑 Uncached message deleted - from {$channel} with timestamp `{$snowflake}`.";
                 $prom[] = $channel->guild->channels->get($info['idChannel'])->send($msg);
             }
-            return \React\Promise\all($prom);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+            return all($prom);
+        } catch (Throwable $e) {
+            captureException($e);
             $channel->client->log->addWarning($e->getMessage(), ['exception' => $e]);
         }
     }
 
-    public static function reportHandler(\CharlotteDunois\Yasmin\Models\MessageReaction $reaction, \CharlotteDunois\Yasmin\Models\User $user): ?Promise
-    {
+    public static function reportHandler(
+        MessageReaction $reaction,
+        \CharlotteDunois\Yasmin\Models\User $user
+    ): ?Promise {
         try {
             $info = self::getInfo($reaction->message->guild);
 
@@ -141,18 +227,18 @@ class Observer implements \Huntress\PluginInterface
             $embed = self::embedMessage($reaction->message, 0xcc0000);
 
             $member = $reaction->message->guild->members->get($user->id);
-            $msg    = "**⚠ Reported message** - reported by {$member->displayName} in {$reaction->message->channel} - " . $reaction->message->getJumpURL();
-            return \React\Promise\all([
+            $msg = "**⚠ Reported message** - reported by {$member->displayName} in {$reaction->message->channel} - " . $reaction->message->getJumpURL();
+            return all([
                 $reaction->message->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]),
                 $reaction->remove($member->user),
             ]);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $reaction->client->log->addWarning($e->getMessage(), ['exception' => $e]);
         }
     }
 
-    public static function joinHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?Promise
+    public static function joinHandler(GuildMember $member): ?Promise
     {
         try {
             $info = self::getInfo($member->guild);
@@ -161,25 +247,25 @@ class Observer implements \Huntress\PluginInterface
                 return null;
             }
 
-            $joined = \Carbon\Carbon::createFromTimestamp($member->user->createdTimestamp);
+            $joined = Carbon::createFromTimestamp($member->user->createdTimestamp);
 
             $embed = new MessageEmbed();
             $embed->setAuthor($member->user->tag)->setTimestamp(time())
-            ->setColor(0x7bf43)->setThumbnail($member->user->getDisplayAvatarURL())
-            ->addField("Name", "{$member} ({$member->user->tag})", true)
-            ->addField("ID", $member->id, true)
-            ->addField("Joined Discord", $joined->toCookieString(), true)
-            ->addField("Member #", $member->guild->members->count(), true);
+                ->setColor(0x7bf43)->setThumbnail($member->user->getDisplayAvatarURL())
+                ->addField("Name", "{$member} ({$member->user->tag})", true)
+                ->addField("ID", $member->id, true)
+                ->addField("Joined Discord", $joined->toCookieString(), true)
+                ->addField("Member #", $member->guild->members->count(), true);
 
             $msg = "👋 Member joined";
             return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $member->client->log->addWarning($e->getMessage(), ['exception' => $e]);
         }
     }
 
-    public static function leaveHandler(\CharlotteDunois\Yasmin\Models\GuildMember $member): ?Promise
+    public static function leaveHandler(GuildMember $member): ?Promise
     {
         try {
             $info = self::getInfo($member->guild);
@@ -190,9 +276,9 @@ class Observer implements \Huntress\PluginInterface
 
             $embed = new MessageEmbed();
             $embed->setAuthor($member->user->tag)->setTimestamp(time())
-            ->setColor(0xbf2222)->setThumbnail($member->user->getDisplayAvatarURL())
-            ->addField("Name", "{$member} ({$member->user->tag})", true)
-            ->addField("ID", $member->id, true);
+                ->setColor(0xbf2222)->setThumbnail($member->user->getDisplayAvatarURL())
+                ->addField("Name", "{$member} ({$member->user->tag})", true)
+                ->addField("ID", $member->id, true);
 
             $ur = [];
             foreach ($member->roles->sortCustom(function ($a, $b) {
@@ -207,7 +293,8 @@ class Observer implements \Huntress\PluginInterface
                 $ur[] = "<no roles>";
             }
 
-            $roles     = \CharlotteDunois\Yasmin\Utils\MessageHelpers::splitMessage(implode("\n", $ur), ['maxLength' => 1024]);
+            $roles = MessageHelpers::splitMessage(implode("\n", $ur),
+                ['maxLength' => 1024]);
             $firstRole = true;
             foreach ($roles as $role) {
                 $embed->addField($firstRole ? "Roles" : "Roles (cont.)", $role);
@@ -216,69 +303,9 @@ class Observer implements \Huntress\PluginInterface
 
             $msg = "💨 Member left (or was banned)";
             return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $member->client->log->addWarning($e->getMessage(), ['exception' => $e]);
         }
-    }
-
-    private static function embedMessage(\CharlotteDunois\Yasmin\Models\Message $message, int $color = null): MessageEmbed
-    {
-        $embed = new MessageEmbed();
-        $embed->setDescription($message->content)
-        ->setAuthor($message->author->tag, $message->author->getDisplayAvatarURL())
-        ->setTimestamp($message->createdTimestamp);
-
-        if (is_int($color)) {
-            $embed->setColor($color);
-        }
-
-        if (count($message->attachments) > 0) {
-            $att = [];
-            foreach ($message->attachments as $attach) {
-                $att[] = "{$attach->url} (" . number_format($attach->size) . " bytes)";
-            }
-            $embed->addField("Attachments", implode("\n", $att));
-        }
-        return $embed;
-    }
-
-    private static function getInfo(\CharlotteDunois\Yasmin\Models\Guild $guild, bool $forceRefresh = false): ?array
-    {
-        static $cache = [];
-
-        if (!$forceRefresh && array_key_exists($guild->id, $cache) && $cache[$guild->id][0] + 30 > time()) {
-            return $cache[$guild->id][1];
-        }
-
-        $qb  = $guild->client->db->createQueryBuilder();
-        $qb->select("*")->from("observer")->where('`idGuild` = ?')->setParameter(0, $guild->id, "integer");
-        $res = $qb->execute()->fetchAll();
-        if (count($res) == 1) {
-            $cache[$guild->id] = [time(), $res[0]];
-            return $res[0];
-        }
-        return null;
-    }
-
-    private static function setMonitor(\CharlotteDunois\Yasmin\Models\Guild $guild, \CharlotteDunois\Yasmin\Models\TextChannel $channel)
-    {
-        $query = $guild->client->db->prepare('INSERT INTO observer (`idGuild`, `idChannel`) VALUES(?, ?) '
-        . 'ON DUPLICATE KEY UPDATE `idChannel`=VALUES(`idChannel`);', ['integer', 'integer']);
-        $query->bindValue(1, $guild->id);
-        $query->bindValue(2, $channel->id);
-        $query->execute();
-
-        self::getInfo($guild, true);
-    }
-
-    private static function setReport(\CharlotteDunois\Yasmin\Models\Guild $guild, int $emote)
-    {
-        $query = $guild->client->db->prepare('UPDATE observer SET `reportEmote` = ? where `idGuild` = ?;', ['integer', 'integer']);
-        $query->bindValue(1, $emote);
-        $query->bindValue(2, $guild->id);
-        $query->execute();
-
-        self::getInfo($guild, true);
     }
 }

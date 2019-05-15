@@ -8,7 +8,11 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
+use Huntress\EventData;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use Huntress\EventListener;
 
 /**
  * Deletes "permission denied" messages by Angush's bot.
@@ -17,9 +21,9 @@ use \Huntress\Huntress;
  *
  * @author Keira Dueck <sylae@calref.net>
  */
-class Ascalon implements \Huntress\PluginInterface
+class Ascalon implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
 
     public static function register(Huntress $bot)
     {
@@ -36,7 +40,7 @@ class Ascalon implements \Huntress\PluginInterface
         $bot->eventManager->addEventListener($eh);
     }
 
-    public static function process(\Huntress\EventData $data)
+    public static function process(EventData $data)
     {
         if (stripos($data->message->content, "you do not have permission to use this command.")) {
             return $data->message->delete();

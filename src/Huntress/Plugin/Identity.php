@@ -8,17 +8,18 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
 
 /**
  * Simple builtin to show user information
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Identity implements \Huntress\PluginInterface
+class Identity implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
 
     public static function register(Huntress $bot)
     {

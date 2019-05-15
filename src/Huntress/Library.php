@@ -8,19 +8,22 @@
 
 namespace Huntress;
 
+use CharlotteDunois\Collect\Collection;
+use Exception;
+
 /**
  * Description of Library
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Library extends \CharlotteDunois\Collect\Collection
+class Library extends Collection
 {
 
     public function loadFanfic()
     {
         $x = json_decode(file_get_contents("temp/fanficDB.json"));
         if (json_last_error() != JSON_ERROR_NONE) {
-            throw new \Exception("Unable to load Fanfic.json! " . json_last_error_msg(), json_last_error());
+            throw new Exception("Unable to load Fanfic.json! " . json_last_error_msg(), json_last_error());
         }
         $this->clear();
         foreach ($x as $k => $v) {

@@ -8,17 +8,25 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
+use CharlotteDunois\Yasmin\Models\Guild;
+use CharlotteDunois\Yasmin\Models\Message;
+use Doctrine\DBAL\Schema\Schema;
+use Exception;
+use Huntress\DatabaseFactory;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use React\Promise\ExtendedPromiseInterface as Promise;
+use Throwable;
 
 /**
  * Simple builtin to show user information
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Shipping implements \Huntress\PluginInterface
+class Shipping implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
 
     public static function register(Huntress $bot)
     {
@@ -26,15 +34,15 @@ class Shipping implements \Huntress\PluginInterface
         $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
     }
 
-    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
+    public static function db(Schema $schema): void
     {
         $t = $schema->createTable("ships");
         $t->addColumn("guild", "bigint", ["unsigned" => true]);
-        $t->addColumn("ship", "string", ['customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
+        $t->addColumn("ship", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->setPrimaryKey(["guild", "ship"]);
     }
 
-    public static function process(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function process(Huntress $bot, Message $message): ?Promise
     {
         try {
             $t = self::_split($message->content);
@@ -54,51 +62,56 @@ class Shipping implements \Huntress\PluginInterface
                     return self::send($message->channel, ":put_litter_in_its_place: " . $cape);
                 case "list":
                 case "ls":
-                    $qb   = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-                    $qb->select("ship")->from("ships")->where("guild = ?")->orderBy("ship")->setParameter(1, $message->guild->id, "integer");
-                    $x    = $qb->execute()->fetchAll();
-                    $r    = [];
+                    $qb = DatabaseFactory::get()->createQueryBuilder();
+                    $qb->select("ship")->from("ships")->where("guild = ?")->orderBy("ship")->setParameter(1,
+                        $message->guild->id, "integer");
+                    $x = $qb->execute()->fetchAll();
+                    $r = [];
                     foreach ($x as $s) {
                         $r[] = '`' . $s['ship'] . '`';
                     }
                     if (count($r) < 1) {
-                        throw new \Exception("No ships found for this server! Add some with `!ship add [name]`");
+                        throw new Exception("No ships found for this server! Add some with `!ship add [name]`");
                     }
                     return self::send($message->channel, implode(", ", $r), ['split' => ['char' => ","]]);
 
                 case "me":
-                    return self::send($message->channel, sprintf("%s x %s OTP", $message->member->displayName, self::getCape($message->guild)));
+                    return self::send($message->channel,
+                        sprintf("%s x %s OTP", $message->member->displayName, self::getCape($message->guild)));
                 default:
-                    return self::send($message->channel, sprintf("%s x %s OTP", self::getCape($message->guild), self::getCape($message->guild)));
+                    return self::send($message->channel,
+                        sprintf("%s x %s OTP", self::getCape($message->guild), self::getCape($message->guild)));
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
     }
 
-    public static function addCape(\CharlotteDunois\Yasmin\Models\Guild $guild, string $cape): void
+    public static function addCape(Guild $guild, string $cape): void
     {
-        $query = \Huntress\DatabaseFactory::get()->prepare('INSERT INTO ships (`guild`, `ship`) VALUES(?, ?) '
-        . 'ON DUPLICATE KEY UPDATE ship=VALUES(ship);', ['integer', 'string']);
+        $query = DatabaseFactory::get()->prepare('INSERT INTO ships (`guild`, `ship`) VALUES(?, ?) '
+            . 'ON DUPLICATE KEY UPDATE ship=VALUES(ship);', ['integer', 'string']);
         $query->bindValue(1, $guild->id);
         $query->bindValue(2, $cape);
         $query->execute();
     }
 
-    public static function delCape(\CharlotteDunois\Yasmin\Models\Guild $guild, string $cape): void
+    public static function delCape(Guild $guild, string $cape): void
     {
-        $qb = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-        $qb->delete("ships")->where("guild = ?")->andWhere("ship = ?")->setParameter(1, $guild->id, "integer")->setParameter(2, $cape, "string");
+        $qb = DatabaseFactory::get()->createQueryBuilder();
+        $qb->delete("ships")->where("guild = ?")->andWhere("ship = ?")->setParameter(1, $guild->id,
+            "integer")->setParameter(2, $cape, "string");
         $qb->execute();
     }
 
-    public static function getCape(\CharlotteDunois\Yasmin\Models\Guild $guild): string
+    public static function getCape(Guild $guild): string
     {
-        $qb = \Huntress\DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("ship")->from("ships")->where("guild = ?")->orderBy("RAND()")->setMaxResults(1)->setParameter(1, $guild->id, "integer");
-        $x  = $qb->execute()->fetchColumn();
+        $qb = DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("ship")->from("ships")->where("guild = ?")->orderBy("RAND()")->setMaxResults(1)->setParameter(1,
+            $guild->id, "integer");
+        $x = $qb->execute()->fetchColumn();
         if (is_bool($x)) {
-            throw new \Exception("No ships found for this server! Add some with `!ship add [name]`");
+            throw new Exception("No ships found for this server! Add some with `!ship add [name]`");
         }
         return $x;
     }

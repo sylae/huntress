@@ -8,9 +8,14 @@
 
 namespace Huntress;
 
-use \Carbon\Carbon;
-use \CharlotteDunois\Collect\Collection;
-use \CharlotteDunois\Yasmin\Models\MessageEmbed;
+use Carbon\Carbon;
+use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use Doctrine\DBAL\Schema\Schema;
+use League\HTMLToMarkdown\HtmlConverter;
+use function qp;
+use function Sentry\captureException;
+use Throwable;
 
 /**
  * Unified class for handling RSS and other syndication systems.
@@ -58,12 +63,26 @@ class RSSProcessor
     public function __construct(Huntress $bot, string $id, string $url, int $interval, int $channel)
     {
         $this->huntress = $bot;
-        $this->id       = $id;
-        $this->url      = $url;
+        $this->id = $id;
+        $this->url = $url;
         $this->interval = $interval;
-        $this->channel  = $channel;
+        $this->channel = $channel;
 
         $this->huntress->eventManager->addURLEvent($this->url, $this->interval, [$this, 'eventManagerCallback']);
+    }
+
+    public static function db(Schema $schema): void
+    {
+        $t = $schema->createTable("rss");
+        $t->addColumn("id", "string", ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("lastUpdate", "datetime");
+        $t->setPrimaryKey(["id"]);
+    }
+
+    public static function register(Huntress $bot)
+    {
+        $dbEv = EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']);
+        $bot->eventManager->addEventListener($dbEv);
     }
 
     public function eventManagerCallback(string $string, Huntress $bot)
@@ -81,34 +100,45 @@ class RSSProcessor
     protected function dataProcessingCallback(string $string): Collection
     {
         try {
-            $data  = \qp($string);
+            $data = qp($string);
             $items = $data->find('item');
             if (!is_countable($items)) {
                 return new Collection();
             }
-            $lastPub  = $this->getLastRSS();
-            $newest   = $lastPub;
+            $lastPub = $this->getLastRSS();
+            $newest = $lastPub;
             $newItems = [];
             foreach ($items as $item) {
                 $published = new Carbon($item->find('pubDate')->text());
                 if ($published <= $lastPub) {
                     continue;
                 }
-                $newest     = max($newest, $published);
+                $newest = max($newest, $published);
                 $newItems[] = (object) [// todo: make this its own class
-                    'title'    => $item->find('title')->text(),
-                    'link'     => $item->find('link')->text(),
-                    'date'     => $published,
+                    'title' => $item->find('title')->text(),
+                    'link' => $item->find('link')->text(),
+                    'date' => $published,
                     'category' => $item->find('category')->text(),
-                    'body'     => (new \League\HTMLToMarkdown\HtmlConverter(['strip_tags' => true]))->convert($item->find('description')->text()),
+                    'body' => (new HtmlConverter(['strip_tags' => true]))->convert($item->find('description')->text()),
                 ];
             }
             return new Collection($newItems);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
+    }
+
+    protected function getLastRSS(): Carbon
+    {
+        $qb = $this->huntress->db->createQueryBuilder();
+        $qb->select("*")->from("rss")->where('`id` = ?')->setParameter(0, $this->id, "string");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return new Carbon($data['lastUpdate']);
+        }
+        return Carbon::createFromTimestamp(0);
     }
 
     protected function dataPublishingCallback(object $item): bool
@@ -120,23 +150,12 @@ class RSSProcessor
                 $embed->setColor($this->itemColor);
             }
             $this->huntress->channels->get($this->channel)->send("", ['embed' => $embed]);
-        } catch (\Throwable $e) {
-            \Sentry\captureException($e);
+        } catch (Throwable $e) {
+            captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
             return false;
         }
         return true;
-    }
-
-    protected function getLastRSS(): Carbon
-    {
-        $qb  = $this->huntress->db->createQueryBuilder();
-        $qb->select("*")->from("rss")->where('`id` = ?')->setParameter(0, $this->id, "string");
-        $res = $qb->execute()->fetchAll();
-        foreach ($res as $data) {
-            return new Carbon($data['lastUpdate']);
-        }
-        return Carbon::createFromTimestamp(0);
     }
 
     protected function setLastRSS(Carbon $time)
@@ -145,7 +164,7 @@ class RSSProcessor
             return;
         }
         $query = $this->huntress->db->prepare('INSERT INTO rss (`id`, `lastUpdate`) VALUES(?, ?) '
-        . 'ON DUPLICATE KEY UPDATE `lastUpdate` = VALUES(`lastUpdate`);
+            . 'ON DUPLICATE KEY UPDATE `lastUpdate` = VALUES(`lastUpdate`);
         ', ['string', 'datetime']);
         $query->bindValue(1, $this->id);
         $query->bindValue(2, $time);
@@ -155,19 +174,5 @@ class RSSProcessor
     public function sortObjects($a, $b): int
     {
         return $a->date <=> $b->date;
-    }
-
-    public static function db(\Doctrine\DBAL\Schema\Schema $schema): void
-    {
-        $t = $schema->createTable("rss");
-        $t->addColumn("id", "string", ['length' => 255, 'customSchemaOptions' => \Huntress\DatabaseFactory::CHARSET]);
-        $t->addColumn("lastUpdate", "datetime");
-        $t->setPrimaryKey(["id"]);
-    }
-
-    public static function register(Huntress $bot)
-    {
-        $dbEv = EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']);
-        $bot->eventManager->addEventListener($dbEv);
     }
 }

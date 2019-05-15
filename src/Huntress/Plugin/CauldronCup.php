@@ -8,21 +8,30 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
+use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\Permissions;
+use CharlotteDunois\Yasmin\Models\TextChannel;
+use GetOpt\ArgumentException;
+use GetOpt\Command;
 use GetOpt\GetOpt;
 use GetOpt\Operand;
-use GetOpt\Command;
-use GetOpt\ArgumentException;
-use CharlotteDunois\Yasmin\Models\Message;
+use Huntress\EventData;
+use Huntress\EventListener;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use Huntress\Snowflake;
+use Throwable;
 
 /**
  * Cauldron Cup / PCT Cup management
  *
  * @author Keira Dueck <sylae@calref.net>
  */
-class CauldronCup implements \Huntress\PluginInterface
+class CauldronCup implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
     const NOTE_PCTC = <<<NOTE
 **Welcome to PCT Cup Season Two!**
 As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **48 hours** to complete your snips and submit them for processing.
@@ -60,7 +69,7 @@ NOTE;
 
     public static function register(Huntress $bot)
     {
-        $eh = \Huntress\EventListener::new()
+        $eh = EventListener::new()
             ->addCommand("ccup")
             ->addGuild(385678357745893376)
             ->setCallback([self::class, "cup"]);
@@ -68,7 +77,7 @@ NOTE;
         $bot->eventManager->addEventListener($eh);
 
 
-        $eh2 = \Huntress\EventListener::new()
+        $eh2 = EventListener::new()
             ->addGuild(385678357745893376)
             ->addChannel(567713466148716544)
             ->addEvent("message")
@@ -77,7 +86,7 @@ NOTE;
         $bot->eventManager->addEventListener($eh2);
     }
 
-    public static function reposter(\Huntress\EventData $data)
+    public static function reposter(EventData $data)
     {
         if ($data->message->author->id == $data->message->client->user->id) {
             return;
@@ -90,7 +99,7 @@ NOTE;
         });
     }
 
-    public static function cup(\Huntress\EventData $data)
+    public static function cup(EventData $data)
     {
         if (is_null($data->message->member->roles->get(385680396555255809))) {
             return self::unauthorized($data->message);
@@ -127,20 +136,23 @@ NOTE;
                 return self::send($data->message->channel, $getOpt->getHelpText());
             }
             return call_user_func($command->getHandler(), $getOpt, $data->message);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e);
         }
     }
 
     public static function create(GetOpt $getOpt, Message $message)
     {
-        $sf = \Huntress\Snowflake::format(\Huntress\Snowflake::generate());
+        $sf = Snowflake::format(Snowflake::generate());
         return $message->guild->createChannel([
             'name' => "ccup-secret-$sf",
             'type' => "text",
             'parent' => 391049778286559253,
-        ], "Created on behalf of {$message->author->tag} from {$message->id}")->then(function (\CharlotteDunois\Yasmin\Models\TextChannel $channel) use ($message, $getOpt) {
-            $channel->send(sprintf(self::NOTE_CCUP, $getOpt->getOperand("genre"), $getOpt->getOperand("theme")))->then(function (Message $m) {
+        ], "Created on behalf of {$message->author->tag} from {$message->id}")->then(function (
+            TextChannel $channel
+        ) use ($message, $getOpt) {
+            $channel->send(sprintf(self::NOTE_CCUP, $getOpt->getOperand("genre"),
+                $getOpt->getOperand("theme")))->then(function (Message $m) {
                 return $m->pin();
             });
             return self::send($message->channel, "<#{$channel->id}> :ok_hand:");
@@ -152,16 +164,18 @@ NOTE;
     public static function summon(GetOpt $getOpt, Message $message)
     {
         $user = self::parseGuildUser($message->guild, $getOpt->getOperand("user"));
-        if (!$user instanceof \CharlotteDunois\Yasmin\Models\GuildMember) {
+        if (!$user instanceof GuildMember) {
             return self::send($message->channel, "Could not recognize that user.");
         }
-        return $message->channel->overwritePermissions($user, \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['VIEW_CHANNEL'] | \CharlotteDunois\Yasmin\Models\Permissions::PERMISSIONS['MANAGE_MESSAGES'], 0, "Created on behalf of {$message->author->tag}")
-        ->then(function ($overwrites) use ($message, $user) {
-            $message->delete();
-            return self::send($message->channel, "$user come here.");
-        }, function ($error) use ($message) {
-            self::error($message, "Error", json_encode($error));
-        });
+        return $message->channel->overwritePermissions($user,
+            Permissions::PERMISSIONS['VIEW_CHANNEL'] | Permissions::PERMISSIONS['MANAGE_MESSAGES'],
+            0, "Created on behalf of {$message->author->tag}")
+            ->then(function ($overwrites) use ($message, $user) {
+                $message->delete();
+                return self::send($message->channel, "$user come here.");
+            }, function ($error) use ($message) {
+                self::error($message, "Error", json_encode($error));
+            });
     }
 
     public static function steal(GetOpt $getOpt, Message $message)

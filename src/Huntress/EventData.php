@@ -8,40 +8,48 @@
 
 namespace Huntress;
 
+use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
+use CharlotteDunois\Yasmin\Models\Guild;
+use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\Role;
+use CharlotteDunois\Yasmin\Models\User;
+use JsonSerializable;
+
 /**
  * Description of EventData
  *
  * @author Keira Dueck <sylae@calref.net>
  */
-class EventData implements \JsonSerializable
+class EventData implements JsonSerializable
 {
     /**
      *
-     * @var \CharlotteDunois\Yasmin\Models\User|\CharlotteDunois\Yasmin\Models\GuildMember
+     * @var User|GuildMember
      */
     public $user;
 
     /**
      *
-     * @var \CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface
+     * @var GuildChannelInterface
      */
     public $channel;
 
     /**
      *
-     * @var \CharlotteDunois\Yasmin\Models\Role
+     * @var Role
      */
     public $role;
 
     /**
      *
-     * @var \CharlotteDunois\Yasmin\Models\Message
+     * @var Message
      */
     public $message;
 
     /**
      *
-     * @var \CharlotteDunois\Yasmin\Models\Guild
+     * @var Guild
      */
     public $guild;
 

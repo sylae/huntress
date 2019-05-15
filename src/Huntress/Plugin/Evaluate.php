@@ -8,17 +8,21 @@
 
 namespace Huntress\Plugin;
 
-use \Huntress\Huntress;
-use \React\Promise\ExtendedPromiseInterface as Promise;
+use CharlotteDunois\Yasmin\Models\Message;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use React\Promise\ExtendedPromiseInterface as Promise;
+use Throwable;
 
 /**
  * Simple builtin to show user information
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Evaluate implements \Huntress\PluginInterface
+class Evaluate implements PluginInterface
 {
-    use \Huntress\PluginHelperTrait;
+    use PluginHelperTrait;
     const USE_CLASSES = [
         '\Carbon\Carbon',
         '\CharlotteDunois\Yasmin\Utils\URLHelpers',
@@ -30,7 +34,7 @@ class Evaluate implements \Huntress\PluginInterface
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "eval", [self::class, "process"]);
     }
 
-    public static function process(Huntress $bot, \CharlotteDunois\Yasmin\Models\Message $message): ?Promise
+    public static function process(Huntress $bot, Message $message): ?Promise
     {
         if (!in_array($message->author->id, $bot->config['evalUsers'])) {
             return self::unauthorized($message);
@@ -47,7 +51,7 @@ class Evaluate implements \Huntress\PluginInterface
                         "```json" . PHP_EOL . json_encode($response, JSON_PRETTY_PRINT) . PHP_EOL . "```",
                         ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 return self::exceptionHandler($message, $e, true, false);
             }
         }
