@@ -14,7 +14,6 @@ use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Doctrine\DBAL\Schema\Schema;
 use Exception;
-use function html5qp;
 use Huntress\DatabaseFactory;
 use Huntress\EventListener;
 use Huntress\Huntress;
@@ -24,9 +23,10 @@ use Huntress\RedditProcessor;
 use LogicException;
 use QueryPath\DOMQuery;
 use React\Promise\ExtendedPromiseInterface as Promise;
-use function Sentry\captureException;
 use stdClass;
 use Throwable;
+use function html5qp;
+use function Sentry\captureException;
 
 /**
  * Simple builtin to show user information
@@ -234,79 +234,87 @@ class PCT implements PluginInterface
             $data = html5qp($string);
             $items = $data->find('li.discussionListItem');
             foreach ($items as $item) {
-                $x = (object) [
-                    'id' => (int) str_replace("thread-", "", $item->attr("id")),
-                    'title' => trim($item->find('h3')->text()),
-                    'threadTime' => self::unfuckDates($item->find(".startDate .DateTime")),
-                    'replyTime' => self::unfuckDates($item->find(".lastPost .DateTime")),
-                    'author' => [
-                        'name' => $item->find('.posterDate a.username')->text(),
-                        'av' => "https://forums.spacebattles.com/" . $item->find('.posterAvatar img')->attr("src"),
-                        'url' => "https://forums.spacebattles.com/" . $item->find('.posterDate a.username')->attr("href"),
-                    ],
-                    'replier' => [
-                        'name' => $item->find('.lastPost a.username')->text(),
-                        'av' => null,
-                    ],
-                    'numReplies' => (int) trim($item->find('.stats .major dd')->text()),
-                    'numViews' => (int) str_replace(",", "", $item->find('.stats .minor dd')->text()),
-                    'wordcount' => str_replace("Word Count: ", "", $item->find(".posterDate a.OverlayTrigger")->text()),
-                ];
+                try {
+                    $x = (object) [
+                        'id' => (int) str_replace("thread-", "", $item->attr("id")),
+                        'title' => trim($item->find('h3')->text()),
+                        'threadTime' => self::unfuckDates($item->find(".startDate .DateTime")),
+                        'replyTime' => self::unfuckDates($item->find(".lastPost .DateTime")),
+                        'author' => [
+                            'name' => $item->find('.posterDate a.username')->text(),
+                            'av' => "https://forums.spacebattles.com/" . $item->find('.posterAvatar img')->attr("src"),
+                            'url' => "https://forums.spacebattles.com/" . $item->find('.posterDate a.username')->attr("href"),
+                        ],
+                        'replier' => [
+                            'name' => $item->find('.lastPost a.username')->text(),
+                            'av' => null,
+                        ],
+                        'numReplies' => (int) trim($item->find('.stats .major dd')->text()),
+                        'numViews' => (int) str_replace(",", "", $item->find('.stats .minor dd')->text()),
+                        'wordcount' => str_replace("Word Count: ", "",
+                            $item->find(".posterDate a.OverlayTrigger")->text()),
+                    ];
 
-                if (!self::alreadyPosted($x)) {
-                    // sbHell mode if it's a new topic
-                    $embed = new MessageEmbed();
-                    $embed->setTitle($x->title)->setColor(0x00ff00)
-                        ->setURL("https://forums.spacebattles.com/threads/{$x->id}/")
-                        ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
-                        ->addField("Created", $x->threadTime->toFormattedDateString(), true)
-                        ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies),
-                            number_format(ceil($x->numReplies / 25))), true)
-                        ->addField("Views", number_format($x->numViews), true)
-                        ->setFooter("Last reply")
-                        ->setTimestamp($x->replyTime->timestamp);
+                    if (!self::alreadyPosted($x)) {
+                        // sbHell mode if it's a new topic
+                        $embed = new MessageEmbed();
+                        $embed->setTitle($x->title)->setColor(0x00ff00)
+                            ->setURL("https://forums.spacebattles.com/threads/{$x->id}/")
+                            ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
+                            ->addField("Created", $x->threadTime->toFormattedDateString(), true)
+                            ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies),
+                                number_format(ceil($x->numReplies / 25))), true)
+                            ->addField("Views", number_format($x->numViews), true)
+                            ->setFooter("Last reply")
+                            ->setTimestamp($x->replyTime->timestamp);
 
-                    if (mb_strlen($x->wordcount) > 0) {
-                        $embed->addField("Wordcount", $x->wordcount, true);
-                    }
-                    $bot->channels->get(514258427258601474)->send("", ['embed' => $embed]);
-                } else {
-                    // gaywatch
-                    if (self::isGaywatch($x) && self::lastPost($x) < $x->replyTime) {
-                        if ($x->author['name'] == $x->replier['name']) {
-                            // op update
-                            $embed = new MessageEmbed();
-                            $embed->setTitle($x->title)->setColor(0x00ff00)
-                                ->setURL("https://forums.spacebattles.com/threads/{$x->id}/unread")
-                                ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
-                                ->addField("Created", $x->threadTime->toFormattedDateString(), true)
-                                ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies),
-                                    number_format(ceil($x->numReplies / 25))), true)
-                                ->addField("Views", number_format($x->numViews), true)
-                                ->setFooter("Last reply")
-                                ->setTimestamp($x->replyTime->timestamp);
+                        if (mb_strlen($x->wordcount) > 0) {
+                            $embed->addField("Wordcount", $x->wordcount, true);
+                        }
+                        $bot->channels->get(514258427258601474)->send("", ['embed' => $embed]);
+                    } else {
+                        // gaywatch
+                        if (self::isGaywatch($x) && self::lastPost($x) < $x->replyTime) {
+                            if ($x->author['name'] == $x->replier['name']) {
+                                // op update
+                                $embed = new MessageEmbed();
+                                $embed->setTitle($x->title)->setColor(0x00ff00)
+                                    ->setURL("https://forums.spacebattles.com/threads/{$x->id}/unread")
+                                    ->setAuthor($x->author['name'], $x->author['av'], $x->author['url'])
+                                    ->addField("Created", $x->threadTime->toFormattedDateString(), true)
+                                    ->addField("Replies", sprintf("%s (%s pages)", number_format($x->numReplies),
+                                        number_format(ceil($x->numReplies / 25))), true)
+                                    ->addField("Views", number_format($x->numViews), true)
+                                    ->setFooter("Last reply")
+                                    ->setTimestamp($x->replyTime->timestamp);
 
-                            if (mb_strlen($x->wordcount) > 0) {
-                                $embed->addField("Wordcount", $x->wordcount, true);
+                                if (mb_strlen($x->wordcount) > 0) {
+                                    $embed->addField("Wordcount", $x->wordcount, true);
+                                }
+                                $bot->channels->get(540449157320802314)->send("<@&540465395576864789>: {$x->author['name']} has updated *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>",
+                                    ['embed' => $embed]);
+                            } else {
+                                // not op update
+                                $bot->channels->get(540449157320802314)->send("SB member {$x->replier['name']} has replied to *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>");
                             }
-                            $bot->channels->get(540449157320802314)->send("<@&540465395576864789>: {$x->author['name']} has updated *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>",
-                                ['embed' => $embed]);
-                        } else {
-                            // not op update
-                            $bot->channels->get(540449157320802314)->send("SB member {$x->replier['name']} has replied to *{$x->title}*\n<https://forums.spacebattles.com/threads/{$x->id}/unread>");
                         }
                     }
-                }
 
-                // push to db
-                $query = DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `title`) VALUES(?, ?, ?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`), `timeTopicPost`=VALUES(`timeTopicPost`), `title`=VALUES(`title`);',
-                    ['string', 'datetime', 'datetime', 'string']);
-                $query->bindValue(1, $x->id);
-                $query->bindValue(2, $x->threadTime);
-                $query->bindValue(3, $x->replyTime);
-                $query->bindValue(4, $x->title);
-                $query->execute();
+                    // push to db
+                    $query = DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `title`) VALUES(?, ?, ?, ?) '
+                        . 'ON DUPLICATE KEY UPDATE `timeLastReply`=VALUES(`timeLastReply`), `timeTopicPost`=VALUES(`timeTopicPost`), `title`=VALUES(`title`);',
+                        ['string', 'datetime', 'datetime', 'string']);
+                    $query->bindValue(1, $x->id);
+                    $query->bindValue(2, $x->threadTime);
+                    $query->bindValue(3, $x->replyTime);
+                    $query->bindValue(4, $x->title);
+                    $query->execute();
+                } catch (LogicException $e) {
+                    $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+                } catch (Throwable $e) {
+                    captureException($e);
+                    $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+                }
             }
         } catch (Throwable $e) {
             captureException($e);
