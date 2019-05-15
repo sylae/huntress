@@ -56,25 +56,23 @@ class Role implements PluginInterface
     {
         try {
             $roles = self::getValidOptions($data->message->member);
-            $res = $roles->filter(function ($v) use ($char) {
+            $res = $roles->first(function ($v) use ($char) {
                 return mb_strtolower($char) == mb_strtolower($v->name);
             });
-            if (count($res) > 0) {
-                foreach ($res as $role) {
-                    if ($data->message->member->roles->has($role)) {
-                        return $data->message->member->removeRole($role)->then(function ($member) use ($data, $role) {
-                            return $data->message->channel->send("Role removed: {$role->name}");
-                        }, function ($error) use ($data, $role) {
-                            return $data->message->channel->send("Unable to remove role  {$role->name}. Error: $error");
-                        });
-                    } else {
-                        return $data->message->member->addRole($role)->then(function ($member) use ($data, $role) {
-                            return $data->message->channel->send("Role added: {$role->name}");
-                        }, function ($error) use ($data, $role) {
-                            return $data->message->channel->send("Unable to add role  {$role->name}. Error: $error");
-                        });
+            if ($res instanceof \CharlotteDunois\Yasmin\Models\Role) {
+                if ($data->message->member->roles->has($res->id)) {
+                    return $data->message->member->removeRole($res)->then(function ($member) use ($data, $res) {
+                        return $data->message->channel->send("Role removed: {$res->name}");
+                    }, function ($error) use ($data, $res) {
+                        return $data->message->channel->send("Unable to remove role  {$res->name}. Error: $error");
+                    });
+                } else {
+                    return $data->message->member->addRole($res)->then(function ($member) use ($data, $res) {
+                        return $data->message->channel->send("Role added: {$res->name}");
+                    }, function ($error) use ($data, $res) {
+                        return $data->message->channel->send("Unable to add role  {$res->name}. Error: $error");
+                    });
 
-                    }
                 }
             } else {
                 $maybe = $roles->sortCustom(function ($a, $b) use ($char) {
