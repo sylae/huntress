@@ -23,10 +23,10 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RedditProcessor;
-use function React\Promise\all;
 use React\Promise\ExtendedPromiseInterface;
-use function Sentry\captureException;
 use Throwable;
+use function React\Promise\all;
+use function Sentry\captureException;
 
 /**
  * Simple builtin to show user information
