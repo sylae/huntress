@@ -106,7 +106,7 @@ class Management implements PluginInterface
                 $bot->channels->count(),
                 $bot->users->count(),
             ];
-            $embed->addField("Guilds / Channels / Users", implode(" / ", $count));
+            $embed->addField("Guilds / Channels / (loaded) Users", implode(" / ", $count));
             $embed->addField("Huntress", self::gitVersion());
             $embed->addField("System", php_uname());
             $embed->addField("Uptime",
