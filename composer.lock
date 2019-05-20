@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "050bdfaf98b4f373eb061fdb1ee53887",
+    "content-hash": "4359072a881d99f75650e787d9fad37b",
     "packages": [
         {
             "name": "cakephp/core",
@@ -241,12 +241,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/CharlotteDunois/Yasmin.git",
-                "reference": "dd47f69eb8e09ec2572a51a1dd102864792553f0"
+                "reference": "55dc1094ddbcd742831251bd4beabb885c967cac"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/CharlotteDunois/Yasmin/zipball/dd47f69eb8e09ec2572a51a1dd102864792553f0",
-                "reference": "dd47f69eb8e09ec2572a51a1dd102864792553f0",
+                "url": "https://api.github.com/repos/CharlotteDunois/Yasmin/zipball/55dc1094ddbcd742831251bd4beabb885c967cac",
+                "reference": "55dc1094ddbcd742831251bd4beabb885c967cac",
                 "shasum": ""
             },
             "require": {
@@ -292,7 +292,7 @@
                 }
             ],
             "description": "Yasmin is a Discord API library for PHP.",
-            "time": "2019-05-14T08:55:56+00:00"
+            "time": "2019-05-19T13:04:12+00:00"
         },
         {
             "name": "clue/block-react",
@@ -1307,16 +1307,16 @@
         },
         {
             "name": "nesbot/carbon",
-            "version": "2.17.1",
+            "version": "2.18.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/briannesbitt/Carbon.git",
-                "reference": "96acbc0c03782e8115156dd4dd8b736267155066"
+                "reference": "8322b7bd1805be31867c13bf3cdaab948a0dd406"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/96acbc0c03782e8115156dd4dd8b736267155066",
-                "reference": "96acbc0c03782e8115156dd4dd8b736267155066",
+                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/8322b7bd1805be31867c13bf3cdaab948a0dd406",
+                "reference": "8322b7bd1805be31867c13bf3cdaab948a0dd406",
                 "shasum": ""
             },
             "require": {
@@ -1363,7 +1363,7 @@
                 "datetime",
                 "time"
             ],
-            "time": "2019-04-27T18:04:27+00:00"
+            "time": "2019-05-16T18:44:35+00:00"
         },
         {
             "name": "ocramius/package-versions",
@@ -3809,7 +3809,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.3"
+        "php": ">=7.3",
+        "ext-json": "*"
     },
     "platform-dev": []
 }
