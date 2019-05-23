@@ -18,8 +18,10 @@ use Exception;
 use InvalidArgumentException;
 use League\HTMLToMarkdown\HtmlConverter;
 use React\Promise\ExtendedPromiseInterface;
-use function Sentry\captureException;
+use Sentry\State\Scope;
 use Throwable;
+use function Sentry\captureException;
+use function Sentry\withScope;
 
 /**
  *
@@ -47,7 +49,15 @@ trait PluginHelperTrait
         bool $sentry = true
     ): ExtendedPromiseInterface {
         if ($sentry) {
-            captureException($e);
+            withScope(function (Scope $scope) use ($e, $message): void {
+                $scope->setUser(['id' => $message->author->id ?? null, 'username' => $message->author->tag ?? null]);
+                $scope->setTag('plugin', get_called_class() ?? null);
+                $scope->setExtra('message', $message->getJumpURL() ?? null);
+                $scope->setExtra('content', $message->content ?? null);
+                $scope->setExtra('channel', $message->channel->name ?? null);
+                $scope->setExtra('guild', $message->guild->name ?? null);
+                captureException($e);
+            });
         }
         $msg = $e->getFile() . ":" . $e->getLine() . PHP_EOL . PHP_EOL . $e->getMessage();
         if ($showTrace) {
