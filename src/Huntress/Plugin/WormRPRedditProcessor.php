@@ -1,31 +1,35 @@
 <?php
-
 /**
  * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
 
-namespace Huntress;
+namespace Huntress\Plugin;
+
 
 use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use Huntress\Huntress;
+use Huntress\PluginHelperTrait;
+use Huntress\PluginInterface;
+use Huntress\RedditProcessor;
 use Throwable;
 use function Sentry\captureException;
 
-/**
- * Description of RedditProcessor
- *
- * @author Keira Dueck <sylae@calref.net>
- */
-class RedditProcessor extends RSSProcessor
+class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
 {
+    use PluginHelperTrait;
 
-    public function __construct(Huntress $bot, string $id, string $target, int $interval, int $channel)
+    public static function register(Huntress $bot)
     {
-        $url = "https://www.reddit.com/r/$target/new.json";
-        parent::__construct($bot, $id, $url, $interval, $channel);
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not adding RSS event on testing.");
+        } else {
+            new self($bot, "wormrpPosts", "wormrp", 30, 118981144464195584);
+        }
     }
 
     protected function dataProcessingCallback(string $string): Collection
@@ -40,7 +44,7 @@ class RedditProcessor extends RSSProcessor
             $newItems = [];
             foreach ($items as $item) {
                 $published = Carbon::createFromTimestamp($item->data->created_utc);
-                if ($published <= $lastPub) {
+                if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
                     continue;
                 }
                 $newest = max($newest, $published);
@@ -70,11 +74,37 @@ class RedditProcessor extends RSSProcessor
             if (mb_strlen($item->title) > 250) {
                 $item->body = substr($item->title, 0, 250) . "...";
             }
+
+            switch ($item->category) {
+                case "Character":
+                case "Equipment":
+                case "Lore":
+                case "Group":
+                    $channel = 386943351062265888; // the_list
+                    break;
+                case "Meta":
+                    $channel = 118981144464195584; // general
+                    break;
+                case "Event":
+                case "Patrol":
+                case "Non-Canon":
+                default:
+                    $channel = 409043591881687041; // events
+            }
+
             $embed = new MessageEmbed();
             $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
-                ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '',
+                ->setTimestamp($item->date->timestamp);
+
+            $redditUser = WormRP::fetchAccount($this->huntress->channels->get($channel)->guild, $item->author);
+            if ($redditUser instanceof GuildMember) {
+                $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL(),
                     "https://reddit.com/user/" . $item->author);
-            $this->huntress->channels->get($this->channel)->send("", ['embed' => $embed]);
+            } else {
+                $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
+            }
+
+            $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
         } catch (Throwable $e) {
             captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
