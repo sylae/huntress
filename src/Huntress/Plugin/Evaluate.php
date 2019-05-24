@@ -124,7 +124,7 @@ class Evaluate implements PluginInterface
             } elseif ($value instanceof Throwable) {
                 return self::exceptionHandler($data->message, $value, true, false);
             } elseif ($value instanceof Collection) {
-                $embed->addField("Count", $value->count(), true);
+                $embed->addField("Total count", $value->count(), true);
 
                 // see what it contains
                 $contents = $value->map(function ($v) {
@@ -139,7 +139,6 @@ class Evaluate implements PluginInterface
                 })->sort(true);
 
                 $embed->setDescription($contents->implode(0, PHP_EOL));
-                $embed->addField("Count", $value->count(), true);
             } elseif ($value instanceof Promise) {
                 $embed->setDescription("Will edit this message with result...");
                 $p0 = $value;
