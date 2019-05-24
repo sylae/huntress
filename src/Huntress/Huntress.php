@@ -20,8 +20,8 @@ use Monolog\Processor\IntrospectionProcessor;
 use Monolog\Registry;
 use React\EventLoop\LoopInterface;
 use ReflectionClass;
-use function Sentry\captureException;
 use Throwable;
+use function Sentry\captureException;
 
 /**
  * This is the main Huntress class, mostly backend stuff tbh.
@@ -53,11 +53,6 @@ class Huntress extends Client
      * @var EventManager
      */
     public $eventManager;
-
-    /**
-     * @var PermissionManager
-     */
-    // public $permissionManager;
 
     /**
      *
@@ -131,25 +126,25 @@ class Huntress extends Client
         return $l_template;
     }
 
-    private function registerBuiltinHooks()
+    private function registerBuiltinHooks(): void
     {
         RSSProcessor::register($this);
     }
 
-    public function start()
+    public function start(): void
     {
         $this->login($this->config['botToken']);
         $this->loop->run();
     }
 
-    public function readyHandler()
+    public function readyHandler(): void
     {
         $this->log->info("Logged in as {$this->user->tag} ({$this->user->id})");
         $this->eventManager->initializePeriodics();
         $this->emit(PluginInterface::PLUGINEVENT_READY, $this);
     }
 
-    public function messageHandler(Message $message)
+    public function messageHandler(Message $message): void
     {
         $tag = ($message->guild->name ?? false) ? $message->guild->name . " #" . $message->channel->name : "DM";
         $this->log->info('[' . $tag . '] ' . $message->author->tag . ': ' . $message->content);
@@ -176,7 +171,7 @@ class Huntress extends Client
         }
     }
 
-    public function errorHandler(Throwable $e)
+    public function errorHandler(Throwable $e): void
     {
         captureException($e);
         $this->log->warning("Uncaught error!", ['exception' => $e]);
