@@ -143,13 +143,7 @@ class Management implements PluginInterface
 
     private static function gitVersion(): string
     {
-        exec("git diff --quiet HEAD", $null, $rv);
-
-        $commit = trim(`git rev-parse HEAD`);
-        $tag = $commit . ($rv == 1 ? "-modified" : "");
-        $url = "https://github.com/sylae/huntress/commit/" . $commit;
-
-        return "[$tag]($url)";
+        return sprintf("[%s](https://github.com/sylae/huntress/commit/%s)", VERSION, VERSION);
     }
 
     private static function getPlugins(): array

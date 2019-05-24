@@ -1,32 +1,48 @@
 <?php
 
 /*
- * Copyright (c) 2018 Keira Aro <sylae@calref.net>
+ * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use React\EventLoop\Factory;
+use Sentry\ClientBuilder;
+use Sentry\State\Hub;
+use Sentry\State\Scope;
+use Sentry\Transport\NullTransport;
+use Throwable;
+
 require_once __DIR__ . "/vendor/autoload.php";
 require_once __DIR__ . "/config.php";
 
-$loop = \React\EventLoop\Factory::create();
-\CharlotteDunois\Yasmin\Utils\URLHelpers::setLoop($loop);
+// set up our event loop
+$loop = Factory::create();
+URLHelpers::setLoop($loop);
 
-$builder = \Sentry\ClientBuilder::create($config['sentry']);
+// grab out git ID and thow it in a const
+exec("git diff --quiet HEAD", $null, $rv);
+define('VERSION', trim(`git rev-parse HEAD`) . ($rv == 1 ? "-modified" : ""));
+
+// initialize Sentry
+$builder = ClientBuilder::create(array_merge($config['sentry'], [
+    'release' => 'huntress@' . VERSION,
+]));
 if (php_uname('s') == "Windows NT") {
-    $transport = new \Sentry\Transport\NullTransport();
+    $transport = new NullTransport();
 } else {
     $transport = new SentryTransport($builder->getOptions(), $loop);
 }
 $client = $builder->setTransport($transport)->getClient();
-\Sentry\State\Hub::setCurrent((new \Sentry\State\Hub($client)));
+Hub::setCurrent((new Hub($client)));
 
-set_exception_handler(function (\Throwable $e) {
-    $scope = new \Sentry\State\Scope();
+set_exception_handler(function (Throwable $e) {
+    $scope = new Scope();
     $scope->setExtra('fatal', true);
-    \Sentry\State\Hub::getCurrent()->getClient()->captureException($e, $scope);
+    Hub::getCurrent()->getClient()->captureException($e, $scope);
 });
 
 if (PHP_SAPI != "cli") {
