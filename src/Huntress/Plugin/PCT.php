@@ -254,6 +254,9 @@ class PCT implements PluginInterface
                         'wordcount' => str_replace("Word Count: ", "",
                             $item->find(".posterDate a.OverlayTrigger")->text()),
                     ];
+                    if (is_null($x->threadTime) || is_null($x->replyTime)) {
+                        continue;
+                    }
 
                     if (!self::alreadyPosted($x)) {
                         // sbHell mode if it's a new topic
@@ -326,19 +329,22 @@ class PCT implements PluginInterface
      * @param DOMQuery $qp
      *
      * @return Carbon
-     * @throws LogicException
      */
-    private static function unfuckDates(DOMQuery $qp): Carbon
+    private static function unfuckDates(DOMQuery $qp): ?Carbon
     {
-        if ($qp->is("span")) {
-            $obj = new Carbon(str_replace(" at", "", $qp->text()), "America/New_York");
-        } elseif ($qp->is("abbr")) {
-            $obj = new Carbon(date('c', $qp->attr("data-time")));
-        } else {
-            throw new LogicException("what the fuck");
+        try {
+            if ($qp->is("span")) {
+                $obj = new Carbon(str_replace(" at", "", $qp->text()), "America/New_York");
+            } elseif ($qp->is("abbr")) {
+                $obj = new Carbon(date('c', $qp->attr("data-time")));
+            } else {
+                throw new LogicException("what the fuck");
+            }
+            $obj->setTimezone("UTC");
+            return $obj;
+        } catch (Throwable $e) {
+            return null;
         }
-        $obj->setTimezone("UTC");
-        return $obj;
     }
 
     private static function alreadyPosted(stdClass $post): bool
