@@ -15,10 +15,10 @@ use CharlotteDunois\Yasmin\Models\MessageReaction;
 use CharlotteDunois\Yasmin\Models\Presence;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use Exception;
-use function React\Promise\all;
 use React\Promise\PromiseInterface as Promise;
-use function Sentry\captureException;
 use Throwable;
+use function React\Promise\all;
+use function Sentry\captureException;
 
 /**
  * Description of EventManager
@@ -145,7 +145,7 @@ class EventManager
                 } else {
                     throw new Exception("Unknown argument type passed to eventHandler");
                 }
-                $data->guild = $message->guild;
+                $data->guild = $message->guild ?? null;
                 $data->channel = $message->channel;
                 $data->user = $message->author;
                 $data->message = $message;
