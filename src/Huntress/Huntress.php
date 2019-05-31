@@ -81,7 +81,7 @@ class Huntress extends Client
         $this->db = DatabaseFactory::get();
 
         // legacy handlers
-        $this->on('ready', [$this, 'readyHandler']);
+        $this->once('ready', [$this, 'readyHandler']);
         $this->on('message', [$this, 'messageHandler']);
 
         $yasminEvents = new ReflectionClass('\CharlotteDunois\Yasmin\ClientEvents');
