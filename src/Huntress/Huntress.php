@@ -66,9 +66,8 @@ class Huntress extends Client
         $this->config = $config;
         $this->eventManager = new EventManager($this);
         $this->registerBuiltinHooks();
-        // $this->permissionManager = new PermissionManager($this);
 
-        parent::__construct(['shardCount' => 1], $loop);
+        parent::__construct([], $loop);
 
         $classes = get_declared_classes();
         foreach ($classes as $class) {
