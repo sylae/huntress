@@ -21,6 +21,7 @@ use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\RSSProcessor;
 use React\Promise\ExtendedPromiseInterface;
 use Throwable;
 use function React\Promise\all;
@@ -50,6 +51,9 @@ class WormRP implements PluginInterface
                 self::class,
                 "pollActiveCheck",
             ])->setPeriodic(10));
+            new RSSProcessor($bot, 'WikiRecentChanges',
+                'https://wormrp.syl.ae/w/api.php?urlversion=2&action=feedrecentchanges&feedformat=rss', 60,
+                504159510965911563);
         }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
 
