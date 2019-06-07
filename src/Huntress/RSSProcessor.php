@@ -13,9 +13,9 @@ use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Doctrine\DBAL\Schema\Schema;
 use League\HTMLToMarkdown\HtmlConverter;
+use Throwable;
 use function qp;
 use function Sentry\captureException;
-use Throwable;
 
 /**
  * Unified class for handling RSS and other syndication systems.
@@ -145,7 +145,8 @@ class RSSProcessor
     {
         try {
             $embed = new MessageEmbed();
-            $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setTimestamp($item->date->timestamp)->setFooter($item->category);
+            $embed->setTitle($item->title)->setURL($item->link)->setDescription(substr($item->body, 0,
+                2040))->setTimestamp($item->date->timestamp)->setFooter($item->category);
             if (is_int($this->itemColor)) {
                 $embed->setColor($this->itemColor);
             }
