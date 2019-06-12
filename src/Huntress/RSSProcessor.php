@@ -60,6 +60,11 @@ class RSSProcessor
      */
     public $itemColor;
 
+    /**
+     * @var bool
+     */
+    public $showBody = true;
+
     public function __construct(Huntress $bot, string $id, string $url, int $interval, int $channel)
     {
         $this->huntress = $bot;
@@ -145,8 +150,10 @@ class RSSProcessor
     {
         try {
             $embed = new MessageEmbed();
-            $embed->setTitle($item->title)->setURL($item->link)->setDescription(substr($item->body, 0,
-                2040))->setTimestamp($item->date->timestamp)->setFooter($item->category);
+            $embed->setTitle($item->title)->setURL($item->link)->setTimestamp($item->date->timestamp)->setFooter($item->category);
+            if ($this->showBody) {
+                $embed->setDescription(substr($item->body, 0, 2040));
+            }
             if (is_int($this->itemColor)) {
                 $embed->setColor($this->itemColor);
             }
