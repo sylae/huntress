@@ -260,11 +260,23 @@ class WormRP implements PluginInterface
             $embed = new MessageEmbed();
             $embed->setTitle($item->fulltext);
             $embed->setURL($item->fullurl);
-            $embed->addField("Known as", implode(", ", $item->printouts->Identity ?? ['Unkown']));
-            $embed->addField("Player", implode("\n", $item->printouts->Author ?? ['Unkown']), true);
-            $embed->addField("Status", implode("\n", $item->printouts->Status ?? ['Unkown']), true);
-            $embed->addField("Alignment", implode("\n", $item->printouts->Alignment ?? ['Unkown']), true);
-            $embed->addField("Affiliation", implode("\n", $item->printouts->Affiliation ?? ['Unkown']), true);
+            $fields = [
+                "Known as" => "Identity",
+                "Player" => "Author",
+                "Status" => "Status",
+                "Alignment" => "Alignment",
+                "Affiliation" => "Affiliation",
+            ];
+            foreach ($fields as $label => $pval) {
+                $x = $item->printouts->{$pval};
+                if (count($x) > 0) {
+                    $val = implode(", ", $x);
+                    if (mb_strlen(trim($val)) > 0) {
+                        $inline = ($pval != "Identity"); // this one in particular not inline
+                        $embed->addField($label, $val, $inline);
+                    }
+                }
+            }
             if (count($item->printouts->{'Meta element og-image'}) > 0) {
                 $embed->setThumbnail($item->printouts->{'Meta element og-image'}[0]);
             }
