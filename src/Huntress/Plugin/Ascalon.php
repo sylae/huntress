@@ -9,10 +9,10 @@
 namespace Huntress\Plugin;
 
 use Huntress\EventData;
+use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
-use Huntress\EventListener;
 
 /**
  * Deletes "permission denied" messages by Angush's bot.
@@ -34,6 +34,7 @@ class Ascalon implements PluginInterface
             ->addChannel(368669692665004032)// mast roleplaying
             ->addChannel(561118174322360322)// nash botspam
             ->addChannel(570692417049591818)// wd portland gn-ideas
+            ->addChannel(591170693626855434)// mast motw
             ->setCallback([self::class, "process"]);
         // @todo switch channel config over to HPM
 
