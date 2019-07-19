@@ -8,6 +8,7 @@
         "clue/block-react": "^1.3",
         "clue/buzz-react": "^2.6",
         "doctrine/dbal": "^2.9",
+        "hoa/compiler": "^3.17",
         "intervention/image": "^2.5",
         "league/html-to-markdown": "^4.8",
         "monolog/monolog": "^1.24",
