@@ -51,7 +51,7 @@ class Dice implements Visit, PluginInterface
             return self::send($data->channel, sprintf("%s rolled `%s` : %s%s", $data->message->author, $roll, $result,
                 ($useDebug) ? "\n```\n" . $debug . "\n```" : ""));
         } catch (Throwable $e) {
-            return self::exceptionHandler($data->message, $e, true);
+            return self::exceptionHandler($data->message, $e, false);
         }
     }
 
