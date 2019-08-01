@@ -14,6 +14,7 @@ use CharlotteDunois\Yasmin\Models\VoiceChannel;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\RSSProcessor;
 use React\Promise\ExtendedPromiseInterface as Promise;
 use Throwable;
 
@@ -31,6 +32,9 @@ class Masturbatorium implements PluginInterface
         $bot->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "modlog", [self::class, "modlog"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "zoe", [self::class, "honk"]);
+        $rss = new RSSProcessor($bot, 'WebtoonsBodies',
+            'https://www.webtoons.com/en/challenge/bodies/rss?title_no=313877', 300,
+            465340599906729984);
     }
 
     public static function voiceStateHandler(
