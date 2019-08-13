@@ -1881,16 +1881,16 @@
         },
         {
             "name": "league/html-to-markdown",
-            "version": "4.8.1",
+            "version": "4.8.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/html-to-markdown.git",
-                "reference": "250d1bf45f80d15594fb6b316df777d6d4c97ad1"
+                "reference": "e747489191f8e9144a7270eb61f8b9516e99e413"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/html-to-markdown/zipball/250d1bf45f80d15594fb6b316df777d6d4c97ad1",
-                "reference": "250d1bf45f80d15594fb6b316df777d6d4c97ad1",
+                "url": "https://api.github.com/repos/thephpleague/html-to-markdown/zipball/e747489191f8e9144a7270eb61f8b9516e99e413",
+                "reference": "e747489191f8e9144a7270eb61f8b9516e99e413",
                 "shasum": ""
             },
             "require": {
@@ -1923,16 +1923,16 @@
             ],
             "authors": [
                 {
-                    "name": "Nick Cernis",
-                    "email": "nick@cern.is",
-                    "homepage": "http://modernnerd.net",
-                    "role": "Original Author"
+                    "name": "Colin O'Dell",
+                    "role": "Lead Developer",
+                    "email": "colinodell@gmail.com",
+                    "homepage": "https://www.colinodell.com"
                 },
                 {
-                    "name": "Colin O'Dell",
-                    "email": "colinodell@gmail.com",
-                    "homepage": "https://www.colinodell.com",
-                    "role": "Lead Developer"
+                    "name": "Nick Cernis",
+                    "role": "Original Author",
+                    "email": "nick@cern.is",
+                    "homepage": "http://modernnerd.net"
                 }
             ],
             "description": "An HTML-to-markdown conversion helper for PHP",
@@ -1941,7 +1941,7 @@
                 "html",
                 "markdown"
             ],
-            "time": "2018-12-24T17:21:44+00:00"
+            "time": "2019-08-02T11:57:39+00:00"
         },
         {
             "name": "masterminds/html5",
@@ -3824,7 +3824,7 @@
                 },
                 {
                     "name": "Gert de Pagter",
-                    "email": "backendtea@gmail.com"
+                    "email": "BackEndTea@gmail.com"
                 }
             ],
             "description": "Symfony polyfill for ctype functions",
