@@ -31,10 +31,10 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\Snowflake;
-use function React\Promise\all;
 use React\Promise\ExtendedPromiseInterface as Promise;
 use stdClass;
 use Throwable;
+use function React\Promise\all;
 
 /**
  * Simple builtin to show user information
@@ -268,7 +268,7 @@ class Match implements PluginInterface
         }
     }
 
-    private static function getMatchInfo(int $idMatch, Guild $guild): stdClass
+    public static function getMatchInfo(int $idMatch, Guild $guild): stdClass
     {
         $db = DatabaseFactory::get();
         $match = $db->createQueryBuilder()->select("*")->from("match_matches")->where('idMatch = ?')->setParameter(0,
