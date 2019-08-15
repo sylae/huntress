@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b4d3d434882d2b89dfd23958112d6a8f",
+    "content-hash": "f6d9c717d987771787a1d19391e9a1da",
     "packages": [
         {
             "name": "cakephp/core",
@@ -241,12 +241,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/CharlotteDunois/Yasmin.git",
-                "reference": "b8a164282aafd5a004b5399781456b7aaa70fbaa"
+                "reference": "4a3b0ebc48fdf16d7d913e9b0e0d19116343357f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/CharlotteDunois/Yasmin/zipball/b8a164282aafd5a004b5399781456b7aaa70fbaa",
-                "reference": "b8a164282aafd5a004b5399781456b7aaa70fbaa",
+                "url": "https://api.github.com/repos/CharlotteDunois/Yasmin/zipball/4a3b0ebc48fdf16d7d913e9b0e0d19116343357f",
+                "reference": "4a3b0ebc48fdf16d7d913e9b0e0d19116343357f",
                 "shasum": ""
             },
             "require": {
@@ -292,7 +292,7 @@
                 }
             ],
             "description": "Yasmin is a Discord API library for PHP.",
-            "time": "2019-06-23T18:26:47+00:00"
+            "time": "2019-08-14T17:57:03+00:00"
         },
         {
             "name": "clue/block-react",
@@ -2090,16 +2090,16 @@
         },
         {
             "name": "nesbot/carbon",
-            "version": "2.22.3",
+            "version": "2.23.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/briannesbitt/Carbon.git",
-                "reference": "738fbd8d80b2c5e158fda76c29c2de432fcc6f7e"
+                "reference": "97a08830a22ce0b69549a4966773c0eae900468d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/738fbd8d80b2c5e158fda76c29c2de432fcc6f7e",
-                "reference": "738fbd8d80b2c5e158fda76c29c2de432fcc6f7e",
+                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/97a08830a22ce0b69549a4966773c0eae900468d",
+                "reference": "97a08830a22ce0b69549a4966773c0eae900468d",
                 "shasum": ""
             },
             "require": {
@@ -2146,14 +2146,14 @@
                     "homepage": "http://github.com/kylekatarnls"
                 }
             ],
-            "description": "A simple API extension for DateTime.",
+            "description": "A API extension for DateTime that supports 281 different languages.",
             "homepage": "http://carbon.nesbot.com",
             "keywords": [
                 "date",
                 "datetime",
                 "time"
             ],
-            "time": "2019-08-07T12:36:44+00:00"
+            "time": "2019-08-12T17:19:41+00:00"
         },
         {
             "name": "ocramius/package-versions",
