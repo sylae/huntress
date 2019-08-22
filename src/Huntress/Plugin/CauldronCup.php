@@ -54,7 +54,7 @@ Competitors have permission to pin anything they might find useful. Please pin y
 
 __What you need to do:__
 1. Pick a character! Your opponent will do the same.
-2. Write a snippet featuring the two characters within the genre and including (as loosly or tighly as you want) the theme.
+2. Write a snippet featuring the two characters within the genre and including (as loosly or tightly as you want) the theme.
 3. Submit your snippet within 72 hours of this post to the form.
 
 Please write your posts in Markdown format, with a blank line between paragraphs. Here's a cheatsheet: https://commonmark.org/help/
