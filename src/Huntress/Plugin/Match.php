@@ -375,10 +375,6 @@ class Match implements PluginInterface
     {
         try {
             $anon = !((bool) $getOpt->getOption("no-anonymous"));
-            if (!in_array($message->author->id,
-                $message->client->config['evalUsers'])) { // todo: actual permission stuff
-                return self::unauthorized($message);
-            }
             $match = Snowflake::parse($getOpt->getOperand('match'));
             $info = self::getMatchInfo($match, $message->guild);
 
@@ -386,18 +382,29 @@ class Match implements PluginInterface
             $r[] = "__**Match {$info->title}**__ `" . Snowflake::format($info->idMatch) . "`";
             $r[] = "Deadline: *" . $info->duedate->longRelativeToNowDiffForHumans(2) . "*";
             $r[] = "";
-            $info->entries->each(function ($v, $k) use (&$r, $anon) {
-                if ($anon) {
-                    $r[] = sprintf("Competitor ID %s - Data `%s`", Snowflake::format($v->id), $v->data ?? "<null>");
-                } else {
-                    $r[] = sprintf("Competitor %s (ID %s) - Data `%s`", $v->user->displayName,
-                        Snowflake::format($v->id), $v->data ?? "<null>");
-                }
-                $vcount = $v->votes->count();
-                $vplode = $v->votes->implode("displayName", ", ");
-                $r[] = sprintf("%s votes - %s", $vcount, $vplode);
-                $r[] = "";
-            });
+            if (!in_array($message->author->id,
+                $message->client->config['evalUsers'])) { // todo: actual permission stuff
+                // losers without perms just get the count
+                $count = 0;
+                $info->entries->each(function ($v) use (&$count) {
+                    $count += $v->votes->count();
+                });
+                $r[] = sprintf("Total votes: %s", $count);
+            } else {
+                // if you've got perms, show the actual votes
+                $info->entries->each(function ($v) use (&$r, $anon) {
+                    if ($anon) {
+                        $r[] = sprintf("Competitor ID %s - Data `%s`", Snowflake::format($v->id), $v->data ?? "<null>");
+                    } else {
+                        $r[] = sprintf("Competitor %s (ID %s) - Data `%s`", $v->user->displayName,
+                            Snowflake::format($v->id), $v->data ?? "<null>");
+                    }
+                    $vcount = $v->votes->count();
+                    $vplode = $v->votes->implode("displayName", ", ");
+                    $r[] = sprintf("%s votes - %s", $vcount, $vplode);
+                    $r[] = "";
+                });
+            }
             return self::send($message->channel, implode(PHP_EOL, $r), ['split' => true]);
         } catch (Throwable $e) {
             self::exceptionHandler($message, $e);
