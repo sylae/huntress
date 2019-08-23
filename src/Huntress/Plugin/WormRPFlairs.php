@@ -144,6 +144,10 @@ class WormRPFlairs implements PluginInterface
                 self::setCookiesIfApplicable($response);
                 $text = json_decode((string) $response->getBody())->parse->text->{'*'};
                 $cd['flair'] = trim(html5qp($text, 'p')->text());
+                if (mb_strlen($cd['flair']) > 64) {
+                    // attempt to shorten it to make it maybe fit.
+                    $cd['flair'] = str_replace(" | ", " ", $cd['flair']);
+                }
                 return $cd;
             });
         })->then(function (array $cd) {
@@ -290,7 +294,8 @@ class WormRPFlairs implements PluginInterface
             }
             $c = $cd['content'];
             $c = preg_replace(sprintf(self::TPL_REGEX, "rep_morality"), '|$1 = ' . $cd['desiredRep'][1] . PHP_EOL, $c);
-            $c = preg_replace(sprintf(self::TPL_REGEX, "rep_notoriety"), '|$1 = ' . $cd['desiredRep'][2] . PHP_EOL, $c);
+            $c = preg_replace(sprintf(self::TPL_REGEX, "rep_notoriety"),
+                '|$1 = ' . mb_strtoupper($cd['desiredRep'][2]) . PHP_EOL, $c);
             $c = preg_replace(sprintf(self::TPL_REGEX, "rep_criminal"), '|$1 = ' . $cd['desiredRep'][3] . PHP_EOL, $c);
             $cd['newContent'] = $c;
             return $cd;
