@@ -187,8 +187,10 @@ class Role implements PluginInterface
 
         $qb = $member->client->db->createQueryBuilder();
         $qb->select("*")->from("roles_inherit")->where('`idGuild` = ?')->setParameter(0, $member->guild->id, "integer");
-        $res = $qb->execute()->fetchAll();
-        return (new Collection($res))->groupBy("idRoleDest");
+        $res = new Collection($qb->execute()->fetchAll());
+        return $res->filter(function ($v) use ($member) {
+            return $member->guild->roles->has($v['idRoleSource']) && $member->guild->roles->has($v['idRoleDest']);
+        })->groupBy("idRoleDest");
     }
 
     private static function toggleRole(EventData $data, string $char): ?PromiseInterface
