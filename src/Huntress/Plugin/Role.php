@@ -126,26 +126,29 @@ class Role implements PluginInterface
         try {
             $roles = self::getValidOptions($data->message->member);
             $inherits = self::getInheritances($data->message->member);
-            if ($roles->count() == 0) {
+            if ($roles->count() == 0 && $inherits->count() == 0) {
                 return $data->message->channel->send("No roles found! Tell the server owner to bug my owner!");
             }
 
             $embed = new MessageEmbed();
             $embed->setTitle("Roles List - {$data->guild->name}")
-                ->setDescription("Use `!role ROLE NAME` to toggle a role.\nDo **not** use an `@`!")
                 ->setColor($data->message->member->getDisplayColor());
 
             $entries = $roles->map(function ($v) {
                 return sprintf("%s (`!role %s`)", $v, $v->name);
             })->implode('val', PHP_EOL);
 
-            $roles = MessageHelpers::splitMessage($entries,
-                ['maxLength' => 1024]);
-            $firstRole = true;
-            foreach ($roles as $role) {
-                $embed->addField($firstRole ? "Roles" : "Roles (cont.)", $role);
-                $firstRole = false;
+            if (mb_strlen($entries) > 0) {
+                $embed->setDescription("Use `!role ROLE NAME` to toggle a role.\nDo **not** use an `@`!");
+                $roles = MessageHelpers::splitMessage($entries,
+                    ['maxLength' => 1024]);
+                $firstRole = true;
+                foreach ($roles as $role) {
+                    $embed->addField($firstRole ? "Roles" : "Roles (cont.)", $role);
+                    $firstRole = false;
+                }
             }
+
             $entries_i = $inherits->map(function ($v, $k) {
                 $sources = implode(", ", array_map(function ($v) {
                     return "<@&{$v['idRoleSource']}>";
@@ -153,12 +156,14 @@ class Role implements PluginInterface
                 return sprintf("<@&%s> is inherited from %s", $k, $sources);
             })->implode('val', PHP_EOL);
 
-            $inheritance = MessageHelpers::splitMessage($entries_i,
-                ['maxLength' => 1024]);
-            $firstInheritance = true;
-            foreach ($inheritance as $i) {
-                $embed->addField($firstInheritance ? "Inherited Roles" : "Inherited Roles (cont.)", $i);
-                $firstInheritance = false;
+            if (mb_strlen($entries_i) > 0) {
+                $inheritance = MessageHelpers::splitMessage($entries_i,
+                    ['maxLength' => 1024]);
+                $firstInheritance = true;
+                foreach ($inheritance as $i) {
+                    $embed->addField($firstInheritance ? "Inherited Roles" : "Inherited Roles (cont.)", $i);
+                    $firstInheritance = false;
+                }
             }
 
             return $data->message->channel->send("", ['embed' => $embed]);
