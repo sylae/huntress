@@ -20,6 +20,7 @@ use Huntress\PluginInterface;
 use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 use Throwable;
+use function Sentry\captureException;
 
 
 /**
@@ -44,9 +45,19 @@ class Role implements PluginInterface
         );
 
         $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("inheritrole")
+            ->setCallback([self::class, "roleInherit"])
+        );
+
+        $bot->eventManager->addEventListener(EventListener::new()
             ->addEvent("dbSchema")
             ->setCallback([self::class, "db"])
         );
+
+        $bot->eventManager->addEventListener(EventListener::new()->setCallback([
+            self::class,
+            "pollInheritance",
+        ])->setPeriodic(10));
     }
 
     public static function db(Schema $schema): void
@@ -55,6 +66,44 @@ class Role implements PluginInterface
         $t->addColumn("idRole", "bigint", ["unsigned" => true]);
         $t->addColumn("idGuild", "bigint", ["unsigned" => true]);
         $t->setPrimaryKey(["idRole"]);
+
+        $t2 = $schema->createTable("roles_inherit");
+        $t2->addColumn("idGuild", "bigint", ["unsigned" => true]);
+        $t2->addColumn("idRoleSource", "bigint", ["unsigned" => true]);
+        $t2->addColumn("idRoleDest", "bigint", ["unsigned" => true]);
+        $t2->setPrimaryKey(["idRoleSource", "idRoleDest"]);
+    }
+
+    public static function pollInheritance(Huntress $bot)
+    {
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not firing " . __METHOD__);
+            return;
+        }
+        try {
+            $qb = $bot->db->createQueryBuilder();
+            $qb->select("*")->from("roles_inherit");
+            foreach ($qb->execute()->fetchAll() as $row) {
+                if (!$bot->guilds->has($row['idGuild'])) {
+                    continue;
+                }
+                $guild = $bot->guilds->get($row['idGuild']);
+
+                if ($guild->roles->has($row['idRoleSource']) && $guild->roles->has($row['idRoleSource'])) {
+                    $guild->members->filter(function (GuildMember $v) use ($row) {
+                        return $v->roles->has($row['idRoleSource']) && !$v->roles->has($row['idRoleDest']);
+                    })->each(function (GuildMember $v) use ($row) {
+                        $v->client->log->debug("{$v->user->tag} inherits {$row['idRoleDest']} from {$row['idRoleSource']}.");
+                        $v->addRole($row['idRoleDest'], "Inherited from role <@&{$row['idRoleSource']}>");
+                    });
+                } else {
+                    $bot->log->notice("Guild {$guild->name} has orphaned roles!");
+                }
+            }
+        } catch (Throwable $e) {
+            captureException($e);
+            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+        }
     }
 
     public static function roleEntry(EventData $data): ?ExtendedPromiseInterface
@@ -76,6 +125,7 @@ class Role implements PluginInterface
     {
         try {
             $roles = self::getValidOptions($data->message->member);
+            $inherits = self::getInheritances($data->message->member);
             if ($roles->count() == 0) {
                 return $data->message->channel->send("No roles found! Tell the server owner to bug my owner!");
             }
@@ -95,6 +145,20 @@ class Role implements PluginInterface
             foreach ($roles as $role) {
                 $embed->addField($firstRole ? "Roles" : "Roles (cont.)", $role);
                 $firstRole = false;
+            }
+            $entries_i = $inherits->map(function ($v, $k) {
+                $sources = implode(", ", array_map(function ($v) {
+                    return "<@&{$v['idRoleSource']}>";
+                }, $v));
+                return sprintf("<@&%s> is inherited from %s", $k, $sources);
+            })->implode('val', PHP_EOL);
+
+            $inheritance = MessageHelpers::splitMessage($entries_i,
+                ['maxLength' => 1024]);
+            $firstInheritance = true;
+            foreach ($inheritance as $i) {
+                $embed->addField($firstInheritance ? "Inherited Roles" : "Inherited Roles (cont.)", $i);
+                $firstInheritance = false;
             }
 
             return $data->message->channel->send("", ['embed' => $embed]);
@@ -116,6 +180,15 @@ class Role implements PluginInterface
         })->sortCustom(function ($a, $b) {
             return $b->position <=> $a->position;
         });
+    }
+
+    private static function getInheritances(GuildMember $member): Collection
+    {
+
+        $qb = $member->client->db->createQueryBuilder();
+        $qb->select("*")->from("roles_inherit")->where('`idGuild` = ?')->setParameter(0, $member->guild->id, "integer");
+        $res = $qb->execute()->fetchAll();
+        return (new Collection($res))->groupBy("idRoleDest");
     }
 
     private static function toggleRole(EventData $data, string $char): ?PromiseInterface
@@ -164,6 +237,43 @@ class Role implements PluginInterface
             return 1000000;
         }
         return (similar_text($a, $b) * 1000) - levenshtein($a, $b, 1, 5, 10);
+    }
+
+    public static function roleInherit(EventData $data): ?ExtendedPromiseInterface
+    {
+        if (!in_array($data->message->author->id, $data->message->client->config['evalUsers'])) {
+            return self::unauthorized($data->message);
+        } // todo: HPM
+
+        try {
+            $args = self::_split($data->message->content);
+            if (count($args) < 3 || !$data->guild->roles->has($args[1]) || !$data->guild->roles->has($args[2])) {
+                return self::error($data->message, "Error", "Usage: `!inheritrole SOURCE_ROLE_ID DEST_ROLE_ID`.");
+            }
+
+            $source = $data->guild->roles->get($args[1]);
+            $dest = $data->guild->roles->get($args[2]);
+
+            if ($source->id == $source->guild->id || $dest->id == $dest->guild->id) {
+                return self::error($data->message, "Error", "`@everyone` is not a bindable role!");
+            }
+
+            self::addInheritance($source, $dest);
+            return $data->message->channel->send("Role added to server role inheritance: Having `@{$source->name}` will add `@{$dest->name}`.");
+
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e, true);
+        }
+    }
+
+    private static function addInheritance(\CharlotteDunois\Yasmin\Models\Role $source, \CharlotteDunois\Yasmin\Models\Role $dest)
+    {
+        $query = $source->client->db->prepare('REPLACE INTO roles_inherit (`idRoleSource`, `idRoleDest`, `idGuild`) VALUES(?, ?, ?)',
+            ['integer', 'integer', 'integer']);
+        $query->bindValue(1, $source->id);
+        $query->bindValue(2, $dest->id);
+        $query->bindValue(3, $source->guild->id);
+        $query->execute();
     }
 
     public static function roleBind(EventData $data): ?ExtendedPromiseInterface
