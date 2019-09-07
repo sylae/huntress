@@ -22,10 +22,10 @@ use function Sentry\captureException;
 class RedditProcessor extends RSSProcessor
 {
 
-    public function __construct(Huntress $bot, string $id, string $target, int $interval, int $channel)
+    public function __construct(Huntress $bot, string $id, string $target, int $interval, array $channels)
     {
         $url = "https://www.reddit.com/r/$target/new.json";
-        parent::__construct($bot, $id, $url, $interval, $channel);
+        parent::__construct($bot, $id, $url, $interval, $channels);
     }
 
     protected function dataProcessingCallback(string $string): Collection

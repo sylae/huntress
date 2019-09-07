@@ -56,7 +56,7 @@ class PCT implements PluginInterface
         } else {
             $bot->eventManager->addURLEvent("https://forums.spacebattles.com/forums/worm.115/", 30,
                 [self::class, "sbHell"]);
-            new RedditProcessor($bot, "theVolcano", "wormfanfic", 30, 542263101559668736);
+            new RedditProcessor($bot, "theVolcano", "wormfanfic", 30, [542263101559668736]);
         }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "gaywatch", [self::class, "gaywatch"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);

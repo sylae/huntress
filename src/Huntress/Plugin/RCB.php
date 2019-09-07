@@ -22,7 +22,7 @@ class RCB implements PluginInterface
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding RSS event on testing.");
         } else {
-            new RedditProcessor($bot, "rcbWormMemes", "WormMemes", 30, 354769211937259521);
+            new RedditProcessor($bot, "rcbWormMemes", "WormMemes", 30, [354769211937259521, 608108475037384708]);
         }
     }
 }

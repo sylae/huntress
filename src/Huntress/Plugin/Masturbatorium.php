@@ -34,7 +34,7 @@ class Masturbatorium implements PluginInterface
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "zoe", [self::class, "honk"]);
         $rss = new RSSProcessor($bot, 'WebtoonsBodies',
             'https://www.webtoons.com/en/challenge/bodies/rss?title_no=313877', 300,
-            465340599906729984);
+            [465340599906729984]);
     }
 
     public static function voiceStateHandler(

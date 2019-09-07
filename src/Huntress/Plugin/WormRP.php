@@ -55,7 +55,7 @@ class WormRP implements PluginInterface
             $wiki = new RSSProcessor($bot, 'WikiRecentChanges',
                 'https://wormrp.syl.ae/w/api.php?urlversion=2&action=feedrecentchanges&feedformat=rss&hideminor=true',
                 60,
-                504159510965911563);
+                [504159510965911563]);
             $wiki->showBody = false;
         }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);

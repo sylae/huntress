@@ -50,9 +50,9 @@ class RSSProcessor
 
     /**
      *
-     * @var int
+     * @var int[]
      */
-    public $channel;
+    public $channels;
 
     /**
      *
@@ -65,13 +65,13 @@ class RSSProcessor
      */
     public $showBody = true;
 
-    public function __construct(Huntress $bot, string $id, string $url, int $interval, int $channel)
+    public function __construct(Huntress $bot, string $id, string $url, int $interval, array $channels)
     {
         $this->huntress = $bot;
         $this->id = $id;
         $this->url = $url;
         $this->interval = $interval;
-        $this->channel = $channel;
+        $this->channels = $channels;
 
         $this->huntress->eventManager->addURLEvent($this->url, $this->interval, [$this, 'eventManagerCallback']);
     }
@@ -157,7 +157,9 @@ class RSSProcessor
             if (is_int($this->itemColor)) {
                 $embed->setColor($this->itemColor);
             }
-            $this->huntress->channels->get($this->channel)->send("", ['embed' => $embed]);
+            foreach ($this->channels as $channel) {
+                $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+            }
         } catch (Throwable $e) {
             captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
