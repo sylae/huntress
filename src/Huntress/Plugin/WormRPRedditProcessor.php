@@ -28,7 +28,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding RSS event on testing.");
         } else {
-            new self($bot, "wormrpPosts", "wormrp", 30, 118981144464195584);
+            new self($bot, "wormrpPosts", "wormrp", 30, []);
         }
     }
 
