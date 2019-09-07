@@ -74,7 +74,9 @@ class RedditProcessor extends RSSProcessor
             $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
                 ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '',
                     "https://reddit.com/user/" . $item->author);
-            $this->huntress->channels->get($this->channel)->send("", ['embed' => $embed]);
+            foreach ($this->channels as $channel) {
+                $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+            }
         } catch (Throwable $e) {
             captureException($e);
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
