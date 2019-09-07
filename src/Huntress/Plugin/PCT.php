@@ -95,7 +95,7 @@ class PCT implements PluginInterface
             })
             ->then(function (GuildMember $member) {
                 return self::send($member->guild->channels->get(397462075896627221),
-                    sprintf("Welcome to PCT, %s!", (string)$member));
+                    sprintf("Welcome to PCT, %s!", (string) $member));
             });
     }
 
@@ -209,7 +209,7 @@ class PCT implements PluginInterface
                 return $message->channel->send(implode("\n", $r), ['split' => true]);
             }
             if (is_numeric($t[1]) && $message->member->roles->has(406698099143213066)) {
-                $t[1] = (int)$t[1];
+                $t[1] = (int) $t[1];
                 $defaultTime = Carbon::now();
                 $query = DatabaseFactory::get()->prepare('INSERT INTO pct_sbhell (`idTopic`, `timeTopicPost`, `timeLastReply`, `gaywatch`) VALUES(?, ?, ?, 1) '
                     . 'ON DUPLICATE KEY UPDATE `gaywatch`=VALUES(`gaywatch`);', ['string', 'datetime', 'datetime']);
@@ -235,8 +235,8 @@ class PCT implements PluginInterface
             $items = $data->find('li.discussionListItem');
             foreach ($items as $item) {
                 try {
-                    $x = (object)[
-                        'id' => (int)str_replace("thread-", "", $item->attr("id")),
+                    $x = (object) [
+                        'id' => (int) str_replace("thread-", "", $item->attr("id")),
                         'title' => trim($item->find('h3')->text()),
                         'threadTime' => self::unfuckDates($item->find(".startDate .DateTime")),
                         'replyTime' => self::unfuckDates($item->find(".lastPost .DateTime")),
@@ -249,8 +249,8 @@ class PCT implements PluginInterface
                             'name' => $item->find('.lastPost a.username')->text(),
                             'av' => null,
                         ],
-                        'numReplies' => (int)trim($item->find('.stats .major dd')->text()),
-                        'numViews' => (int)str_replace(",", "", $item->find('.stats .minor dd')->text()),
+                        'numReplies' => (int) trim($item->find('.stats .major dd')->text()),
+                        'numViews' => (int) str_replace(",", "", $item->find('.stats .minor dd')->text()),
                         'wordcount' => str_replace("Word Count: ", "",
                             $item->find(".posterDate a.OverlayTrigger")->text()),
                     ];
@@ -364,7 +364,7 @@ class PCT implements PluginInterface
         $qb->select("*")->from("pct_sbhell")->where('`idTopic` = ?')->setParameter(0, $post->id, "integer");
         $res = $qb->execute()->fetchAll();
         foreach ($res as $data) {
-            return (bool)$data['gaywatch'] ?? false;
+            return (bool) $data['gaywatch'] ?? false;
         }
         return false;
     }
