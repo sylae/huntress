@@ -48,7 +48,7 @@ trait PluginHelperTrait
         bool $showTrace = false,
         bool $sentry = true
     ): ExtendedPromiseInterface {
-        if ($sentry) {
+        if ($sentry && !$e instanceof UserErrorException) {
             withScope(function (Scope $scope) use ($e, $message): void {
                 $scope->setUser(['id' => $message->author->id ?? null, 'username' => $message->author->tag ?? null]);
                 $scope->setTag('plugin', get_called_class() ?? null);

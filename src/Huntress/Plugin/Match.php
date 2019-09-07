@@ -20,7 +20,6 @@ use CharlotteDunois\Yasmin\Models\TextChannel;
 use CharlotteDunois\Yasmin\Utils\MessageHelpers;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Schema\Schema;
-use Exception;
 use GetOpt\ArgumentException;
 use GetOpt\Command;
 use GetOpt\GetOpt;
@@ -31,6 +30,7 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\Snowflake;
+use Huntress\UserErrorException;
 use React\Promise\ExtendedPromiseInterface as Promise;
 use stdClass;
 use Throwable;
@@ -275,7 +275,7 @@ class Match implements PluginInterface
             $idMatch)->execute()->fetchAll();
 
         if (count($match) != 1) {
-            throw new Exception("Either that match doesn't exist, or something that gone apocalyptically wrong.");
+            throw new UserErrorException("Couldn't find that match!");
         } else {
             $match = $match[0];
             $match['created'] = new Carbon($match['created']);
