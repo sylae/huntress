@@ -18,7 +18,7 @@ use Huntress\RedditProcessor;
 use Throwable;
 use function Sentry\captureException;
 
-class RCB extends RedditProcessor implements PluginInterface
+class WormMemes extends RedditProcessor implements PluginInterface
 {
     use PluginHelperTrait;
 
