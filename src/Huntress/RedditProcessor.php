@@ -56,7 +56,7 @@ class RedditProcessor extends RSSProcessor
             return new Collection($newItems);
         } catch (Throwable $e) {
             captureException($e);
-            $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
     }
@@ -79,7 +79,7 @@ class RedditProcessor extends RSSProcessor
             }
         } catch (Throwable $e) {
             captureException($e);
-            $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }
         return true;

@@ -60,7 +60,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             return new Collection($newItems);
         } catch (Throwable $e) {
             captureException($e);
-            $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
     }
@@ -107,7 +107,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
         } catch (Throwable $e) {
             captureException($e);
-            $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }
         return true;

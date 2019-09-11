@@ -102,7 +102,7 @@ class Role implements PluginInterface
             }
         } catch (Throwable $e) {
             captureException($e);
-            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 

@@ -153,7 +153,7 @@ class Observer implements PluginInterface
             return $message->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
         } catch (Throwable $e) {
             captureException($e);
-            $message->client->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $message->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
@@ -203,7 +203,7 @@ class Observer implements PluginInterface
             return all($prom);
         } catch (Throwable $e) {
             captureException($e);
-            $channel->client->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $channel->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
@@ -234,7 +234,7 @@ class Observer implements PluginInterface
             ]);
         } catch (Throwable $e) {
             captureException($e);
-            $reaction->client->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $reaction->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
@@ -261,7 +261,7 @@ class Observer implements PluginInterface
             return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
         } catch (Throwable $e) {
             captureException($e);
-            $member->client->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $member->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
@@ -305,7 +305,7 @@ class Observer implements PluginInterface
             return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
         } catch (Throwable $e) {
             captureException($e);
-            $member->client->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $member->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 }

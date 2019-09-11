@@ -127,7 +127,7 @@ class WormRP implements PluginInterface
             }
         } catch (Throwable $e) {
             captureException($e);
-            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
@@ -179,7 +179,7 @@ class WormRP implements PluginInterface
             }
         } catch (Throwable $e) {
             captureException($e);
-            $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 

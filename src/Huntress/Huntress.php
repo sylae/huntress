@@ -72,7 +72,7 @@ class Huntress extends Client
         $classes = get_declared_classes();
         foreach ($classes as $class) {
             if ((new ReflectionClass($class))->implementsInterface("Huntress\PluginInterface")) {
-                $this->log->addInfo("Loading plugin $class");
+                $this->log->info("Loading plugin $class");
                 $class::register($this);
             }
         }
@@ -112,7 +112,7 @@ class Huntress extends Client
 
     private function setupLogger(): Logger
     {
-        $l_console = new StreamHandler(STDERR, $this->config['logLevel']);
+        $l_console = new StreamHandler(STDERR, "info"); // for some reason it doesnt like it being passed by var? idfk
         $l_console->setFormatter(new LineFormatter(null, null, true, true));
         $l_template = new Logger("Bot");
         $l_template->pushHandler($l_console);
