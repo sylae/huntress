@@ -93,7 +93,7 @@ class RSSProcessor
     public function eventManagerCallback(string $string, Huntress $bot)
     {
         $collect = $this->dataProcessingCallback($string)->sortCustom([$this, 'sortObjects']);
-        $this->huntress->log->addDebug("[RSS] {$this->id} - There are " . $collect->count() . " items to post.");
+        $this->huntress->log->debug("[RSS] {$this->id} - There are " . $collect->count() . " items to post.");
         foreach ($collect as $item) {
             $this->dataPublishingCallback($item);
         }
@@ -130,7 +130,7 @@ class RSSProcessor
             return new Collection($newItems);
         } catch (Throwable $e) {
             captureException($e);
-            $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
     }
@@ -162,7 +162,7 @@ class RSSProcessor
             }
         } catch (Throwable $e) {
             captureException($e);
-            $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }
         return true;

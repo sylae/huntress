@@ -43,7 +43,7 @@ class EventManager
     {
         $this->huntress = $huntress;
         $this->events = new Collection();
-        $this->huntress->log->addInfo("[HEM] Huntress EventManager initialized");
+        $this->huntress->log->info("[HEM] Huntress EventManager initialized");
     }
 
     public function addURLEvent(string $url, int $interval, callable $callable): int
@@ -58,12 +58,12 @@ class EventManager
                         return $callable($data, $bot);
                     } catch (Throwable $e) {
                         captureException($e);
-                        $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+                        $bot->log->warning($e->getMessage(), ['exception' => $e]);
                     }
                 });
             } catch (Throwable $e) {
                 captureException($e);
-                $bot->log->addWarning($e->getMessage(), ['exception' => $e]);
+                $bot->log->warning($e->getMessage(), ['exception' => $e]);
             }
         })->setPeriodic($interval));
     }
