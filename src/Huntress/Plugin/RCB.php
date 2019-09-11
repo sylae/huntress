@@ -10,6 +10,7 @@ namespace Huntress\Plugin;
 
 use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
@@ -26,7 +27,7 @@ class RCB extends RedditProcessor implements PluginInterface
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding RSS event on testing.");
         } else {
-            new self($bot, "rcbWormMemes", "WormMemes", 30, [354769211937259521, 608108475037384708]);
+            new self($bot, "rcbWormMemes", "WormMemes", 30, []);
         }
     }
 
@@ -61,5 +62,50 @@ class RCB extends RedditProcessor implements PluginInterface
             $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
+    }
+
+    protected function dataPublishingCallback(object $item): bool
+    {
+        try {
+            if (mb_strlen($item->body) > 500) {
+                $item->body = substr($item->body, 0, 500) . "...";
+            }
+            if (mb_strlen($item->title) > 250) {
+                $item->body = substr($item->title, 0, 250) . "...";
+            }
+
+            switch ($item->category) {
+                case "Ward":
+                    $channel = 609585631818940427; // rearden
+                    break;
+                case "Pact":
+                    $channel = 620845142382739467; // non agression pact
+                    break;
+                case "Twig":
+                    $channel = 621183537424498718; // twig pun
+                    break;
+                case "Worm":
+                case "Meta":
+                default:
+                    $channel = 608108475037384708; // galts
+            }
+
+            $embed = new MessageEmbed();
+            $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
+                ->setTimestamp($item->date->timestamp);
+
+            $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
+
+            // rcb 354769211937259521
+            $this->huntress->channels->get(354769211937259521)->send("", ['embed' => $embed]);
+
+            // appropriate wormmemes channel
+            $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+        } catch (Throwable $e) {
+            captureException($e);
+            $this->huntress->log->addWarning($e->getMessage(), ['exception' => $e]);
+            return false;
+        }
+        return true;
     }
 }
