@@ -96,9 +96,6 @@ class WormMemes extends RedditProcessor implements PluginInterface
 
             $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
 
-            // rcb 354769211937259521
-            $this->huntress->channels->get(354769211937259521)->send("", ['embed' => $embed]);
-
             // appropriate wormmemes channel
             $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
         } catch (Throwable $e) {
