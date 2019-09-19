@@ -50,7 +50,7 @@ class Masturbatorium implements PluginInterface
     public static function owo(EventData $data)
     {
         $is_manual = $data->message->content == "%name change" && $data->message->author->id == 297969955356540929;
-        if (random_int(1, 100) == 1 || $is_manual) {
+        if (random_int(1, 1000) == 1 || $is_manual) {
             return URLHelpers::resolveURLToData("https://wormrp.syl.ae/wiki/OwO_Godrays")->then(function ($string) use ($data) {
                 try {
                     $tracks = new Collection(html5qp($string, "table.tracklist td:nth-of-type(2)")->toArray());
