@@ -8,15 +8,20 @@
 
 namespace Huntress\Plugin;
 
+use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\VoiceChannel;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use Huntress\EventData;
+use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RSSProcessor;
 use React\Promise\ExtendedPromiseInterface as Promise;
 use Throwable;
+use function html5qp;
 
 /**
  * Simple builtin to show user information
@@ -35,6 +40,34 @@ class Masturbatorium implements PluginInterface
         $rss = new RSSProcessor($bot, 'WebtoonsBodies',
             'https://www.webtoons.com/en/challenge/bodies/rss?title_no=313877', 300,
             [465340599906729984]);
+        $eh = EventListener::new()
+            ->addEvent("message")
+            ->addGuild(349058708304822273)
+            ->setCallback([self::class, "owo"]);
+        $bot->eventManager->addEventListener($eh);
+    }
+
+    public static function owo(EventData $data)
+    {
+        $is_manual = $data->message->content == "%name change" && $data->message->author->id == 297969955356540929;
+        if (random_int(1, 100) == 1 || $is_manual) {
+            return URLHelpers::resolveURLToData("https://wormrp.syl.ae/wiki/OwO_Godrays")->then(function ($string) use ($data) {
+                try {
+                    $tracks = new Collection(html5qp($string, "table.tracklist td:nth-of-type(2)")->toArray());
+                    $track = $tracks->map(function ($v) {
+                        return $v->textContent;
+                    })->filter(function ($v) {
+                        return (trim($v) != "Untitled");
+                    })->random(1)->all();
+                    $track = mb_strtolower(trim(array_pop($track), "\""));
+                    return $data->message->guild->setName($track, "owo trigger")->then(function ($guild) use ($data) {
+                        return $data->message->react("😤");
+                    });
+                } catch (Throwable $e) {
+                    return self::exceptionHandler($data->message, $e, true);
+                }
+            });
+        }
     }
 
     public static function voiceStateHandler(
