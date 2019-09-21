@@ -235,14 +235,16 @@ class Match implements PluginInterface
     public static function voteMatch(GetOpt $getOpt, Message $message)
     {
         try {
+            if ($message->member->roles->has(625010125282738227)) {
+                return self::send($message->channel,
+                    "<:disdain:450830477562085407>");
+            }
             $match = Snowflake::parse($getOpt->getOperand('match'));
             $entry = Snowflake::parse($getOpt->getOperand('entry'));
 
             $info = self::getMatchInfo($match, $message->guild);
 
             if ($info->duedate < Carbon::now()) {
-                return self::send($message->channel,
-                    "I'm sorry, voting has expired for that match. Please try again later.");
             }
 
             $query = DatabaseFactory::get()->prepare('REPLACE INTO match_votes (`idCompetitor`, `idMatch`, `idVoter`, `created`) VALUES(?, ?, ?, ?)',
@@ -298,7 +300,7 @@ class Match implements PluginInterface
         $votes = (new Collection($db->createQueryBuilder()->select("*")->from("match_votes")->where('idMatch = ?')->setParameter(0,
             $idMatch)->execute()->fetchAll()));
         $votes->each(function ($v, $k) use ($match, $guild) {
-            if ($guild->members->has($v['idVoter'])) {
+            if ($guild->members->has($v['idVoter']) && !$guild->members->get($v['idVoter'])->roles->has(625010125282738227)) {
                 $vote = new stdClass();
                 $vote->user = $guild->members->get($v['idVoter']);
                 $vote->displayName = $vote->user->displayName;
