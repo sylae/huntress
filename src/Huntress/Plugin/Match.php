@@ -245,6 +245,8 @@ class Match implements PluginInterface
             $info = self::getMatchInfo($match, $message->guild);
 
             if ($info->duedate < Carbon::now()) {
+                return self::send($message->channel,
+                    "I'm sorry, voting has expired for that match. Please try again later.");
             }
 
             $query = DatabaseFactory::get()->prepare('REPLACE INTO match_votes (`idCompetitor`, `idMatch`, `idVoter`, `created`) VALUES(?, ?, ?, ?)',
