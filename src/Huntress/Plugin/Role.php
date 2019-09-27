@@ -89,7 +89,7 @@ class Role implements PluginInterface
                 }
                 $guild = $bot->guilds->get($row['idGuild']);
 
-                if ($guild->roles->has($row['idRoleSource']) && $guild->roles->has($row['idRoleSource'])) {
+                if ($guild->roles->has($row['idRoleSource']) && $guild->roles->has($row['idRoleDest'])) {
                     $guild->members->filter(function (GuildMember $v) use ($row) {
                         return $v->roles->has($row['idRoleSource']) && !$v->roles->has($row['idRoleDest']);
                     })->each(function (GuildMember $v) use ($row) {
