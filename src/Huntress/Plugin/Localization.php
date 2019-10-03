@@ -65,10 +65,16 @@ class Localization implements PluginInterface
             $args = self::_split($message->content);
             $now = Carbon::now();
             if (count($args) > 1) {
+                try {
+                    $zone = new CarbonTimeZone($args[1]);
+                } catch (\Throwable $e) {
+                    return self::error($message, "Unknown Timezone",
+                        "I couldn't understand that. Please pick a value from [this list](https://www.php.net/manual/en/timezones.php).");
+                }
                 $query = DatabaseFactory::get()->prepare('INSERT INTO locale (user, timezone) VALUES(?, ?) '
                     . 'ON DUPLICATE KEY UPDATE timezone=VALUES(timezone);', ['integer', 'string']);
                 $query->bindValue(1, $message->author->id);
-                $query->bindValue(2, $args[1]);
+                $query->bindValue(2, $zone->getName());
                 $query->execute();
                 $string = "Your timezone has been updated to **%s**.\nI have your local time as **%s**";
             } else {

@@ -15,7 +15,7 @@ use Exception;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
-use React\Promise\ExtendedPromiseInterface as Promise;
+use React\Promise\PromiseInterface as Promise;
 use ReflectionClass;
 use Throwable;
 
