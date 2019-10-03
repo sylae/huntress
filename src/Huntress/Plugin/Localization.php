@@ -9,6 +9,7 @@
 namespace Huntress\Plugin;
 
 use Carbon\Carbon;
+use Carbon\CarbonTimeZone;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\GuildMemberStorage;
 use CharlotteDunois\Yasmin\Models\Message;
@@ -106,15 +107,35 @@ class Localization implements PluginInterface
         // grab everyone's zone
         $tzs = self::fetchTimezones(self::getMembersWithPermission($data->channel));
 
+        $tzs = array_map(function ($v) {
+            try {
+                return new CarbonTimeZone($v);
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }, $tzs);
+
+        uasort($tzs, function (?CarbonTimeZone $a, ?CarbonTimeZone $b) use ($time) {
+            if (is_null($a) || is_null($b)) {
+                return 0;
+            }
+            $off = $a->getOffset($time) <=> $b->getOffset($time);
+            $loc = $a->getLocation() <=> $b->getLocation();
+
+            if ($off === 0) {
+                return $loc;
+            }
+            return $off;
+        });
+
         $lines = [];
         foreach ($tzs as $tz) {
-            try {
-                $ntime = clone $time;
-                $ntime->setTimezone($tz);
-                $lines[] = sprintf("**%s**: %s", $tz, $ntime->toDayDateTimeString());
-            } catch (\Throwable $e) {
-                // whatever
+            if (is_null($tz)) {
+                continue;
             }
+            $ntime = clone $time;
+            $ntime->setTimezone($tz);
+            $lines[] = sprintf("**%s**: %s", $tz, $ntime->toDayDateTimeString());
         }
         $lines = implode(PHP_EOL, $lines);
 
