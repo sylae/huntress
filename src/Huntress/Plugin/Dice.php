@@ -57,7 +57,8 @@ class Dice implements Visit, PluginInterface
                 return in_array($v->id, self::KNOWN_DICEBOTS);
             })->count();
             if ($count > 0) {
-                return $data->message->channel->send("nope!");
+                $data->message->client->log->info("Not rolling due to another bot with matching prefix.");
+                return;
             }
 
             $roll = str_replace(self::_split($data->message->content)[0], "", $data->message->content);
