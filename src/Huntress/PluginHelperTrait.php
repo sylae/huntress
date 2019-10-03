@@ -9,11 +9,14 @@
 namespace Huntress;
 
 use Carbon\Carbon;
+use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
 use CharlotteDunois\Yasmin\Interfaces\TextChannelInterface;
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\GuildMemberStorage;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use CharlotteDunois\Yasmin\Models\Permissions;
 use Exception;
 use InvalidArgumentException;
 use League\HTMLToMarkdown\HtmlConverter;
@@ -248,5 +251,12 @@ trait PluginHelperTrait
         } else {
             throw new Exception("Could not parse relative time.");
         }
+    }
+
+    public static function getMembersWithPermission(GuildChannelInterface $channel, int $permission = Permissions::PERMISSIONS['VIEW_CHANNEL']): GuildMemberStorage
+    {
+        return $channel->getGuild()->members->filter(function (GuildMember $v) use ($channel, $permission) {
+            return $v->permissionsIn($channel)->has($permission);
+        });
     }
 }
