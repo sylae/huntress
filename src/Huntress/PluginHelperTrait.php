@@ -196,12 +196,14 @@ trait PluginHelperTrait
         return $r;
     }
 
-    public static function readTime(string $r): Carbon
+    public static function readTime(string $r, string $tz = "UTC"): Carbon
     {
+
         if (self::isRelativeTime($r)) {
             return self::timeRelative($r);
         } else {
-            return (new Carbon($r))->setTimezone("UTC");
+
+            return (new Carbon($r, $tz));
         }
     }
 
