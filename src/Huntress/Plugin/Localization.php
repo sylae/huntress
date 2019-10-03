@@ -63,11 +63,11 @@ class Localization implements PluginInterface
             }
             $tz = new UserLocale($message->author);
             $now_tz = $tz->applyTimezone($now);
-        } catch (Throwable $e) {
             return self::send($message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>",
                 $tz->localeSandbox(function () use ($now_tz) {
                     return $now_tz->toDayDateTimeString();
                 })));
+        } catch (Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
     }
