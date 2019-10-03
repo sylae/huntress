@@ -7,6 +7,8 @@
 
 namespace Huntress\Plugin;
 
+use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Permissions;
 use Hoa\Compiler\Llk\Llk;
 use Hoa\Compiler\Visitor\Dump;
 use Hoa\File\Read;
@@ -22,6 +24,11 @@ use Throwable;
 class Dice implements Visit, PluginInterface
 {
     use PluginHelperTrait;
+
+    private const KNOWN_DICEBOTS = [
+        261302296103747584, // avrae
+        559331529378103317, // 5ecrawler
+    ];
 
     public static function register(Huntress $bot)
     {
@@ -44,6 +51,15 @@ class Dice implements Visit, PluginInterface
     public static function process(EventData $data, bool $useDebug = false)
     {
         try {
+            // don't do anything if another dicebot with the same prefix is here!
+            $count = self::getMembersWithPermission($data->channel,
+                Permissions::PERMISSIONS['SEND_MESSAGES'] | Permissions::PERMISSIONS['VIEW_CHANNEL'])->filter(function (GuildMember $v) {
+                return in_array($v->id, self::KNOWN_DICEBOTS);
+            })->count();
+            if ($count > 0) {
+                return $data->message->channel->send("nope!");
+            }
+
             $roll = str_replace(self::_split($data->message->content)[0], "", $data->message->content);
             $debug = "";
             $result = self::rollDice($roll, $debug);
