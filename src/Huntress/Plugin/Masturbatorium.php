@@ -40,6 +40,9 @@ class Masturbatorium implements PluginInterface
         $rss = new RSSProcessor($bot, 'WebtoonsBodies',
             'https://www.webtoons.com/en/challenge/bodies/rss?title_no=313877', 300,
             [465340599906729984]);
+        $rss = new RSSProcessor($bot, 'WebtoonsLoreOlympus',
+            'https://www.webtoons.com/en/romance/lore-olympus/rss?title_no=1320', 300,
+            [465340599906729984]);
         $eh = EventListener::new()
             ->addEvent("message")
             ->addGuild(349058708304822273)
