@@ -61,7 +61,10 @@ class Dice implements Visit, PluginInterface
                 return;
             }
 
-            $roll = str_replace(self::_split($data->message->content)[0], "", $data->message->content);
+            $roll = trim(str_replace(self::_split($data->message->content)[0], "", $data->message->content));
+            if (mb_strlen($roll) == 0) {
+                return self::send($data->channel, ":thinking:");
+            }
             $debug = "";
             $result = self::rollDice($roll, $debug);
             $data->message->client->log->debug($debug);
