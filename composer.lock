@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3b9b51731b9a1c4228af8073ba38fef6",
+    "content-hash": "f88b2038964fd9b2e5163272bf4c090b",
     "packages": [
         {
             "name": "cakephp/core",
@@ -1888,16 +1888,16 @@
         },
         {
             "name": "league/html-to-markdown",
-            "version": "4.8.2",
+            "version": "4.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/html-to-markdown.git",
-                "reference": "e747489191f8e9144a7270eb61f8b9516e99e413"
+                "reference": "71319108e3db506250b8987721b13568fd9fa446"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/html-to-markdown/zipball/e747489191f8e9144a7270eb61f8b9516e99e413",
-                "reference": "e747489191f8e9144a7270eb61f8b9516e99e413",
+                "url": "https://api.github.com/repos/thephpleague/html-to-markdown/zipball/71319108e3db506250b8987721b13568fd9fa446",
+                "reference": "71319108e3db506250b8987721b13568fd9fa446",
                 "shasum": ""
             },
             "require": {
@@ -1907,7 +1907,7 @@
             },
             "require-dev": {
                 "mikehaertl/php-shellcommand": "~1.1.0",
-                "phpunit/phpunit": "4.*",
+                "phpunit/phpunit": "^4.8|^5.7",
                 "scrutinizer/ocular": "~1.1"
             },
             "bin": [
@@ -1916,7 +1916,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "4.9-dev"
+                    "dev-master": "4.10-dev"
                 }
             },
             "autoload": {
@@ -1948,7 +1948,7 @@
                 "html",
                 "markdown"
             ],
-            "time": "2019-08-02T11:57:39+00:00"
+            "time": "2019-11-02T14:54:14+00:00"
         },
         {
             "name": "masterminds/html5",
