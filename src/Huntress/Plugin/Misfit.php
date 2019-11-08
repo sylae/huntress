@@ -48,6 +48,22 @@ class Misfit implements PluginInterface
                 return self::ls($data->message, $state);
             case 'ls':
                 return self::ls($data->message, self::state());
+            case 'export':
+                return $data->message->channel->send(json_encode(self::state()));
+            case 'import':
+                return self::fetchMessage($data->message->client,
+                    $tp[2])->then(function (Message $importMsg) use ($data) {
+                    $oldState = json_decode(array_pop(explode("\n", $importMsg->content)), true);
+                    if (count($oldState) == 6) {
+                        $state = self::state($oldState);
+                        return self::ls($data->message, $state);
+                    } else {
+                        return $data->message->channel->send("Could not read data: " . json_last_error_msg());
+                    }
+                }, function ($error) use ($data) {
+                    return self::error($data->message, "Unable to fetch message", $error);
+                });
+
             case 'set':
                 $state = self::state();
                 $state[$tp[2]] = [(int) $tp[4], $tp[3]];
@@ -97,6 +113,7 @@ class Misfit implements PluginInterface
         foreach ($state as $part => $d) {
             $x[] = sprintf("*%s*: level %s %s", $part, $d[0], $d[1]);
         }
+        $x[] = json_encode($state);
         return self::send($message->channel, implode(PHP_EOL, $x));
     }
 

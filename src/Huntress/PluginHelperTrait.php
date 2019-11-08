@@ -17,10 +17,13 @@ use CharlotteDunois\Yasmin\Models\GuildMemberStorage;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Models\Permissions;
+use CharlotteDunois\Yasmin\Models\TextChannel;
 use Exception;
 use InvalidArgumentException;
 use League\HTMLToMarkdown\HtmlConverter;
 use React\Promise\ExtendedPromiseInterface;
+use React\Promise\PromiseInterface;
+use React\Promise\RejectedPromise;
 use Sentry\State\Scope;
 use Throwable;
 use function Sentry\captureException;
@@ -260,5 +263,27 @@ trait PluginHelperTrait
         return $channel->getGuild()->members->filter(function (GuildMember $v) use ($channel, $permission) {
             return $v->permissionsIn($channel)->has($permission);
         });
+    }
+
+    public static function fetchMessage(Huntress $bot, string $url): PromiseInterface
+    {
+        $match = [];
+        preg_match('/https:\/\/.*?discordapp.com\/channels\/(\d+)\/(\d+)\/(\d+)/i', $url, $match);
+
+        if (is_numeric($match[1]) && is_numeric($match[2]) && is_numeric($match[3])) {
+            $guild = $bot->guilds->get($match[1]);
+            if (is_null($guild)) {
+                return new RejectedPromise("Unknown Guild");
+            }
+
+            /** @var TextChannel $channel */
+            $channel = $guild->channels->get($match[2]);
+            if (is_null($channel)) {
+                return new RejectedPromise("Unknown Channel");
+            }
+            return $channel->fetchMessage($match[3]);
+        } else {
+            return new RejectedPromise("Invalid URL");
+        }
     }
 }
