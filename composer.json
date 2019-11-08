@@ -10,7 +10,7 @@
         "doctrine/dbal": "^2.9",
         "hoa/compiler": "^3.17",
         "intervention/image": "^2.5",
-        "league/html-to-markdown": "^4.8",
+        "league/html-to-markdown": "^4.9",
         "monolog/monolog": "^2.0",
         "nesbot/carbon": "^2.24",
         "querypath/querypath": "^3.0",
