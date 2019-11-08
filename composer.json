@@ -12,7 +12,7 @@
         "intervention/image": "^2.5",
         "league/html-to-markdown": "^4.9",
         "monolog/monolog": "^2.0",
-        "nesbot/carbon": "^2.24",
+        "nesbot/carbon": "^2.26",
         "querypath/querypath": "^3.0",
         "sentry/sentry": "^2.1",
         "ulrichsg/getopt-php": "^3.2"
