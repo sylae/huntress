@@ -75,7 +75,9 @@ class TelephoneDelay implements PluginInterface
         $ch = $bot->channels->get(self::DESTINATION);
         if ($ch instanceof TextChannel) {
             $item = array_shift($state);
-            $ch->send($item);
+            if (is_string($item) && mb_strlen(trim($item)) > 0) {
+                $ch->send($item);
+            }
             self::state($state);
         }
     }
