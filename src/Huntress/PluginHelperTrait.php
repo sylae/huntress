@@ -41,13 +41,6 @@ trait PluginHelperTrait
         return (php_uname('s') == "Windows NT");
     }
 
-    public static function _split(string $string): array
-    {
-        $regex = '/(?<=^|\s)([\'"]?)(.+?)(?<!\\\\)\1(?=$|\s)/';
-        preg_match_all($regex, $string . ' ', $matches);
-        return $matches[2];
-    }
-
     public static function exceptionHandler(
         Message $message,
         Throwable $e,
@@ -285,5 +278,33 @@ trait PluginHelperTrait
         } else {
             return new RejectedPromise("Invalid URL");
         }
+    }
+
+    public static function arg_substr(string $content, int $start, int $length = null): string
+    {
+        $args = self::_split($content);
+        if (array_key_last($args) < $start) {
+            throw new \OutOfBoundsException('$start greater than length of string');
+        }
+
+        // @todo: this better
+        $newstr = [];
+        foreach ($args as $index => $arg) {
+            if ($index < $start) {
+                continue;
+            }
+            if (is_int($length) && $index >= $start + $length) {
+                continue;
+            }
+            $newstr[] = $arg;
+        }
+        return implode(" ", $newstr);
+    }
+
+    public static function _split(string $string): array
+    {
+        $regex = '/(?<=^|\s)([\'"]?)(.+?)(?<!\\\\)\1(?=$|\s)/';
+        preg_match_all($regex, $string . ' ', $matches);
+        return $matches[2];
     }
 }
