@@ -1,4 +1,13 @@
 {
+    "name": "sylae/huntress",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Keira Dueck",
+            "email": "sylae@calref.net"
+        }
+    ],
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
