@@ -14,7 +14,6 @@ use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\VoiceChannel;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use Huntress\EventData;
-use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
@@ -48,11 +47,13 @@ class Masturbatorium implements PluginInterface
                 'https://www.webtoons.com/en/romance/lore-olympus/rss?title_no=1320', 300,
                 [465340599906729984]);
         }
+        /*
         $eh = EventListener::new()
             ->addEvent("message")
             ->addGuild(349058708304822273)
             ->setCallback([self::class, "owo"]);
         $bot->eventManager->addEventListener($eh);
+        */
     }
 
     public static function owo(EventData $data)
