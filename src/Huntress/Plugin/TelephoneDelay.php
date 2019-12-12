@@ -14,6 +14,7 @@ use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use function Sentry\captureException;
 
 class TelephoneDelay implements PluginInterface
 {
@@ -47,16 +48,21 @@ class TelephoneDelay implements PluginInterface
 
     public static function telephone(EventData $data)
     {
-        $tp = self::_split($data->message->content);
+        try {
+            $tp = self::_split($data->message->content);
 
-        switch ($tp[1] ?? 'ls') {
-            case 'reset':
-                self::state(self::DEFAULT);
-                return $data->message->channel->send(":ok_hand:");
-            case 'ls':
-                return self::dump($data->message->channel, self::state());
-            default:
-                return $data->message->channel->send("usage: `!telephone reset|ls`");
+            switch ($tp[1] ?? 'ls') {
+                case 'reset':
+                    self::state(self::DEFAULT);
+                    return $data->message->channel->send(":ok_hand:");
+                case 'ls':
+                    return self::dump($data->message->channel, self::state());
+                default:
+                    return $data->message->channel->send("usage: `!telephone reset|ls`");
+            }
+        } catch (\Throwable $e) {
+            captureException($e);
+            $data->message->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
@@ -71,21 +77,31 @@ class TelephoneDelay implements PluginInterface
 
     public static function telephonePoll(Huntress $bot)
     {
-        $state = self::state();
-        $ch = $bot->channels->get(self::DESTINATION);
-        if ($ch instanceof TextChannel) {
-            $item = array_shift($state);
-            if (is_string($item) && mb_strlen(trim($item)) > 0) {
-                $ch->send($item);
+        try {
+            $state = self::state();
+            $ch = $bot->channels->get(self::DESTINATION);
+            if ($ch instanceof TextChannel) {
+                $item = array_shift($state);
+                if (is_string($item) && mb_strlen(trim($item)) > 0) {
+                    $ch->send($item);
+                }
+                self::state($state);
             }
-            self::state($state);
+        } catch (\Throwable $e) {
+            captureException($e);
+            $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
     public static function telephoneListener(EventData $data)
     {
-        $state = self::state();
-        $state[] = $data->message->content;
-        self::state($state);
+        try {
+            $state = self::state();
+            $state[] = $data->message->content;
+            self::state($state);
+        } catch (\Throwable $e) {
+            captureException($e);
+            $data->message->client->log->warning($e->getMessage(), ['exception' => $e]);
+        }
     }
 }
