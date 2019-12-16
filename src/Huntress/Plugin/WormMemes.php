@@ -30,7 +30,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
         } else {
             new self($bot, "rcbWormMemes", "WormMemes", 30, []);
             new RSSProcessor($bot, 'wyldblowWormMemes', "https://queryfeed.net/tw?q=%40wyldblow", 30,
-                [608108475037384708]);
+                [609585631818940427]);
         }
     }
 
