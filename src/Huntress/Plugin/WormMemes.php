@@ -15,6 +15,7 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RedditProcessor;
+use Huntress\RSSProcessor;
 use Throwable;
 use function Sentry\captureException;
 
@@ -28,6 +29,8 @@ class WormMemes extends RedditProcessor implements PluginInterface
             $bot->log->debug("Not adding RSS event on testing.");
         } else {
             new self($bot, "rcbWormMemes", "WormMemes", 30, []);
+            new RSSProcessor($bot, 'wyldblowWormMemes', "https://queryfeed.net/tw?q=%40wyldblow", 30,
+                [608108475037384708]);
         }
     }
 
