@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c64ef5e695883f2cb646657242df7805",
+    "content-hash": "8633118df938be986965d993817df2ef",
     "packages": [
         {
             "name": "cakephp/core",
@@ -147,6 +147,7 @@
             ],
             "description": "Collection, an utility to conventionally store a key-value pair.",
             "homepage": "https://github.com/CharlotteDunois/Collection",
+            "abandoned": true,
             "time": "2018-12-04T18:43:09+00:00"
         },
         {
@@ -190,6 +191,7 @@
                 "event",
                 "events"
             ],
+            "abandoned": true,
             "time": "2019-04-14T15:44:49+00:00"
         },
         {
@@ -233,6 +235,7 @@
             "keywords": [
                 "validation"
             ],
+            "abandoned": true,
             "time": "2019-01-15T17:31:56+00:00"
         },
         {
@@ -295,6 +298,7 @@
                 }
             ],
             "description": "Yasmin is a Discord API library for PHP.",
+            "abandoned": true,
             "time": "2019-10-15T17:08:00+00:00"
         },
         {
@@ -2171,22 +2175,22 @@
         },
         {
             "name": "nesbot/carbon",
-            "version": "2.26.0",
+            "version": "2.28.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/briannesbitt/Carbon.git",
-                "reference": "e01ecc0b71168febb52ae1fdc1cfcc95428e604e"
+                "reference": "e2bcbcd43e67ee6101d321d5de916251d2870ca8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/e01ecc0b71168febb52ae1fdc1cfcc95428e604e",
-                "reference": "e01ecc0b71168febb52ae1fdc1cfcc95428e604e",
+                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/e2bcbcd43e67ee6101d321d5de916251d2870ca8",
+                "reference": "e2bcbcd43e67ee6101d321d5de916251d2870ca8",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "php": "^7.1.8 || ^8.0",
-                "symfony/translation": "^3.4 || ^4.0"
+                "symfony/translation": "^3.4 || ^4.0 || ^5.0"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^2.14 || ^3.0",
@@ -2201,6 +2205,9 @@
             ],
             "type": "library",
             "extra": {
+                "branch-alias": {
+                    "dev-master": "2.x-dev"
+                },
                 "laravel": {
                     "providers": [
                         "Carbon\\Laravel\\ServiceProvider"
@@ -2234,7 +2241,7 @@
                 "datetime",
                 "time"
             ],
-            "time": "2019-10-21T21:32:25+00:00"
+            "time": "2019-12-16T16:30:25+00:00"
         },
         {
             "name": "ocramius/package-versions",
@@ -3927,16 +3934,16 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.12.0",
+            "version": "v1.13.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "b42a2f66e8f1b15ccf25652c3424265923eb4f17"
+                "reference": "7b4aab9743c30be783b73de055d24a39cf4b954f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/b42a2f66e8f1b15ccf25652c3424265923eb4f17",
-                "reference": "b42a2f66e8f1b15ccf25652c3424265923eb4f17",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/7b4aab9743c30be783b73de055d24a39cf4b954f",
+                "reference": "7b4aab9743c30be783b73de055d24a39cf4b954f",
                 "shasum": ""
             },
             "require": {
@@ -3948,7 +3955,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.12-dev"
+                    "dev-master": "1.13-dev"
                 }
             },
             "autoload": {
@@ -3982,46 +3989,47 @@
                 "portable",
                 "shim"
             ],
-            "time": "2019-08-06T08:03:45+00:00"
+            "time": "2019-11-27T14:18:11+00:00"
         },
         {
             "name": "symfony/translation",
-            "version": "v4.3.8",
+            "version": "v5.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation.git",
-                "reference": "bbce239b35b0cd47bd75848b23e969f17dd970e7"
+                "reference": "e86df1b0f1672362ecf96023faf2c42241c41330"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation/zipball/bbce239b35b0cd47bd75848b23e969f17dd970e7",
-                "reference": "bbce239b35b0cd47bd75848b23e969f17dd970e7",
+                "url": "https://api.github.com/repos/symfony/translation/zipball/e86df1b0f1672362ecf96023faf2c42241c41330",
+                "reference": "e86df1b0f1672362ecf96023faf2c42241c41330",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.1.3",
+                "php": "^7.2.5",
                 "symfony/polyfill-mbstring": "~1.0",
-                "symfony/translation-contracts": "^1.1.6"
+                "symfony/translation-contracts": "^2"
             },
             "conflict": {
-                "symfony/config": "<3.4",
-                "symfony/dependency-injection": "<3.4",
-                "symfony/yaml": "<3.4"
+                "symfony/config": "<4.4",
+                "symfony/dependency-injection": "<5.0",
+                "symfony/http-kernel": "<5.0",
+                "symfony/twig-bundle": "<5.0",
+                "symfony/yaml": "<4.4"
             },
             "provide": {
-                "symfony/translation-implementation": "1.0"
+                "symfony/translation-implementation": "2.0"
             },
             "require-dev": {
                 "psr/log": "~1.0",
-                "symfony/config": "~3.4|~4.0",
-                "symfony/console": "~3.4|~4.0",
-                "symfony/dependency-injection": "~3.4|~4.0",
-                "symfony/finder": "~2.8|~3.0|~4.0",
-                "symfony/http-kernel": "~3.4|~4.0",
-                "symfony/intl": "~3.4|~4.0",
-                "symfony/service-contracts": "^1.1.2",
-                "symfony/var-dumper": "~3.4|~4.0",
-                "symfony/yaml": "~3.4|~4.0"
+                "symfony/config": "^4.4|^5.0",
+                "symfony/console": "^4.4|^5.0",
+                "symfony/dependency-injection": "^5.0",
+                "symfony/finder": "^4.4|^5.0",
+                "symfony/http-kernel": "^5.0",
+                "symfony/intl": "^4.4|^5.0",
+                "symfony/service-contracts": "^1.1.2|^2",
+                "symfony/yaml": "^4.4|^5.0"
             },
             "suggest": {
                 "psr/log-implementation": "To use logging capability in translator",
@@ -4031,7 +4039,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "4.3-dev"
+                    "dev-master": "5.0-dev"
                 }
             },
             "autoload": {
@@ -4058,24 +4066,24 @@
             ],
             "description": "Symfony Translation Component",
             "homepage": "https://symfony.com",
-            "time": "2019-11-06T23:21:49+00:00"
+            "time": "2019-11-18T17:27:11+00:00"
         },
         {
             "name": "symfony/translation-contracts",
-            "version": "v1.1.7",
+            "version": "v2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation-contracts.git",
-                "reference": "364518c132c95642e530d9b2d217acbc2ccac3e6"
+                "reference": "8cc682ac458d75557203b2f2f14b0b92e1c744ed"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation-contracts/zipball/364518c132c95642e530d9b2d217acbc2ccac3e6",
-                "reference": "364518c132c95642e530d9b2d217acbc2ccac3e6",
+                "url": "https://api.github.com/repos/symfony/translation-contracts/zipball/8cc682ac458d75557203b2f2f14b0b92e1c744ed",
+                "reference": "8cc682ac458d75557203b2f2f14b0b92e1c744ed",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.1.3"
+                "php": "^7.2.5"
             },
             "suggest": {
                 "symfony/translation-implementation": ""
@@ -4083,7 +4091,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.1-dev"
+                    "dev-master": "2.0-dev"
                 }
             },
             "autoload": {
@@ -4115,7 +4123,7 @@
                 "interoperability",
                 "standards"
             ],
-            "time": "2019-09-17T11:12:18+00:00"
+            "time": "2019-11-18T17:27:11+00:00"
         },
         {
             "name": "tivie/php-os-detector",
