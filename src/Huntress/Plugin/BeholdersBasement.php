@@ -8,6 +8,7 @@
 
 namespace Huntress\Plugin;
 
+use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\CategoryChannel;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
@@ -26,6 +27,7 @@ use Huntress\PluginInterface;
 use Huntress\Snowflake;
 use React\Promise\PromiseInterface;
 use Throwable;
+use function Sentry\captureException;
 
 /**
  * Games server!
@@ -46,6 +48,17 @@ class BeholdersBasement implements PluginInterface
             ->setCallback([self::class, "commandListener"]);
         $bot->eventManager->addEventListener($eh);
         $bot->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
+
+        $eh2 = EventListener::new()
+            ->setPeriodic(60 * 60)
+            ->setCallback([self::class, "prideDiceChange"]);
+        $bot->eventManager->addEventListener($eh2);
+
+        $eh3 = EventListener::new()
+            ->addCommand("icon")
+            ->addGuild(619043630187020299)
+            ->setCallback([self::class, "prideDice"]);
+        $bot->eventManager->addEventListener($eh3);
     }
 
 
@@ -174,5 +187,33 @@ class BeholdersBasement implements PluginInterface
     public static function summon(GetOpt $getOpt, Message $message): PromiseInterface
     {
         return $message->channel->send("WIP. Please @ a mod to add a player to your game. Sorry for the inconvenience!");
+    }
+
+    public static function prideDice(EventData $data)
+    {
+        try {
+            if (!$data->message->member->roles->has(619043961566134273)) {
+                return self::unauthorized($data->message);
+            }
+
+            return self::prideDiceChange($data->message->client)->then(function ($guild) use ($data) {
+                return $data->message->react("😤");
+            });
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e);
+        }
+    }
+
+    public static function prideDiceChange(Huntress $bot): ?PromiseInterface
+    {
+        try {
+            $tracks = new Collection(glob("data/pridedice/*.png"));
+            $track = $tracks->random(1)->all();
+            $track = mb_strtolower(array_pop($track));
+            return $bot->guilds->get(619043630187020299)->setIcon($track, "owo trigger");
+        } catch (Throwable $e) {
+            captureException($e);
+            $bot->log->warning($e->getMessage(), ['exception' => $e]);
+        }
     }
 }
