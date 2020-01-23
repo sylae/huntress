@@ -55,6 +55,12 @@ class EventData implements JsonSerializable
 
     /**
      *
+     * @var Huntress
+     */
+    public $huntress;
+
+    /**
+     *
      * @var string
      */
     public $command;
