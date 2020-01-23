@@ -200,7 +200,9 @@ class EventManager
                 $data = null;
                 break;
         }
-        $data->huntress = $this->huntress;
+        if ($data instanceof EventData) {
+            $data->huntress = $this->huntress;
+        }
         $this->huntress->log->debug("[HEM] Received event $yasminType", ['data' => $data]);
         $this->fire($yasminType, $data);
     }
