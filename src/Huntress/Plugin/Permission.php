@@ -7,6 +7,7 @@
 
 namespace Huntress\Plugin;
 
+use CharlotteDunois\Yasmin\Models\Permissions;
 use GetOpt\ArgumentException;
 use GetOpt\Command;
 use GetOpt\GetOpt;
@@ -49,6 +50,9 @@ class Permission implements PluginInterface
                     Operand::REQUIRED))->setValidation('is_string')->setDescription('The name of the permission to check.'),
                 (new Operand('user',
                     Operand::OPTIONAL))->setValidation('is_string')->setDefaultValue("@self")->setDescription('The user whose permissions you want to check. Defaults to self.'),
+            ])->addOptions([
+                (new Option('a', 'all',
+                    GetOpt::NO_ARGUMENT))->setDescription("Show all checks even if irrelevant."),
             ]);
             $commands[] = Command::create('add',
                 [self::class, 'addPerm'])->setDescription('Add a permission to the database')->addOperands([
@@ -109,15 +113,37 @@ class Permission implements PluginInterface
         $str[] = "";
 
         $end = "(unset)";
-        foreach ($debug as $setting => $targets) {
-            foreach ($targets as $target => $value) {
+        foreach ($debug as $target => $settings) {
+            foreach ($settings as $setting => $value) {
                 if (is_null($value)) {
                     $v = "(unset)";
                 } else {
                     $v = $value ? "**allowed**" : "~~denied~~";
                     $end = $v;
                 }
-                $str[] = sprintf("Scope `%s` / Target `%s`: %s", $setting, $target, $v);
+
+                // check for relevancy
+                $relevant = true;
+                $note = "";
+                if ($target == "TARGET_BOTADMIN" && !in_array($user->id, $data->message->client->config['evalUsers'])) {
+                    $relevant = false;
+                    $note = " (not bot admin, ignored)";
+                }
+                $isOwner = $user->id == $data->message->guild->ownerID;
+                $isAdmin = $user->permissions->has(Permissions::PERMISSIONS['ADMINISTRATOR']);
+                if ($target == "TARGET_GUILDOWNER" && !($isAdmin || $isOwner)) {
+                    $relevant = false;
+                    $note = " (not guild admin, ignored)";
+                }
+                if (is_null($value)) {
+                    $relevant = false;
+                }
+                if (!$relevant && !$getOpt->getOption(all)) {
+                    continue;
+                }
+                $str[] = sprintf("Target `%s` / Scope `%s`: %s%s", $target, $setting, $v, $note);
+
+
             }
         }
         $str[] = "";

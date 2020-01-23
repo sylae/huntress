@@ -147,11 +147,11 @@ class Permission
         $carry = $this->default;
         $debug['default'] = $carry;
 
-        foreach ($settings as $settingType) {
-            $debug[$this->reverseConst($settingType, "SETTING")] = [];
-            foreach ($targets as $targetType) {
+        foreach ($targets as $targetType) {
+            $debug[$this->reverseConst($targetType, "TARGET")] = [];
+            foreach ($settings as $settingType) {
                 $res = $this->check($settingType, $targetType);
-                $debug[$this->reverseConst($settingType, "SETTING")][$this->reverseConst($targetType, "TARGET")] = $res;
+                $debug[$this->reverseConst($targetType, "TARGET")][$this->reverseConst($settingType, "SETTING")] = $res;
                 if (!is_null($res)) {
                     $carry = $res;
                 }
