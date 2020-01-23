@@ -242,7 +242,7 @@ class Permission
                 break;
             case self::TARGET_BOTADMIN:
                 // bot admin is an easy check
-                if (!in_array($this->context->user->id, $this->huntress->config['evalUsers'])) {
+                if (in_array($this->context->user->id, $this->huntress->config['evalUsers'])) {
                     return (bool) $entry['value'];
                 }
                 break;
