@@ -17,6 +17,7 @@ use CharlotteDunois\Yasmin\Models\GuildMemberStorage;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Models\Permissions;
+use CharlotteDunois\Yasmin\Models\Role;
 use CharlotteDunois\Yasmin\Models\TextChannel;
 use Exception;
 use InvalidArgumentException;
@@ -121,6 +122,30 @@ trait PluginHelperTrait
                 } elseif ($val->user->username . "#" . $val->user->discriminator == $string) {
                     return true;
                 } elseif ($val->user->username == $string) {
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+        } catch (InvalidArgumentException $e) {
+            return null;
+        }
+    }
+
+    public static function parseRole(Guild $guild, string $string): ?Role
+    {
+        $string = trim($string);
+        if (mb_strlen($string) == 0) {
+            return null;
+        }
+        if (preg_match("/<@&(\\d+)>/", $string, $matches)) {
+            return $guild->roles->resolve($matches[1]);
+        }
+        try {
+            return $guild->roles->first(function (Role $v) use ($string) {
+                if (mb_strtolower($v->name) == mb_strtolower($string)) {
+                    return true;
+                } elseif ("@" . mb_strtolower($v->name) == mb_strtolower($string)) {
                     return true;
                 } else {
                     return false;
