@@ -23,7 +23,7 @@ use React\Promise\PromiseInterface as Promise;
 use Throwable;
 
 
-class Permission implements PluginInterface
+class PermissionFrontend implements PluginInterface
 {
     use PluginHelperTrait;
 

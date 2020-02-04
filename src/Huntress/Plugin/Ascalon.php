@@ -11,6 +11,7 @@ namespace Huntress\Plugin;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 
@@ -37,7 +38,7 @@ class Ascalon implements PluginInterface
 
     public static function process(EventData $data)
     {
-        $p = new \Huntress\Permission("p.ascalon.enabled", $data->huntress, false);
+        $p = new Permission("p.ascalon.enabled", $data->huntress, false);
         $p->addChannelContext($data->channel);
         if ($p->resolve() && stripos($data->message->content, "you do not have permission to use this command.")) {
             return $data->message->delete();
