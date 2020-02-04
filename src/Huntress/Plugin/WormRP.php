@@ -268,7 +268,18 @@ class WormRP implements PluginInterface
                 "Affiliation" => "Affiliation",
             ];
             foreach ($fields as $label => $pval) {
-                $x = $item->printouts->{$pval};
+                $x = array_map(function ($v) {
+                    if (is_object($v)) {
+                        if (property_exists($v, "fulltext")) {
+                            return property_exists($v, "fullurl") ? sprintf("[%s](%s)", $v->fulltext,
+                                $v->fullurl) : $v->fulltext;
+                        } else {
+                            return $v->fulltext ?? null;
+                        }
+                    } else {
+                        return $v;
+                    }
+                }, $item->printouts->{$pval});
                 if (count($x) > 0) {
                     $val = implode(", ", $x);
                     if (mb_strlen(trim($val)) > 0) {
