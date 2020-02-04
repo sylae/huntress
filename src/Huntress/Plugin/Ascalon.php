@@ -30,20 +30,16 @@ class Ascalon implements PluginInterface
         $eh = EventListener::new()
             ->addEvent("message")
             ->addUser(198749794523545601)
-            ->addChannel(370727342076854302)// mast botspam
-            ->addChannel(368669692665004032)// mast roleplaying
-            ->addChannel(561118174322360322)// nash botspam
-            ->addChannel(570692417049591818)// wd portland gn-ideas
-            ->addChannel(591170693626855434)// mast motw
             ->setCallback([self::class, "process"]);
         // @todo switch channel config over to HPM
-
         $bot->eventManager->addEventListener($eh);
     }
 
     public static function process(EventData $data)
     {
-        if (stripos($data->message->content, "you do not have permission to use this command.")) {
+        $p = new \Huntress\Permission("p.ascalon.enabled", $data->huntress, false);
+        $p->addChannelContext($data->channel);
+        if ($p->resolve() && stripos($data->message->content, "you do not have permission to use this command.")) {
             return $data->message->delete();
         }
     }
