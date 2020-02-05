@@ -24,7 +24,7 @@
         "nesbot/carbon": "^2.26",
         "querypath/querypath": "^3.0",
         "sentry/sentry": "^2.3",
-        "ulrichsg/getopt-php": "^3.2"
+        "ulrichsg/getopt-php": "^3.3"
     },
     "autoload": {
         "psr-4": {
