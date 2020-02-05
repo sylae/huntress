@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
-use CharlotteDunois\Yasmin\Models\MessageReaction;
 use CharlotteDunois\Yasmin\Models\Permissions;
 use CharlotteDunois\Yasmin\Models\TextChannel;
 use Doctrine\DBAL\Schema\Schema;
@@ -43,10 +42,10 @@ class CauldronCup implements PluginInterface
 {
     use PluginHelperTrait;
 
-    const NAME = "Cauldron Cup Season Four";
+    const NAME = "Cauldron Cup Season Five";
 
     const NOTE = <<<NOTE
-**Welcome to Cauldron Cup Season Four!**
+**Welcome to Cauldron Cup Season Five!**
 As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **72 hours** to complete your snips and submit them for processing.
 
 Your submission should be around **1k words**, no biggie if more or less but shoot for that. The link to submit snips is pinned in <#565085613955612702>. Good luck!
@@ -75,8 +74,6 @@ NOTE;
 
         $dbEv = EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']);
         $bot->eventManager->addEventListener($dbEv);
-
-        // $bot->on("messageReactionAdd", [self::class, "voteHandler"]); // todo new event system
     }
 
     public static function db(Schema $schema): void
@@ -94,31 +91,6 @@ NOTE;
             ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]);
         $t->setPrimaryKey(["idMatch"]);
     }
-
-    public static function voteHandler(
-        MessageReaction $reaction,
-        \CharlotteDunois\Yasmin\Models\User $user
-    ): ?PromiseInterface {
-        if ($reaction->message->channel->id != 297210942951915523) {
-            return null;
-        }
-
-        // is this from huntress and does it have one (1) messageEmbed?
-        if ($reaction->message->author->id != $user->client->user->id || count($reaction->message->embeds) != 1) {
-            return null;
-        }
-
-        // is this for our cup?
-        if (stripos($reaction->message->embeds[0]->title, self::NAME) !== 0) {
-            return null;
-        }
-
-        // ok we're in business.
-
-
-        return self::dump($reaction->message->channel, $reaction);
-    }
-
 
     public static function cup(EventData $data)
     {
