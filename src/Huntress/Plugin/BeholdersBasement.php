@@ -13,7 +13,6 @@ use CharlotteDunois\Yasmin\Models\CategoryChannel;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\Permissions;
-use CharlotteDunois\Yasmin\Models\VoiceChannel;
 use GetOpt\ArgumentException;
 use GetOpt\Command;
 use GetOpt\GetOpt;
@@ -48,7 +47,6 @@ class BeholdersBasement implements PluginInterface
             ->addGuild(619043630187020299)
             ->setCallback([self::class, "commandListener"]);
         $bot->eventManager->addEventListener($eh);
-        $bot->on("voiceStateUpdate", [self::class, "voiceStateHandler"]);
 
         $eh2 = EventListener::new()
             ->setPeriodic(60 * 60)
@@ -61,22 +59,6 @@ class BeholdersBasement implements PluginInterface
             ->setCallback([self::class, "prideDice"]);
         $bot->eventManager->addEventListener($eh3);
     }
-
-
-    public static function voiceStateHandler(
-        GuildMember $new,
-        ?GuildMember $old
-    ) {
-        if ($new->guild->id == 619043630187020299 && $new->voiceChannel instanceof VoiceChannel) {
-            if (is_null($new->roles->get(629830440588541962))) {
-                $new->addRole(629830440588541962)->then(function () use ($new) {
-                    self::send($new->guild->channels->get(624844253046112256),
-                        "<@{$new->id}>, I'm going to give you the DJ role, since you're joining a voice chat.");
-                });
-            }
-        }
-    }
-
 
     public static function commandListener(EventData $data)
     {
