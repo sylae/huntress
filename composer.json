@@ -23,7 +23,7 @@
         "monolog/monolog": "^2.0",
         "nesbot/carbon": "^2.26",
         "querypath/querypath": "^3.0",
-        "sentry/sentry": "^2.2",
+        "sentry/sentry": "^2.3",
         "ulrichsg/getopt-php": "^3.2"
     },
     "autoload": {
