@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\GuildMemberStorage;
-use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Utils\MessageHelpers;
 use Doctrine\DBAL\Connection;
@@ -28,7 +27,7 @@ use React\Promise\PromiseInterface as Promise;
 use Throwable;
 
 /**
- * Simple builtin to show user information
+ * Internationalization and timezone nonsense.
  *
  * @author Keira Dueck <sylae@calref.net>
  */
@@ -38,14 +37,20 @@ class Localization implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "timezone", [self::class, "timezone"]);
-        // $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "locale", [self::class, "locale"]);
-        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addEvent("dbSchema")
+            ->setCallback([self::class, 'db'])
+        );
 
-        $eh = EventListener::new()
+        $bot->eventManager->addEventListener(EventListener::new()
             ->addCommand("time")
-            ->setCallback([self::class, "timeHelper"]);
-        $bot->eventManager->addEventListener($eh);
+            ->setCallback([self::class, "timeHelper"])
+        );
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("timezone")
+            ->setCallback([self::class, "timezone"])
+        );
     }
 
     public static function db(Schema $schema): void
@@ -59,41 +64,41 @@ class Localization implements PluginInterface
         $t->setPrimaryKey(["user"]);
     }
 
-    public static function timezone(Huntress $bot, Message $message): ?Promise
+    public static function timezone(EventData $data): ?Promise
     {
         try {
-            $args = self::_split($message->content);
+            $args = self::_split($data->message->content);
             $now = Carbon::now();
             if (count($args) > 1) {
                 try {
                     $zone = new CarbonTimeZone($args[1]);
                 } catch (\Throwable $e) {
-                    return self::error($message, "Unknown Timezone",
+                    return self::error($data->message, "Unknown Timezone",
                         "I couldn't understand that. Please pick a value from [this list](https://www.php.net/manual/en/timezones.php).");
                 }
                 $query = DatabaseFactory::get()->prepare('INSERT INTO locale (user, timezone) VALUES(?, ?) '
                     . 'ON DUPLICATE KEY UPDATE timezone=VALUES(timezone);', ['integer', 'string']);
-                $query->bindValue(1, $message->author->id);
+                $query->bindValue(1, $data->message->author->id);
                 $query->bindValue(2, $zone->getName());
                 $query->execute();
                 $string = "Your timezone has been updated to **%s**.\nI have your local time as **%s**";
             } else {
                 $string = "Your timezone is currently set to **%s**.\nI have your local time as **%s**\n\nTo update, run `!timezone NewTimeZone` with one of the values in <https://www.php.net/manual/en/timezones.php>.";
             }
-            $tz = new UserLocale($message->author);
+            $tz = new UserLocale($data->message->author);
             $now_tz = $tz->applyTimezone($now);
-            return self::send($message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>",
+            return self::send($data->message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>",
                 $tz->localeSandbox(function () use ($now_tz) {
                     return $now_tz->toDayDateTimeString();
                 })));
         } catch (Throwable $e) {
-            return self::exceptionHandler($message, $e);
+            return self::exceptionHandler($data->message, $e);
         }
     }
 
     public static function timeHelper(EventData $data): ?Promise
     {
-        $time = str_replace(self::_split($data->message->content)[0], "", $data->message->content);
+        $time = self::arg_substr($data->message->content, 1);
         $warn = [];
         // get the user's locale first
         $user_tz = self::fetchTimezone($data->message->member);

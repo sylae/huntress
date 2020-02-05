@@ -32,8 +32,10 @@ class CauldronEmoteHub implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $dbEv = EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']);
-        $bot->eventManager->addEventListener($dbEv);
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addEvent("dbSchema")
+            ->setCallback([self::class, 'db'])
+        );
 
         $bot->eventManager->addEventListener(EventListener::new()
             ->addCommand("_CEHInternalAddGuildInviteURL")

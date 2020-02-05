@@ -71,7 +71,7 @@ class Dice implements Visit, PluginInterface
                 return $p->sendUnauthorizedMessage($data->message->channel);
             }
 
-            $roll = trim(str_replace(self::_split($data->message->content)[0], "", $data->message->content));
+            $roll = trim(self::arg_substr($data->message->content, 1));
             if (mb_strlen($roll) == 0) {
                 return self::send($data->channel, ":thinking:");
             }
