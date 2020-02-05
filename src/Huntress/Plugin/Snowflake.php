@@ -13,7 +13,6 @@ use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
-use Huntress\Snowflake;
 use React\Promise\PromiseInterface;
 
 /**
@@ -21,7 +20,7 @@ use React\Promise\PromiseInterface;
  *
  * @author Keira Dueck <sylae@calref.net>
  */
-class Sowflake implements PluginInterface
+class Snowflake implements PluginInterface
 {
     use PluginHelperTrait;
 
@@ -35,8 +34,8 @@ class Sowflake implements PluginInterface
 
     public static function snow(EventData $data): PromiseInterface
     {
-        $snow = Snowflake::generate();
-        $fmt = Snowflake::format($snow);
+        $snow = \Huntress\Snowflake::generate();
+        $fmt = \Huntress\Snowflake::format($snow);
         return $data->message->channel->send(sprintf("`%s` (`%s`)", $fmt, $snow));
     }
 }

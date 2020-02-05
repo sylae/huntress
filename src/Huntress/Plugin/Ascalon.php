@@ -32,7 +32,6 @@ class Ascalon implements PluginInterface
             ->addEvent("message")
             ->addUser(198749794523545601)
             ->setCallback([self::class, "process"]);
-        // @todo switch channel config over to HPM
         $bot->eventManager->addEventListener($eh);
     }
 
