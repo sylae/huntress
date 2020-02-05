@@ -252,7 +252,7 @@ class Permission
                     $aRole = $this->context->user->roles->get($a['target']);
                     $bRole = $this->context->user->roles->get($b['target']);
                     return $aRole->position <=> $bRole->position;
-                })->reduce(function ($v) {
+                })->reduce(function ($c, $v) {
                     return (bool) $v['value'];
                 }, null);
             default:
