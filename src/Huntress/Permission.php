@@ -13,8 +13,11 @@ use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Models\Permissions;
+use CharlotteDunois\Yasmin\Models\TextChannel;
 use Doctrine\DBAL\Schema\Schema;
+use React\Promise\PromiseInterface;
 
 /**
  * This handles all of the data related to a single permission or group
@@ -273,6 +276,22 @@ class Permission
         return $items->filter(function ($v) use ($target) {
             return $target->roles->has($v['target']);
         });
+    }
+
+    public function sendUnauthorizedMessage(TextChannel $channel): ?PromiseInterface
+    {
+        $embed = new MessageEmbed();
+        $embed->setTitle("Unauthorized!");
+        $embed->setDescription(sprintf("You lack the required permission (`%s`) to use this command. Please try again later.",
+            $this->title));
+        $embed->setTimestamp(time());
+        if ($this->context->user instanceof GuildMember) {
+            $member = $this->context->user;
+            $embed->setColor($member->getDisplayColor() ?? $member->id % 0xFFFFFF);
+            $embed->setAuthor($member->displayName, $member->user->getAvatarURL(64) ?? null);
+        }
+
+        return $channel->send("", ['embed' => $embed]);
     }
 
 }
