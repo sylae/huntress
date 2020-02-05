@@ -22,6 +22,7 @@ use GetOpt\Option;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\Snowflake;
@@ -116,8 +117,10 @@ class BeholdersBasement implements PluginInterface
 
     public static function create(GetOpt $getOpt, Message $message): PromiseInterface
     {
-        if (!$message->member->roles->has(self::MODS)) {
-            return self::unauthorized($message);
+        $p = new Permission("p.beholdersbasement.addgame", $message->client, false);
+        $p->addMessageContext($message);
+        if (!$p->resolve()) {
+            return $p->sendUnauthorizedMessage($message->channel);
         }
         $gm = self::parseGuildUser($message->guild, $getOpt->getOperand("gm"));
         if (!$gm instanceof GuildMember) {
@@ -192,11 +195,12 @@ class BeholdersBasement implements PluginInterface
     public static function prideDice(EventData $data)
     {
         try {
-            if (!$data->message->member->roles->has(619043961566134273)) {
-                return self::unauthorized($data->message);
+            $p = new Permission("p.beholdersbasement.changeicon", $data->huntress, false);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
             }
-
-            return self::prideDiceChange($data->message->client)->then(function ($guild) use ($data) {
+            return self::prideDiceChange($data->huntress)->then(function ($guild) use ($data) {
                 return $data->message->react("😤");
             });
         } catch (Throwable $e) {

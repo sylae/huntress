@@ -26,6 +26,7 @@ use Huntress\DatabaseFactory;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\Snowflake;
@@ -121,8 +122,10 @@ NOTE;
 
     public static function cup(EventData $data)
     {
-        if (!$data->message->member->roles->has(385680396555255809)) {
-            return self::unauthorized($data->message);
+        $p = new Permission("p.ccup.manage", $data->huntress, false);
+        $p->addMessageContext($data->message);
+        if (!$p->resolve()) {
+            return $p->sendUnauthorizedMessage($data->message->channel);
         }
         try {
             $getOpt = new GetOpt();

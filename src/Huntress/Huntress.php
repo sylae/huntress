@@ -128,6 +128,7 @@ class Huntress extends Client
     private function registerBuiltinHooks(): void
     {
         RSSProcessor::register($this);
+        Permission::register($this);
     }
 
     public function start(): void

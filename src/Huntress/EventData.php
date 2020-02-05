@@ -55,6 +55,12 @@ class EventData implements JsonSerializable
 
     /**
      *
+     * @var Huntress
+     */
+    public $huntress;
+
+    /**
+     *
      * @var string
      */
     public $command;
@@ -63,7 +69,7 @@ class EventData implements JsonSerializable
     {
         $x = [];
         foreach (get_object_vars($this) as $k => $v) {
-            if (is_null($v)) {
+            if (is_null($v) || $k === "huntress") {
                 continue;
             }
             if ($k === "command") {
