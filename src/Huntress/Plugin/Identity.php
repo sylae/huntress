@@ -8,14 +8,16 @@
 
 namespace Huntress\Plugin;
 
+use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use React\Promise\PromiseInterface;
 
 /**
- * Simple builtin to show user information
+ * Just some fun Huntress stuff.
  *
- * @author Keira Sylae Aro <sylae@calref.net>
+ * @author Keira Dueck <sylae@calref.net>
  */
 class Identity implements PluginInterface
 {
@@ -23,31 +25,39 @@ class Identity implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->on(self::PLUGINEVENT_READY, [self::class, "process"]);
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->setCallback([self::class, "changeAv"])
+            ->setPeriodic(60 * 60 * 24)
+        );
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->setCallback([self::class, "changeStatus"])
+            ->setPeriodic(15)
+        );
     }
 
-    public static function process(Huntress $bot)
+    public static function changeAv(Huntress $bot): ?PromiseInterface
     {
-        $bot->loop->addPeriodicTimer(60 * 60 * 24, function () use ($bot) {
-            $bot->log->debug("Updating avatar...");
-            $bot->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
-                $bot->log->debug("Avatar update complete!");
-            });
+        $bot->log->debug("Updating avatar...");
+        return $bot->user->setAvatar("https://syl.ae/avatar.jpg")->then(function () use ($bot) {
+            $bot->log->debug("Avatar update complete!");
         });
-        $bot->loop->addPeriodicTimer(15, function () use ($bot) {
-            $opts = [
-                'with your heart',
-                'with fire',
-                'with a Cauldron vial',
-                'with the server',
-                'at being a real person',
-                'with a ball of yarn',
-                'RWBY: Grimm Eclipse',
-            ];
-            $bot->user->setPresence([
-                'status' => 'online',
-                'game' => ['name' => $opts[array_rand($opts)], 'type' => 0],
-            ]);
-        });
+    }
+
+    public static function changeStatus(Huntress $bot): ?PromiseInterface
+    {
+        $opts = [
+            'with your heart',
+            'with fire',
+            'with a Cauldron vial',
+            'with the server',
+            'at being a real person',
+            'with a ball of yarn',
+            'RWBY: Grimm Eclipse',
+        ];
+        return $bot->user->setPresence([
+            'status' => 'online',
+            'game' => ['name' => $opts[array_rand($opts)], 'type' => 0],
+        ]);
     }
 }
