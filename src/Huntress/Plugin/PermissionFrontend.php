@@ -317,7 +317,8 @@ class PermissionFrontend implements PluginInterface
         }
 
         $checkedPerm = sprintf("p.huntress.hpm.edit.%s-%s", $overSetting, $overTarget);
-        $p = new P($checkedPerm, $data->message->client, $default);
+        $p = new P($checkedPerm, $data->huntress, $default);
+        $p->addMessageContext($data->message);
         $overridePermissions[1] = $checkedPerm;
         return $p->resolve();
     }
