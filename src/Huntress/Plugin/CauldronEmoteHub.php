@@ -10,21 +10,21 @@ namespace Huntress\Plugin;
 
 use CharlotteDunois\Yasmin\HTTP\APIEndpoints;
 use CharlotteDunois\Yasmin\Models\Emoji;
-use CharlotteDunois\Yasmin\Models\Message;
-use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use Doctrine\DBAL\Schema\Schema;
 use Huntress\DatabaseFactory;
+use Huntress\EventData;
+use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
-use Imagick;
-use React\Promise\ExtendedPromiseInterface as Promise;
+use React\Promise\PromiseInterface as Promise;
 use Throwable;
 
 /**
  * Emoji management functions.
  *
- * @author Keira Sylae Aro <sylae@calref.net>
+ * @author Keira Dueck <sylae@calref.net>
  */
 class CauldronEmoteHub implements PluginInterface
 {
@@ -32,11 +32,23 @@ class CauldronEmoteHub implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "emote", [self::class, "process"]);
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "importEmote", [self::class, "importmoji"]);
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "flopEmote", [self::class, "flopmoji"]);
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "_CEHInternalAddGuildInviteURL", [self::class, "addInvite"]);
-        $bot->on(self::PLUGINEVENT_DB_SCHEMA, [self::class, "db"]);
+        $dbEv = EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']);
+        $bot->eventManager->addEventListener($dbEv);
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("_CEHInternalAddGuildInviteURL")
+            ->addGuild(444430952077197322)
+            ->setCallback([self::class, "addInvite"]));
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("importEmote")
+            ->addCommand("importemote")
+            ->setCallback([self::class, "importmoji"]));
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("emote")
+            ->addCommand("emoji")
+            ->setCallback([self::class, "process"]));
     }
 
     public static function db(Schema $schema): void
@@ -47,76 +59,88 @@ class CauldronEmoteHub implements PluginInterface
         $t->setPrimaryKey(["guild"]);
     }
 
-    public static function addInvite(Huntress $bot, Message $message): ?Promise
+    public static function addInvite(EventData $data): ?Promise
     {
-        if (is_null($message->member->roles->get(444432484114104321))) {
-            return self::unauthorized($message);
-        } else {
-            try {
-                $args = self::_split($message->content);
-                if (count($args) < 3) {
-                    return self::error($message, "You dipshit :open_mouth:",
-                        "arg1 = guild id\narg2 = invite url\n\nhow hard can this be?");
-                }
-
-                $query = DatabaseFactory::get()->prepare('INSERT INTO ceh_servers (guild, url) VALUES(?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE url=VALUES(url);', ['integer', 'string']);
-                $query->bindValue(1, $args[1]);
-                $query->bindValue(2, $args[2]);
-                $query->execute();
-
-                return self::send($message->channel, "Added! :triumph:");
-            } catch (Throwable $e) {
-                return self::exceptionHandler($message, $e, true);
+        try {
+            $p = new Permission("p.ceh.addinvite", $data->huntress, false);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
             }
+
+            $args = self::_split($data->message->content);
+            if (count($args) < 3) {
+                return self::error($data->message, "You dipshit :open_mouth:",
+                    "arg1 = guild id\narg2 = invite url\n\nhow hard can this be?");
+            }
+
+            $query = DatabaseFactory::get()->prepare('INSERT INTO ceh_servers (guild, url) VALUES(?, ?) '
+                . 'ON DUPLICATE KEY UPDATE url=VALUES(url);', ['integer', 'string']);
+            $query->bindValue(1, $args[1]);
+            $query->bindValue(2, $args[2]);
+            $query->execute();
+
+            return self::send($data->message->channel, "Added! :triumph:");
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e, true);
         }
     }
 
-    public static function importmoji(Huntress $bot, Message $message): ?Promise
+    public static function importmoji(EventData $data): ?Promise
     {
-        if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
-            return self::unauthorized($message);
-        } elseif (!$message->guild->me->permissions->has('MANAGE_EMOJIS')) {
-            return self::error($message, "Unauthorized!",
+        $p = new Permission("p.emotes.import", $data->huntress, false);
+        $p->addMessageContext($data->message);
+        if (!$data->message->member->permissions->has('MANAGE_EMOJIS') || !$p->resolve()) {
+            return self::unauthorized($data->message);
+        } elseif (!$data->message->guild->me->permissions->has('MANAGE_EMOJIS')) {
+            return self::error($data->message, "Unauthorized!",
                 "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
         } else {
             try {
-                $emotes = self::getEmotes($message->content);
+                $emotes = self::getEmotes($data->message->content);
                 if (count($emotes) != 1) {
-                    return self::error($message, "Invalid Arguments", "Give me exactly one emote as an argument");
+                    return self::error($data->message, "Invalid Arguments", "Give me exactly one emote as an argument");
                 }
                 $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'],
                         ($emotes[0]['animated'] ? 'gif' : 'png'));
 
-                return $message->guild->createEmoji($url, $emotes[0]['name'])->then(function (
-                    Emoji $emote
-                ) use ($message) {
-                    return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
-                }, function ($e) use ($message) {
-                    return self::send($message->channel,
+                return $data->message->guild->createEmoji($url,
+                    $emotes[0]['name'])->then(function (Emoji $emote) use ($data) {
+                    return self::send($data->message->channel, "Imported the emote {$emote->name} ({$emote->id})");
+                }, function ($e) use ($data) {
+                    return self::send($data->message->channel,
                         "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
                 });
             } catch (Throwable $e) {
-                return self::exceptionHandler($message, $e, true);
+                return self::exceptionHandler($data->message, $e, true);
             }
         }
     }
 
-    public static function process(Huntress $bot, Message $message): ?Promise
+    public static function process(EventData $data): ?Promise
     {
         try {
-            $m = self::_split($message->content);
+            $p = new Permission("p.emotes.lookup", $data->huntress, true);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+
+            $m = self::_split($data->message->content);
             if (count($m) < 2) {
-                return self::error($message, "Missing Argument", "You need to tell me what to search for");
+                return self::error($data->message, "Missing Argument", "You need to tell me what to search for");
             }
             $code = $m[1];
             $x = [];
-            $bot->emojis->each(function (Emoji $v, $k) use ($code, &$x) {
-                if ($v->requireColons && ($v->guild->name == "Cauldron Emote Hub" || stripos($v->guild->name,
-                            "CEH") !== false)) { // todo: do this better
-                    $l = levenshtein($code, $v->name);
-                    if (stripos($v->name, $code) !== false || $l < 3) {
-                        $x[$k] = $l;
+            $gperm = new Permission("p.emotes.searchable", $data->huntress, true);
+            $data->huntress->emojis->each(function (Emoji $v, $k) use ($code, &$x, $gperm) {
+                if (!is_null($v->guild)) {
+                    $gperm->addGuildContext($v->guild);
+                    if ($gperm->resolve()) {
+                        $l = levenshtein($code, $v->name);
+                        if (stripos($v->name, $code) !== false || $l < 3) {
+                            $x[$k] = $l;
+                        }
                     }
                 }
             });
@@ -125,7 +149,7 @@ class CauldronEmoteHub implements PluginInterface
             $s = [];
             $guildcount = [];
             foreach (array_slice($x, 0, 50, true) as $code => $similarity) {
-                $emote = $bot->emojis->resolve($code);
+                $emote = $data->huntress->emojis->resolve($code);
                 $sim_str = ($similarity == 0) ? "perfect match" : "similarity $similarity";
 
                 $guildcount[$emote->guild->id] = true;
@@ -137,14 +161,14 @@ class CauldronEmoteHub implements PluginInterface
                 $s[] = "No results found matching `$code`";
             }
             foreach ($guildcount as $guild => $count) {
-                if (!$bot->guilds->get($guild)->members->has($message->author->id) && $url = self::getInvite($guild)) {
+                if (!$data->huntress->guilds->get($guild)->members->has($data->message->author->id) && $url = self::getInvite($guild)) {
                     $s[] = $url;
                 }
             }
 
-            return self::send($message->channel, implode(PHP_EOL, $s), ['split' => true]);
+            return self::send($data->message->channel, implode(PHP_EOL, $s), ['split' => true]);
         } catch (Throwable $e) {
-            return self::exceptionHandler($message, $e);
+            return self::exceptionHandler($data->message, $e);
         }
     }
 
@@ -157,47 +181,5 @@ class CauldronEmoteHub implements PluginInterface
             return $data['url'];
         }
         return false;
-    }
-
-    public static function flopmoji(Huntress $bot, Message $message): ?Promise
-    {
-        if (!$message->member->permissions->has('MANAGE_EMOJIS')) {
-            return self::unauthorized($message);
-        } elseif (!$message->guild->me->permissions->has('MANAGE_EMOJIS')) {
-            return self::error($message, "Unauthorized!",
-                "I don't have permission to add emotes to this server. Please give me the **Manage Emojis** permission.");
-        } else {
-            $emotes = self::getEmotes($message->content);
-            if (count($emotes) != 1) {
-                return self::error($message, "Invalid Arguments", "Give me exactly one emote as an argument");
-            }
-            $url = APIEndpoints::CDN['url'] . APIEndpoints::format(APIEndpoints::CDN['emojis'], $emotes[0]['id'],
-                    ($emotes[0]['animated'] ? 'gif' : 'png'));
-
-            return URLHelpers::resolveURLToData($url)->then(function (string $string) use ($message, $emotes) {
-                try {
-                    $file = "/tmp/huntressEmote." . time() . "." . ($emotes[0]['animated'] ? 'gif' : 'png');
-                    file_put_contents($file, $string);
-                    $img = new Imagick($file);
-                    foreach ($img as $i) {
-                        $i->flopImage();
-                    }
-                    return $message->guild->createEmoji($img->getImagesBlob(),
-                        "r" . $emotes[0]['name'])->then(function (Emoji $emote) use (
-                        $message,
-                        $file
-                    ) {
-                        unlink($file);
-                        return self::send($message->channel, "Imported the emote {$emote->name} ({$emote->id})");
-                    }, function ($e) use ($message, $file) {
-                        unlink($file);
-                        return self::send($message->channel,
-                            "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
-                    });
-                } catch (Throwable $e) {
-                    return self::exceptionHandler($message, $e, true);
-                }
-            });
-        }
     }
 }

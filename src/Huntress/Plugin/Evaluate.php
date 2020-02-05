@@ -44,6 +44,7 @@ class Evaluate implements PluginInterface
 
     public static function process(EventData $data): ?Promise
     {
+        // does not use HPM for a reason.
         if (!in_array($data->message->author->id, $data->message->client->config['evalUsers'])) {
             return self::unauthorized($data->message);
         }
@@ -55,6 +56,8 @@ class Evaluate implements PluginInterface
             $channel = $data->channel;
             $bot = $data->message->client;
             $db = $data->message->client->db;
+            $backtick = "`";
+            $backticks = "```";
 
             $msg = substr(strstr($data->message->content, " "), 1);
             $msg = str_replace(['```php', '```'], "", $msg); // todo: this better

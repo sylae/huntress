@@ -17,10 +17,14 @@ use Hoa\Visitor\Visit;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Throwable;
 
+/**
+ * Simple dice roller / math robot.
+ */
 class Dice implements Visit, PluginInterface
 {
     use PluginHelperTrait;
@@ -59,6 +63,12 @@ class Dice implements Visit, PluginInterface
             if ($count > 0) {
                 $data->huntress->log->info("Not rolling due to another bot with matching prefix.");
                 return;
+            }
+
+            $p = new Permission("p.dice.roll", $data->huntress, true);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
             }
 
             $roll = trim(str_replace(self::_split($data->message->content)[0], "", $data->message->content));
