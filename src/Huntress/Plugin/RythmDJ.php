@@ -8,6 +8,7 @@
 
 namespace Huntress\Plugin;
 
+use CharlotteDunois\Yasmin\Models\VoiceChannel;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
@@ -34,6 +35,9 @@ class RythmDJ implements PluginInterface
     public static function process(EventData $data)
     {
         $p = new Permission("p.rythmdj.enabled", $data->huntress, false);
+        if (!$data->channel instanceof VoiceChannel) {
+            return;
+        }
         $p->addChannelContext($data->channel);
         if ($p->resolve()) {
             $match = $data->guild->roles->filter(function ($v) {
