@@ -223,6 +223,22 @@ class Permission
                 break;
         }
 
+        switch ($setting) {
+            case self::SETTING_GUILD:
+                $items = $items->filter(function ($v) {
+                    return $v['setting'] == $this->context->guild->id;
+                });
+                break;
+            case self::SETTING_CHANNEL:
+                $items = $items->filter(function ($v) {
+                    return $v['setting'] == $this->context->channel->id;
+                });
+                break;
+            case self::SETTING_GLOBAL:
+            default:
+                break;
+        }
+
         // get this out of the way first
         if ($items->count() == 0) {
             return null;
