@@ -15,6 +15,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\ExtendedPromiseInterface;
@@ -106,24 +107,35 @@ class Role implements PluginInterface
         }
     }
 
-    public static function roleEntry(EventData $data): ?ExtendedPromiseInterface
+    public static function roleEntry(EventData $data): ?PromiseInterface
     {
         try {
+            $p = new Permission("p.roles.toggle", $data->huntress, true);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
             $args = self::_split($data->message->content);
             if (count($args) < 2) {
                 return self::giveList($data);
             }
 
-            $char = trim(str_replace($args[0], "", $data->message->content)); // todo: do this better
+            $char = trim(self::arg_substr($data->message->content, 1));
             return self::toggleRole($data, $char);
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
         }
     }
 
-    private static function giveList(EventData $data): ?ExtendedPromiseInterface
+    private static function giveList(EventData $data): ?PromiseInterface
     {
         try {
+            $p = new Permission("p.roles.list", $data->huntress, true);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+
             $roles = self::getValidOptions($data->message->member);
             $inherits = self::getInheritances($data->message->member);
             if ($roles->count() == 0 && $inherits->count() == 0) {
@@ -246,13 +258,15 @@ class Role implements PluginInterface
         return (similar_text($a, $b) * 1000) - levenshtein($a, $b, 1, 5, 10);
     }
 
-    public static function roleInherit(EventData $data): ?ExtendedPromiseInterface
+    public static function roleInherit(EventData $data): ?PromiseInterface
     {
-        if (!in_array($data->message->author->id, $data->message->client->config['evalUsers'])) {
-            return self::unauthorized($data->message);
-        } // todo: HPM
-
         try {
+            $p = new Permission("p.roles.bind", $data->huntress, false);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+
             $args = self::_split($data->message->content);
             if (count($args) < 3 || !$data->guild->roles->has($args[1]) || !$data->guild->roles->has($args[2])) {
                 return self::error($data->message, "Error", "Usage: `!inheritrole SOURCE_ROLE_ID DEST_ROLE_ID`.");
@@ -285,11 +299,13 @@ class Role implements PluginInterface
 
     public static function roleBind(EventData $data): ?ExtendedPromiseInterface
     {
-        if (!in_array($data->message->author->id, $data->message->client->config['evalUsers'])) {
-            return self::unauthorized($data->message);
-        } // todo: HPM
-
         try {
+            $p = new Permission("p.roles.bind", $data->huntress, false);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+
             $args = self::_split($data->message->content);
             if (count($args) < 2 || !$data->guild->roles->has($args[1])) {
                 return self::error($data->message, "Error", "Usage: `!bindrole ROLE_ID`.");
