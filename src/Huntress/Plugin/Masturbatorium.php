@@ -51,9 +51,7 @@ class Masturbatorium implements PluginInterface
             } else {
                 $promises[] = $data->message->channel->send("{$data->user}, please try again. Have you read the rules?");
             }
-
-            return all($promises);
         }
-        return null;
+        return all($promises);
     }
 }
