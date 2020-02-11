@@ -305,11 +305,11 @@ trait PluginHelperTrait
         }
     }
 
-    public static function arg_substr(string $content, int $start, int $length = null): string
+    public static function arg_substr(string $content, int $start, int $length = null)
     {
         $args = self::_split($content);
         if (array_key_last($args) < $start) {
-            throw new \OutOfBoundsException('$start greater than length of string');
+            return false;
         }
 
         // @todo: this better
