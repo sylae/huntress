@@ -16,6 +16,8 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RedditProcessor;
+use React\ChildProcess\Process;
+use React\Promise\Deferred;
 use Throwable;
 use function Sentry\captureException;
 
@@ -104,7 +106,48 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
                 $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
             }
 
+            // send to discord
             $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+
+            // send to approval queue sheet
+            if ($channel == 386943351062265888) {
+                $allowed = ["Equipment", "Lore", "Character"];
+                if (!in_array($item->category, $allowed)) {
+                    $item->category = "Other";
+                }
+                $req = [
+                    'sheetID' => WormRP::APPROVAL_SHEET, 'sheetRange' => 'Queue!A10:H',
+                    'action' => 'pushRow',
+                    'data' => [
+                        $item->date->toDateString(),
+                        $item->title,
+                        $item->category,
+                        "Pending",
+                        $item->author,
+                        "",
+                        "",
+                        $item->link,
+                    ],
+                ];
+                $payload = base64_encode(json_encode($req));
+                $cmd = 'php scripts/pushGoogleSheet.php ' . $payload;
+                $this->huntress->log->debug("Running $cmd");
+                $process = new Process($cmd, null, null, []);
+                $process->start($this->huntress->getLoop());
+                $prom = new Deferred();
+
+                $process->on('exit', function (int $exitcode) use ($prom) {
+                    $this->huntress->log->debug("queueHandler child exited with code $exitcode.");
+
+                    if ($exitcode == 0) {
+                        $this->huntress->log->debug("queueHandler child success!");
+                        $prom->resolve();
+                    } else {
+                        $prom->reject();
+                        $this->huntress->log->debug("queueHandler child failure!");
+                    }
+                });
+            }
         } catch (Throwable $e) {
             captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);

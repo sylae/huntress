@@ -9,6 +9,7 @@
 namespace Huntress\Plugin;
 
 use Carbon\Carbon;
+use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
@@ -22,7 +23,10 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RSSProcessor;
+use React\ChildProcess\Process;
+use React\Promise\Deferred;
 use React\Promise\ExtendedPromiseInterface;
+use React\Promise\PromiseInterface;
 use Throwable;
 use function React\Promise\all;
 use function Sentry\captureException;
@@ -35,6 +39,9 @@ use function Sentry\captureException;
 class WormRP implements PluginInterface
 {
     use PluginHelperTrait;
+
+    // const APPROVAL_SHEET = '1kXME7JHB5VVa5pMBLy1qxlBBef7dkcs2JlXf3z97xpQ'; // test
+    const APPROVAL_SHEET = '1Crv5q-J_oZ_rGJebqJw6xIFeT3Gdil31dqqSEZL_mBc'; // prod
 
     public static function register(Huntress $bot)
     {
@@ -60,11 +67,16 @@ class WormRP implements PluginInterface
         }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
 
-        $eh = EventListener::new()
+        $bot->eventManager->addEventListener(EventListener::new()
             ->addCommand("character")
             ->addGuild(118981144464195584)
-            ->setCallback([self::class, "lookupHandler"]);
-        $bot->eventManager->addEventListener($eh);
+            ->setCallback([self::class, "lookupHandler"])
+        );
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("queue")
+            ->addGuild(118981144464195584)
+            ->setCallback([self::class, "queueHandler"])
+        );
     }
 
     public static function fetchAccount(
@@ -218,7 +230,7 @@ class WormRP implements PluginInterface
         }
     }
 
-    public static function lookupHandler(EventData $data): ?ExtendedPromiseInterface
+    public static function lookupHandler(EventData $data): ?PromiseInterface
     {
         try {
             $args = self::_split($data->message->content);
@@ -305,5 +317,124 @@ class WormRP implements PluginInterface
                 rawurlencode($char) . ">*";
         }
         return null;
+    }
+
+    public static function queueHandler(EventData $data): ?PromiseInterface
+    {
+        try {
+            $timeStart = microtime(true);
+            $b64 = base64_encode(json_encode([
+                'sheetID' => self::APPROVAL_SHEET, 'sheetRange' => 'Queue!A11:L',
+            ]));
+            $cmd = 'php scripts/pushGoogleSheet.php ' . $b64;
+            $data->huntress->log->debug("Running $cmd");
+            $process = new Process($cmd, null, null, [
+                ['file', 'nul', 'r'],
+                $stdout = tmpfile(),
+                ['file', 'nul', 'w'],
+            ]);
+            $process->start($data->huntress->getLoop());
+            $prom = new Deferred();
+
+            $process->on('exit', function (int $exitcode) use ($stdout, $prom, $data) {
+                $data->huntress->log->debug("queueHandler child exited with code $exitcode.");
+
+                // todo: use FileHelper filesystem nonsense for this.
+                rewind($stdout);
+                $childData = stream_get_contents($stdout);
+                fclose($stdout);
+
+                if ($exitcode == 0) {
+                    $data->huntress->log->debug("queueHandler child success!");
+                    $prom->resolve($childData);
+                } else {
+                    $prom->reject($childData);
+                    $data->huntress->log->debug("queueHandler child failure!");
+                }
+            });
+            return $data->message->channel->send("🔮")->then(function ($response) use ($prom, $timeStart) {
+                return $prom->promise()->then(function (string $childData) use ($response, $timeStart) {
+                    return self::queueHandlerProcess($childData, $response, $timeStart);
+                });
+            });
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e, true);
+        }
+    }
+
+    private static function queueHandlerProcess(string $childData, Message $response, float $timeStart): PromiseInterface
+    {
+        try {
+            $embed = new MessageEmbed();
+            $embed->setTitle("WormRP Approval Queue");
+            $embed->setURL("https://docs.google.com/spreadsheets/d/" . self::APPROVAL_SHEET . "/edit");
+            $embed->setTimestamp(time());
+            $col = self::unfuckQueueJSON($childData)->filter(function ($v) {
+                return $v->status != "COMPLETED" && $v->status != "On Hold";
+            })->each(function ($v) use ($embed) {
+
+                $title = sprintf("%s (%s day%s, %s)", $v->name, $v->date->diffInDays(),
+                    $v->date->diffInDays() == 1 ? "" : "s", $v->status);
+                $lines = [];
+
+                $approvers = [];
+                if (is_string($v->approver)) {
+                    $approvers[] = $v->approver;
+                }
+                if (is_string($v->lore)) {
+                    $approvers[] = $v->lore;
+                }
+                switch (count($approvers)) {
+                    case 0:
+                        $astr = "Awaiting approver";
+                        break;
+                    case 1:
+                        $astr = "Approver: " . implode(", ", $approvers);
+                        break;
+                    default:
+                        $astr = "Approvers: " . implode(", ", $approvers);
+                        break;
+                }
+                $lines[] = sprintf("[[Link](%s)] %s by %s (%s)", $v->url, $v->type, $v->author, $astr);
+
+                // notes
+                if (mb_strlen(trim($v->notes)) > 0) {
+                    $lines[] = $v->notes;
+                }
+
+                $embed->addField($title, implode(PHP_EOL, $lines));
+            });
+            $embed->setDescription("There are {$col->count()} items in the approval queue. If you see incorrect or outdated information please contact a staff member.");
+            $timeEnd = microtime(true);
+            return $response->edit(sprintf("Queue fetched in %s seconds.", number_format($timeEnd - $timeStart, 2)),
+                ['embed' => $embed]);
+        } catch (Throwable $e) {
+            return self::exceptionHandler($response, $e, true);
+        }
+    }
+
+    private static function unfuckQueueJSON(string $json): Collection
+    {
+        $decoded = json_decode($json, true);
+
+        // unfuck the data
+        return (new Collection($decoded['values']))->map(function ($v) {
+            foreach ($v as $k => $c) {
+                if (mb_strlen(trim($c)) == 0) {
+                    $v[$k] = null;
+                }
+            }
+            $obj = new \stdClass();
+            $obj->date = new Carbon($v[0] ?? null);
+            $obj->name = $v[1] ?? null;
+            $obj->type = $v[2] ?? null;
+            $obj->status = $v[3] ?? null;
+            $obj->author = $v[4] ?? null;
+            $obj->approver = $v[5] ?? null;
+            $obj->lore = $v[6] ?? null;
+            $obj->url = $v[7] ?? null;
+            $obj->notes = $v[11] ?? null;
+            return $obj;
+        });
     }
 }
