@@ -1,5 +1,6 @@
 composer.phar
 config.php
+google.json
 /vendor/
 /nbproject/private/
 /temp/
