@@ -11,6 +11,7 @@ namespace Huntress;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use React\EventLoop\Factory;
 use Sentry\ClientBuilder;
+use Sentry\SentrySdk;
 use Sentry\State\Hub;
 use Sentry\State\Scope;
 use Sentry\Transport\NullTransport;
@@ -37,7 +38,7 @@ if (php_uname('s') == "Windows NT") {
     $transport = new SentryTransport($builder->getOptions(), $loop);
 }
 $client = $builder->setTransport($transport)->getClient();
-Hub::setCurrent((new Hub($client)));
+SentrySdk::setCurrentHub(new Hub($client));
 
 set_exception_handler(function (Throwable $e) {
     $scope = new Scope();
