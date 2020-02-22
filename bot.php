@@ -34,10 +34,12 @@ $builder = ClientBuilder::create(array_merge($config['sentry'], [
 ]));
 if (php_uname('s') == "Windows NT") {
     $transport = new NullTransport();
+    $client = $builder->setTransport($transport)->getClient();
 } else {
-    $transport = new SentryTransport($builder->getOptions(), $loop);
+    $transport = new SentryTransportFactory();
+    $transport->setLoop($loop);
+    $client = $builder->setTransportFactory($transport)->getClient();
 }
-$client = $builder->setTransport($transport)->getClient();
 SentrySdk::setCurrentHub(new Hub($client));
 
 set_exception_handler(function (Throwable $e) {
