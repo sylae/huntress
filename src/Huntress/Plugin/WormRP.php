@@ -328,10 +328,15 @@ class WormRP implements PluginInterface
             ]));
             $cmd = 'php scripts/pushGoogleSheet.php ' . $b64;
             $data->huntress->log->debug("Running $cmd");
+            if (php_uname('s') == "Windows NT") {
+                $null = 'nul';
+            } else {
+                $null = '/dev/null';
+            }
             $process = new Process($cmd, null, null, [
-                ['file', 'nul', 'r'],
+                ['file', $null, 'r'],
                 $stdout = tmpfile(),
-                ['file', 'nul', 'w'],
+                ['file', $null, 'w'],
             ]);
             $process->start($data->huntress->getLoop());
             $prom = new Deferred();
