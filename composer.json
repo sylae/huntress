@@ -15,7 +15,7 @@
         "ext-json": "*",
         "charlottedunois/yasmin": "dev-master",
         "clue/block-react": "^1.3",
-        "clue/buzz-react": "^2.6",
+        "clue/buzz-react": "^2.7",
         "doctrine/dbal": "^2.9",
         "google/apiclient": "^2.4",
         "hoa/compiler": "^3.17",
