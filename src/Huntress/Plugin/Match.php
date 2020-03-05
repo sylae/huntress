@@ -16,8 +16,6 @@ use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Models\MessageReaction;
-use CharlotteDunois\Yasmin\Models\TextChannel;
-use CharlotteDunois\Yasmin\Utils\MessageHelpers;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Schema\Schema;
 use GetOpt\ArgumentException;
@@ -31,7 +29,7 @@ use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\Snowflake;
 use Huntress\UserErrorException;
-use React\Promise\ExtendedPromiseInterface as Promise;
+use React\Promise\PromiseInterface as Promise;
 use stdClass;
 use Throwable;
 use function React\Promise\all;
@@ -423,9 +421,7 @@ class Match implements PluginInterface
             $getOpt->set(GetOpt::SETTING_STRICT_OPERANDS, true);
             $getOpt->addOperands([
                 (new Operand('message',
-                    Operand::REQUIRED))->setValidation('is_numeric')->setDescription('The message ID to count votes on.'),
-                (new Operand('channel',
-                    Operand::OPTIONAL))->setValidation('is_string')->setDefaultValue((string) $message->channel)->setDescription('The channel the message is in, in #mention format. Default: current channel.'),
+                    Operand::REQUIRED))->setValidation('is_string')->setDescription('The message link to count votes on.'),
             ]);
             try {
                 $args = substr(strstr($message->content, " "), 1);
@@ -434,57 +430,45 @@ class Match implements PluginInterface
                 return self::send($message->channel, $getOpt->getHelpText());
             }
 
-            return MessageHelpers::parseMentions($bot,
-                $getOpt->getOperand('channel'))->then(function (array $res) use ($message, $getOpt) {
-                try {
-                    if (count($res) != 1 || !$res[0]['ref'] instanceof TextChannel) {
-                        return self::error($message, "Could not parse channel!",
-                            "#mention one channel, this channel must be accessible by Huntress.");
-                    }
-                    return $res[0]['ref']->fetchMessage($getOpt->getOperand('message'))->then(function ($quest) use (
-                        $message
-                    ) {
-                        return all($quest->reactions->map(function (
-                            MessageReaction $mr
-                        ) {
-                            return $mr->fetchUsers();
-                        })->all())->then(function (array $reactUsers) use ($message, $quest) {
-                            $reactions = [];
-                            $seenUsers = [];
-                            $cheaters = [];
+            return self::fetchMessage($bot,
+                $getOpt->getOperand("message"))->then(function (Message $quest) use ($message) {
+                return all($quest->reactions->map(function (
+                    MessageReaction $mr
+                ) {
+                    return $mr->fetchUsers();
+                })->all())->then(function (array $reactUsers) use ($message, $quest) {
+                    $reactions = [];
+                    $seenUsers = [];
+                    $cheaters = [];
 
-                            /** @var Collection $users */
-                            foreach ($reactUsers as $reactionID => $users) {
-                                /** @var \CharlotteDunois\Yasmin\Models\User $user */
-                                foreach ($users as $user) {
-                                    if (isset($seenUsers[$user->id])) {
-                                        if (isset($cheaters[$user->id])) {
-                                            continue;
-                                        } else {
-                                            $reactions[$seenUsers[$user->id]]--;
-                                            $cheaters[$user->id] = true;
-                                        }
-                                    } else {
-                                        if (!isset($reactions[$reactionID])) {
-                                            $reactions[$reactionID] = 0;
-                                        }
-
-                                        $reactions[$reactionID]++;
-                                        $seenUsers[$user->id] = $reactionID;
-                                    }
+                    /** @var Collection $users */
+                    foreach ($reactUsers as $reactionID => $users) {
+                        /** @var \CharlotteDunois\Yasmin\Models\User $user */
+                        foreach ($users as $user) {
+                            if (isset($seenUsers[$user->id])) {
+                                if (isset($cheaters[$user->id])) {
+                                    continue;
+                                } else {
+                                    $reactions[$seenUsers[$user->id]]--;
+                                    $cheaters[$user->id] = true;
                                 }
-                            }
-                            $msg = $quest->reactions->map(function (MessageReaction $mr
-                            ) use ($reactions) {
-                                return $mr->emoji->name . ' ' . ($reactions[$mr->emoji->name] ?? 0);
-                            })->implode(null, PHP_EOL);
+                            } else {
+                                if (!isset($reactions[$reactionID])) {
+                                    $reactions[$reactionID] = 0;
+                                }
 
-                            return $message->channel->send($msg);
-                        });
-                    });
-                } catch (Throwable $e) {
-                    self::exceptionHandler($message, $e);
-                }
+                                $reactions[$reactionID]++;
+                                $seenUsers[$user->id] = $reactionID;
+                            }
+                        }
+                    }
+                    $msg = $quest->reactions->map(function (MessageReaction $mr, $id
+                    ) use ($reactions) {
+                        return $mr->emoji->name . ' ' . ($reactions[$id] ?? 0);
+                    })->implode(null, PHP_EOL);
+
+                    return $message->channel->send($msg);
+                });
             });
         } catch (Throwable $e) {
             return self::exceptionHandler($message, $e);
