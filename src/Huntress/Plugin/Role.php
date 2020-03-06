@@ -121,7 +121,11 @@ class Role implements PluginInterface
             }
 
             $char = trim(self::arg_substr($data->message->content, 1));
-            return self::toggleRole($data, $char);
+            if (in_array(mb_strtolower($char), ["landlord", "landlords"])) {
+                return $data->message->channel->send("", ['files' => ['data/landlords.jpg']]);
+            } else {
+                return self::toggleRole($data, $char);
+            }
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
         }
