@@ -10,6 +10,7 @@ namespace Huntress\Plugin;
 
 use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
+use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\GuildMemberStorage;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
@@ -72,6 +73,7 @@ class Localization implements PluginInterface
             if (count($args) > 1) {
                 try {
                     $zone = new CarbonTimeZone($args[1]);
+                    $zone = self::normalizeTZName($zone);
                 } catch (\Throwable $e) {
                     return self::error($data->message, "Unknown Timezone",
                         "I couldn't understand that. Please pick a value from [this list](https://www.php.net/manual/en/timezones.php).");
@@ -81,7 +83,7 @@ class Localization implements PluginInterface
                 $query->bindValue(1, $data->message->author->id);
                 $query->bindValue(2, $zone->getName());
                 $query->execute();
-                $string = "Your timezone has been updated to **%s**.\nI have your local time as **%s**";
+                $string = "Your timezone has been updated to **%s**.\nI have your local time as **%s**\n\nIf this was incorrect, please use one of the values in <https://www.php.net/manual/en/timezones.php>.";
             } else {
                 $string = "Your timezone is currently set to **%s**.\nI have your local time as **%s**\n\nTo update, run `!timezone NewTimeZone` with one of the values in <https://www.php.net/manual/en/timezones.php>.";
             }
@@ -93,6 +95,21 @@ class Localization implements PluginInterface
                 })));
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e);
+        }
+    }
+
+    private static function normalizeTZName(CarbonTimeZone $in): CarbonTimeZone
+    {
+        $zones = (new Collection($in::listIdentifiers($in::ALL_WITH_BC)))
+            ->filter(function ($v) use ($in) {
+                return mb_strtolower($in->toRegionName()) == mb_strtolower($v);
+            });
+
+        if ($zones->count() == 0) {
+            // nothing matched but we got something, it's probably just an offset?
+            return $in;
+        } else {
+            return new CarbonTimeZone($zones->first());
         }
     }
 
