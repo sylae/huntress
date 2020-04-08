@@ -94,7 +94,7 @@ class WormRPFlairs implements PluginInterface
                 });
 
                 // push the flair to the subreddit!
-                $chain->then(function (string $flair) use ($redditUser, $data) {
+                $chain = $chain->then(function (string $flair) use ($redditUser, $data) {
                     $user = escapeshellarg($redditUser);
                     $flair = escapeshellarg($flair);
                     $cmd = "wormrpflair $user $flair";
@@ -132,7 +132,7 @@ class WormRPFlairs implements PluginInterface
                 });
 
                 // send our update
-                $chain->then(function ($cmd) use ($response) {
+                $chain = $chain->then(function ($cmd) use ($response) {
                     return $response->edit($cmd);
                 }, function ($e) use ($data) {
                     return self::error($data->message, "Editing flair failed!", $e);
