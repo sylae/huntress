@@ -10,6 +10,7 @@ namespace Huntress\Plugin;
 
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use GetOpt\ArgumentException;
 use GetOpt\GetOpt;
@@ -21,6 +22,8 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Psr\Http\Message\ResponseInterface;
+use React\ChildProcess\Process;
+use React\Promise\Deferred;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
 use function React\Promise\reject;
@@ -45,6 +48,11 @@ class WormRPFlairs implements PluginInterface
             ->addGuild(118981144464195584)
             ->setCallback([self::class, "repHandler"])
         );
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("flair")
+            ->addGuild(118981144464195584)
+            ->setCallback([self::class, "flairHandler"])
+        );
     }
 
     public static function fetchAccount(
@@ -56,6 +64,96 @@ class WormRPFlairs implements PluginInterface
         $res = $qb->execute()->fetchAll();
         foreach ($res as $data) {
             return $guild->members->get($data['user']) ?? null;
+        }
+        return null;
+    }
+
+    public static function flairHandler(EventData $data): ?Promise
+    {
+        return $data->message->channel->send("🔮")->then(function (Message $response) use ($data) {
+            try {
+
+                // get the user's flair...
+                $redditUser = self::fetchRedditAccount($data->message->member);
+                if (is_null($redditUser)) {
+                    return $response->edit("Sorry, I couldn't find your reddit account. Please bug a staff member to run the following command:\n" .
+                        "`!linkAccount your_reddit_name_with_no_/u/_prefix \"{$data->message->member->displayName}\"`");
+                }
+
+                // get the flair from the wiki!
+                $wikiURL = "https://wormrp.syl.ae/w/api.php?action=parse&format=json&text=%7B%7Bflair%7C%2Fu%2F" . urlencode($redditUser) . "%7D%7D&contentmodel=wikitext";
+                $chain = URLHelpers::getHTTPClient()->get($wikiURL)->then(function (ResponseInterface $response) {
+                    // get new flair tag
+                    $text = json_decode((string) $response->getBody())->parse->text->{'*'};
+                    $flair = trim(html5qp($text, 'p')->text());
+                    if (mb_strlen($flair) > 64) {
+                        // attempt to shorten it to make it maybe fit.
+                        $flair = str_replace(" | ", " ", $flair);
+                    }
+                    return $flair;
+                });
+
+                // push the flair to the subreddit!
+                $chain->then(function (string $flair) use ($redditUser, $data) {
+                    $user = escapeshellarg($redditUser);
+                    $flair = escapeshellarg($flair);
+                    $cmd = "wormrpflair $user $flair";
+                    $data->huntress->log->debug("Running $cmd");
+                    if (php_uname('s') == "Windows NT") {
+                        $null = 'nul';
+                    } else {
+                        $null = '/dev/null';
+                    }
+                    $process = new Process($cmd, null, null, [
+                        ['file', $null, 'r'],
+                        $stdout = tmpfile(),
+                        ['file', $null, 'w'],
+                    ]);
+                    $process->start($data->huntress->getLoop());
+                    $prom = new Deferred();
+
+                    $process->on('exit', function (int $exitcode) use ($stdout, $prom, $data) {
+                        $data->huntress->log->debug("flairHandler child exited with code $exitcode.");
+
+                        // todo: use FileHelper filesystem nonsense for this.
+                        rewind($stdout);
+                        $childData = stream_get_contents($stdout);
+                        fclose($stdout);
+
+                        if ($exitcode == 0) {
+                            $data->huntress->log->debug("flairHandler child success!");
+                            $prom->resolve($childData);
+                        } else {
+                            $prom->reject($childData);
+                            $data->huntress->log->debug("flairHandler child failure!");
+                        }
+                    });
+                    return $prom->promise();
+                });
+
+                // send our update
+                $chain->then(function ($cmd) use ($response) {
+                    return $response->edit($cmd);
+                }, function ($e) use ($data) {
+                    return self::error($data->message, "Editing flair failed!", $e);
+                });
+
+                return $chain;
+
+            } catch (Throwable $e) {
+                return self::exceptionHandler($data->message, $e);
+            }
+        });
+    }
+
+    public static function fetchRedditAccount(
+        GuildMember $member
+    ): ?string {
+        $qb = DatabaseFactory::get()->createQueryBuilder();
+        $qb->select("*")->from("wormrp_users")->where('`user` = ?')->setParameter(0, $member->id, "integer");
+        $res = $qb->execute()->fetchAll();
+        foreach ($res as $data) {
+            return $data['redditName'];
         }
         return null;
     }
