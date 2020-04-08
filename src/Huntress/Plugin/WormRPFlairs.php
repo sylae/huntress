@@ -39,12 +39,12 @@ class WormRPFlairs implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $eh = EventListener::new()
+        $bot->eventManager->addEventListener(EventListener::new()
             ->addCommand("rep")
             ->addCommand("reputation")
             ->addGuild(118981144464195584)
-            ->setCallback([self::class, "repHandler"]);
-        $bot->eventManager->addEventListener($eh);
+            ->setCallback([self::class, "repHandler"])
+        );
     }
 
     public static function fetchAccount(
