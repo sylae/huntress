@@ -15,6 +15,7 @@ use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use GetOpt\ArgumentException;
 use GetOpt\GetOpt;
 use GetOpt\Operand;
+use GetOpt\Option;
 use Huntress\DatabaseFactory;
 use Huntress\EventData;
 use Huntress\EventListener;
@@ -73,11 +74,42 @@ class WormRPFlairs implements PluginInterface
         return $data->message->channel->send("🔮")->then(function (Message $response) use ($data) {
             try {
 
+                $getOpt = new GetOpt();
+                $getOpt->set(GetOpt::SETTING_SCRIPT_NAME, '!flair');
+                $getOpt->set(GetOpt::SETTING_STRICT_OPERANDS, true);
+
+                $getOpt->addOperand((new Operand('color', Operand::OPTIONAL))
+                    ->setValidation('is_string')
+                    ->setDescription("The color (CSS class) you want your flair to be. Consult the pins in <#118981977935183873> for options.")
+                );
+                if ($data->message->member->roles->has(456321111945248779)) {
+                    $getOpt->addOption((new Option('u', 'user', GetOpt::OPTIONAL_ARGUMENT))
+                        ->setDescription("(Staff) Specify a different user.")
+                    );
+                }
+
+                try {
+                    $args = substr(strstr($data->message->content, " "), 1);
+                    $getOpt->process((string) $args);
+                } catch (ArgumentException $exception) {
+                    return $response->edit($getOpt->getHelpText());
+                }
+
+                $member = $data->message->member;
+                if ($data->message->member->roles->has(456321111945248779) && is_string($getOpt->getOption("user"))) {
+                    $overMember = self::parseGuildUser($data->message->guild, $getOpt->getOption("user"));
+                    if ($overMember instanceof GuildMember) {
+                        $member = $overMember;
+                    } else {
+                        $response->edit("I don't know who that is :(");
+                    }
+                }
+
                 // get the user's flair...
-                $redditUser = self::fetchRedditAccount($data->message->member);
+                $redditUser = self::fetchRedditAccount($member);
                 if (is_null($redditUser)) {
                     return $response->edit("Sorry, I couldn't find your reddit account. Please bug a staff member to run the following command:\n" .
-                        "`!linkAccount your_reddit_name_with_no_/u/_prefix \"{$data->message->member->displayName}\"`");
+                        "`!linkAccount your_reddit_name_with_no_/u/_prefix \"{$member->displayName}\"`");
                 }
 
                 // get the flair from the wiki!
@@ -94,10 +126,15 @@ class WormRPFlairs implements PluginInterface
                 });
 
                 // push the flair to the subreddit!
-                $chain = $chain->then(function (string $flair) use ($redditUser, $data) {
+                $chain = $chain->then(function (string $flair) use ($redditUser, $data, $getOpt) {
                     $user = escapeshellarg($redditUser);
                     $flair = escapeshellarg($flair);
-                    $cmd = "wormrpflair $user $flair";
+                    if (is_string($getOpt->getOperand("color"))) {
+                        $css = escapeshellarg($getOpt->getOperand("color"));
+                    } else {
+                        $css = "";
+                    }
+                    $cmd = trim("wormrpflair $user $flair $css");
                     $data->huntress->log->debug("Running $cmd");
                     if (php_uname('s') == "Windows NT") {
                         $null = 'nul';
