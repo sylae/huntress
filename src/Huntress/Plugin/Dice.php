@@ -45,6 +45,11 @@ class Dice implements Visit, PluginInterface
             ->addCommand("rolldebug")
             ->setCallback([self::class, "processDebug"]);
         $bot->eventManager->addEventListener($eh);
+
+        $eh = EventListener::new()
+            ->addCommand("succ")
+            ->setCallback([self::class, "v20Handler"]);
+        $bot->eventManager->addEventListener($eh);
     }
 
     public static function processDebug(EventData $data)
@@ -221,6 +226,76 @@ class Dice implements Visit, PluginInterface
         }
         if (null === $element->getParent()) {
             return $acc();
+        }
+    }
+
+    public static function v20Handler(EventData $data)
+    {
+        try {
+            $p = new Permission("p.dice.roll.v20", $data->huntress, true);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+
+            $usage = "Usage: `!succ numDice [difficulty=6] [spec]`";
+
+            $parts = self::_split($data->message->content);
+            if (count($parts) < 2 || count($parts) > 4 || !is_numeric($parts[1])) {
+                return $data->message->channel->send($usage);
+            } else {
+                $num = $parts[1];
+                if ($num < 1 || $num > 100) {
+                    return $data->message->channel->send("wtf how many dice is this");
+                }
+            }
+
+
+            $diff = 6;
+            if (count($parts) > 2 && is_numeric($parts[2])) {
+                $diff = $parts[2];
+                if ($num < 1 || $num > 100) {
+                    return $data->message->channel->send("difficulty what the fuck");
+                }
+            }
+
+            $spec = false;
+            if (count($parts) == 4 && $parts[3] == "spec") {
+                $spec = true;
+            }
+
+            $rolls = [];
+            $succs = 0;
+            $count = 0;
+
+            while ($count < $num) {
+                $count++;
+                $r = random_int(1, 10);
+                if ($r == 1) {
+                    $succs--;
+                    $rolls[] = "~~**1**~~";
+                } elseif ($r == 10 && $spec) {
+                    $succs++;
+                    $succs++;
+                    $rolls[] = "**10**";
+                } else {
+                    if ($r >= $diff) {
+                        $succs++;
+                        $rolls[] = $r;
+                    } else {
+                        $rolls[] = "~~$r~~";
+                    }
+                }
+            }
+
+            $specmsg = $spec ? " (with specialty)" : "";
+            $message = sprintf("%s rolled **%s** dice at difficulty **%s**%s\n**%s successes** (%s)",
+                $data->message->member,
+                $num,
+                $diff, $specmsg, $succs, implode(", ", $rolls));
+            return $data->message->channel->send($message);
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e, false);
         }
     }
 }
