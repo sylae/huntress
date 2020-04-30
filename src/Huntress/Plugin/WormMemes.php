@@ -79,7 +79,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
 
             switch ($item->category) {
                 case "Ward":
-                    $channel = 609585631818940427; // rearden
+                    $channel = 705397126775177217; // rearden
                     break;
                 case "Pact":
                     $channel = 620845142382739467; // non agression pact
