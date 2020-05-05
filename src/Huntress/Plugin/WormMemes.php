@@ -86,6 +86,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
                     break;
                 case "Poof":
                     $channel = 707103734018342923;
+                    break;
                 case "Twig":
                     $channel = 621183537424498718;
                     break;
