@@ -286,7 +286,7 @@ trait PluginHelperTrait
     public static function fetchMessage(Huntress $bot, string $url): PromiseInterface
     {
         $match = [];
-        preg_match('/https:\/\/.*?discordapp.com\/channels\/(\d+)\/(\d+)\/(\d+)/i', $url, $match);
+        preg_match('/https:\/\/.*?discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)/i', $url, $match);
 
         if (is_numeric($match[1]) && is_numeric($match[2]) && is_numeric($match[3])) {
             $guild = $bot->guilds->get($match[1]);
