@@ -13,7 +13,7 @@
     "require": {
         "php": ">=7.3",
         "ext-json": "*",
-        "charlottedunois/yasmin": "dev-master",
+        "sylae/yasmin": "dev-master",
         "clue/block-react": "^1.3",
         "clue/buzz-react": "^2.6",
         "doctrine/dbal": "^2.9",

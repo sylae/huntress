@@ -4,11 +4,11 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ed17d10905f0976c0fed429bc38ad161",
+    "content-hash": "c916b3f2c6d9323dbaff18c6dce0e2a8",
     "packages": [
         {
             "name": "cakephp/core",
-            "version": "3.8.9",
+            "version": "3.8.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/cakephp/core.git",
@@ -58,16 +58,16 @@
         },
         {
             "name": "cakephp/utility",
-            "version": "3.8.9",
+            "version": "3.8.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/cakephp/utility.git",
-                "reference": "71fe6e8b39f3ef0dedd036cbf112a6e84b01759b"
+                "reference": "9f121defbff4b5f3691b33de8cb203b8923fc2a4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cakephp/utility/zipball/71fe6e8b39f3ef0dedd036cbf112a6e84b01759b",
-                "reference": "71fe6e8b39f3ef0dedd036cbf112a6e84b01759b",
+                "url": "https://api.github.com/repos/cakephp/utility/zipball/9f121defbff4b5f3691b33de8cb203b8923fc2a4",
+                "reference": "9f121defbff4b5f3691b33de8cb203b8923fc2a4",
                 "shasum": ""
             },
             "require": {
@@ -107,199 +107,7 @@
                 "string",
                 "utility"
             ],
-            "time": "2020-01-10T15:24:40+00:00"
-        },
-        {
-            "name": "charlottedunois/collection",
-            "version": "v0.2.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/CharlotteDunois/Collection.git",
-                "reference": "b95c81b207651689c3f08040e00760d80565fd44"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/CharlotteDunois/Collection/zipball/b95c81b207651689c3f08040e00760d80565fd44",
-                "reference": "b95c81b207651689c3f08040e00760d80565fd44",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^8.0|^7.0|^6.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "CharlotteDunois\\Collect\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "Charlotte Dunois",
-                    "email": "github@charuru.moe"
-                }
-            ],
-            "description": "Collection, an utility to conventionally store a key-value pair.",
-            "homepage": "https://github.com/CharlotteDunois/Collection",
-            "abandoned": true,
-            "time": "2018-12-04T18:43:09+00:00"
-        },
-        {
-            "name": "charlottedunois/eventemitter",
-            "version": "v0.1.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/CharlotteDunois/EventEmitter.git",
-                "reference": "7ebba76b06e56b9b031a46ef00a33300c8ce0b00"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/CharlotteDunois/EventEmitter/zipball/7ebba76b06e56b9b031a46ef00a33300c8ce0b00",
-                "reference": "7ebba76b06e56b9b031a46ef00a33300c8ce0b00",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.1.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "CharlotteDunois\\Events\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "Charlotte Dunois",
-                    "email": "github@charuru.moe"
-                }
-            ],
-            "description": "This is an Event Emitter equivalent to Node.js' Event Emitter.",
-            "homepage": "https://github.com/CharlotteDunois/EventEmitter",
-            "keywords": [
-                "EventEmitter",
-                "emitter",
-                "event",
-                "events"
-            ],
-            "abandoned": true,
-            "time": "2019-04-14T15:44:49+00:00"
-        },
-        {
-            "name": "charlottedunois/validator",
-            "version": "v0.3.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/CharlotteDunois/Validator.git",
-                "reference": "f55734605db4dc630d7f263d0bcdc7d83d9bbfbc"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/CharlotteDunois/Validator/zipball/f55734605db4dc630d7f263d0bcdc7d83d9bbfbc",
-                "reference": "f55734605db4dc630d7f263d0bcdc7d83d9bbfbc",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "7"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "CharlotteDunois\\Validation\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "Charlotte Dunois",
-                    "email": "github@charuru.moe"
-                }
-            ],
-            "description": "PHP Validator for stuff.",
-            "homepage": "https://github.com/CharlotteDunois/Validator",
-            "keywords": [
-                "validation"
-            ],
-            "abandoned": true,
-            "time": "2019-01-15T17:31:56+00:00"
-        },
-        {
-            "name": "charlottedunois/yasmin",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/CharlotteDunois/Yasmin.git",
-                "reference": "3beff0ee55e86ea44420cfd4942e722542308266"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/CharlotteDunois/Yasmin/zipball/3beff0ee55e86ea44420cfd4942e722542308266",
-                "reference": "3beff0ee55e86ea44420cfd4942e722542308266",
-                "shasum": ""
-            },
-            "require": {
-                "charlottedunois/collection": "^0.2.0",
-                "charlottedunois/eventemitter": "^0.1.5",
-                "charlottedunois/validator": "^0.3.0",
-                "clue/buzz-react": "^2.6.0",
-                "ext-bcmath": "*",
-                "ext-date": "*",
-                "ext-filter": "*",
-                "ext-json": "*",
-                "ext-mbstring": "*",
-                "ext-openssl": "*",
-                "ext-pcre": "*",
-                "ext-zlib": "*",
-                "php": ">=7.1",
-                "psr/http-message": "^1.0",
-                "ratchet/pawl": "^0.3.1",
-                "react/event-loop": "^1.0|^0.5|^0.4.3",
-                "react/filesystem": "^0.1.1",
-                "react/promise": "^2.7.0",
-                "ringcentral/psr7": "^1.2"
-            },
-            "require-dev": {
-                "charlottedunois/athena": "^0.1.1|dev-master",
-                "charlottedunois/kimberly": "^0.1.2|dev-master"
-            },
-            "suggest": {
-                "charlottedunois/athena": "For Redis-backed ratelimit bucket",
-                "charlottedunois/kimberly": "For WS encoding etf 🚀"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "CharlotteDunois\\Yasmin\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "CharlotteDunois",
-                    "email": "github@charuru.moe"
-                }
-            ],
-            "description": "Yasmin is a Discord API library for PHP.",
-            "abandoned": true,
-            "time": "2019-12-01T12:05:50+00:00"
+            "time": "2020-02-18T01:57:35+00:00"
         },
         {
             "name": "clue/block-react",
@@ -356,26 +164,25 @@
         },
         {
             "name": "clue/buzz-react",
-            "version": "v2.6.1",
+            "version": "v2.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/clue/reactphp-buzz.git",
-                "reference": "47562f6afcb521f216dd90d15ba5e58d02696869"
+                "reference": "ca9537cb5ab7b5aaebe93429980a17cf4ead32b7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/clue/reactphp-buzz/zipball/47562f6afcb521f216dd90d15ba5e58d02696869",
-                "reference": "47562f6afcb521f216dd90d15ba5e58d02696869",
+                "url": "https://api.github.com/repos/clue/reactphp-buzz/zipball/ca9537cb5ab7b5aaebe93429980a17cf4ead32b7",
+                "reference": "ca9537cb5ab7b5aaebe93429980a17cf4ead32b7",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3",
                 "psr/http-message": "^1.0",
-                "react/event-loop": "^1.0 || ^0.5 || ^0.4 || ^0.3",
+                "react/event-loop": "^1.0 || ^0.5",
                 "react/http-client": "^0.5.10",
                 "react/promise": "^2.2.1 || ^1.2.1",
                 "react/promise-stream": "^1.0 || ^0.1.1",
-                "react/promise-timer": "^1.2",
                 "react/socket": "^1.1",
                 "react/stream": "^1.0 || ^0.7",
                 "ringcentral/psr7": "^1.2"
@@ -413,7 +220,7 @@
                 "psr-7",
                 "reactphp"
             ],
-            "time": "2020-01-14T13:22:15+00:00"
+            "time": "2020-02-26T12:05:32+00:00"
         },
         {
             "name": "clue/stream-filter",
@@ -466,6 +273,61 @@
                 "stream_filter_register"
             ],
             "time": "2019-04-09T12:31:48+00:00"
+        },
+        {
+            "name": "composer/package-versions-deprecated",
+            "version": "1.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/composer/package-versions-deprecated.git",
+                "reference": "98df7f1b293c0550bd5b1ce6b60b59bdda23aa47"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/composer/package-versions-deprecated/zipball/98df7f1b293c0550bd5b1ce6b60b59bdda23aa47",
+                "reference": "98df7f1b293c0550bd5b1ce6b60b59bdda23aa47",
+                "shasum": ""
+            },
+            "require": {
+                "composer-plugin-api": "^1.1.0 || ^2.0",
+                "php": "^7"
+            },
+            "replace": {
+                "ocramius/package-versions": "1.2 - 1.8.99"
+            },
+            "require-dev": {
+                "composer/composer": "^1.9.3 || ^2.0@dev",
+                "ext-zip": "^1.13",
+                "phpunit/phpunit": "^6.5 || ^7"
+            },
+            "type": "composer-plugin",
+            "extra": {
+                "class": "PackageVersions\\Installer",
+                "branch-alias": {
+                    "dev-master": "1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PackageVersions\\": "src/PackageVersions"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Marco Pivetta",
+                    "email": "ocramius@gmail.com"
+                },
+                {
+                    "name": "Jordi Boggiano",
+                    "email": "j.boggiano@seld.be"
+                }
+            ],
+            "description": "Composer plugin that provides efficient querying for installed package versions (no runtime IO)",
+            "time": "2020-04-23T11:49:37+00:00"
         },
         {
             "name": "doctrine/cache",
@@ -551,16 +413,16 @@
         },
         {
             "name": "doctrine/dbal",
-            "version": "v2.10.1",
+            "version": "2.10.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/dbal.git",
-                "reference": "c2b8e6e82732a64ecde1cddf9e1e06cb8556e3d8"
+                "reference": "aab745e7b6b2de3b47019da81e7225e14dcfdac8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/dbal/zipball/c2b8e6e82732a64ecde1cddf9e1e06cb8556e3d8",
-                "reference": "c2b8e6e82732a64ecde1cddf9e1e06cb8556e3d8",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/aab745e7b6b2de3b47019da81e7225e14dcfdac8",
+                "reference": "aab745e7b6b2de3b47019da81e7225e14dcfdac8",
                 "shasum": ""
             },
             "require": {
@@ -572,9 +434,11 @@
             "require-dev": {
                 "doctrine/coding-standard": "^6.0",
                 "jetbrains/phpstorm-stubs": "^2019.1",
-                "phpstan/phpstan": "^0.11.3",
+                "nikic/php-parser": "^4.4",
+                "phpstan/phpstan": "^0.12",
                 "phpunit/phpunit": "^8.4.1",
-                "symfony/console": "^2.0.5|^3.0|^4.0|^5.0"
+                "symfony/console": "^2.0.5|^3.0|^4.0|^5.0",
+                "vimeo/psalm": "^3.11"
             },
             "suggest": {
                 "symfony/console": "For helpful console commands such as SQL execution and import of files."
@@ -639,7 +503,7 @@
                 "sqlserver",
                 "sqlsrv"
             ],
-            "time": "2020-01-04T12:56:21+00:00"
+            "time": "2020-04-20T17:19:26+00:00"
         },
         {
             "name": "doctrine/event-manager",
@@ -719,33 +583,38 @@
         },
         {
             "name": "doctrine/inflector",
-            "version": "1.3.1",
+            "version": "1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/inflector.git",
-                "reference": "ec3a55242203ffa6a4b27c58176da97ff0a7aec1"
+                "reference": "ab5de36233a1995f9c776c741b803eb8207aebef"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/inflector/zipball/ec3a55242203ffa6a4b27c58176da97ff0a7aec1",
-                "reference": "ec3a55242203ffa6a4b27c58176da97ff0a7aec1",
+                "url": "https://api.github.com/repos/doctrine/inflector/zipball/ab5de36233a1995f9c776c741b803eb8207aebef",
+                "reference": "ab5de36233a1995f9c776c741b803eb8207aebef",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.1"
+                "php": "^7.2"
             },
             "require-dev": {
-                "phpunit/phpunit": "^6.2"
+                "doctrine/coding-standard": "^7.0",
+                "phpstan/phpstan": "^0.11",
+                "phpstan/phpstan-phpunit": "^0.11",
+                "phpstan/phpstan-strict-rules": "^0.11",
+                "phpunit/phpunit": "^7.0 || ^8.0 || ^9.0"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.3.x-dev"
+                    "dev-master": "2.0.x-dev"
                 }
             },
             "autoload": {
                 "psr-4": {
-                    "Doctrine\\Common\\Inflector\\": "lib/Doctrine/Common/Inflector"
+                    "Doctrine\\Common\\Inflector\\": "lib/Doctrine/Common/Inflector",
+                    "Doctrine\\Inflector\\": "lib/Doctrine/Inflector"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -774,15 +643,21 @@
                     "email": "schmittjoh@gmail.com"
                 }
             ],
-            "description": "Common String Manipulations with regard to casing and singular/plural rules.",
-            "homepage": "http://www.doctrine-project.org",
+            "description": "PHP Doctrine Inflector is a small library that can perform string manipulations with regard to upper/lowercase and singular/plural forms of words.",
+            "homepage": "https://www.doctrine-project.org/projects/inflector.html",
             "keywords": [
                 "inflection",
-                "pluralize",
-                "singularize",
-                "string"
+                "inflector",
+                "lowercase",
+                "manipulation",
+                "php",
+                "plural",
+                "singular",
+                "strings",
+                "uppercase",
+                "words"
             ],
-            "time": "2019-10-30T19:59:35+00:00"
+            "time": "2020-05-06T11:01:57+00:00"
         },
         {
             "name": "doctrine/instantiator",
@@ -885,23 +760,23 @@
         },
         {
             "name": "firebase/php-jwt",
-            "version": "v5.0.0",
+            "version": "v5.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/firebase/php-jwt.git",
-                "reference": "9984a4d3a32ae7673d6971ea00bae9d0a1abba0e"
+                "reference": "feb0e820b8436873675fd3aca04f3728eb2185cb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/9984a4d3a32ae7673d6971ea00bae9d0a1abba0e",
-                "reference": "9984a4d3a32ae7673d6971ea00bae9d0a1abba0e",
+                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/feb0e820b8436873675fd3aca04f3728eb2185cb",
+                "reference": "feb0e820b8436873675fd3aca04f3728eb2185cb",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
             "require-dev": {
-                "phpunit/phpunit": " 4.8.35"
+                "phpunit/phpunit": ">=4.8 <=9"
             },
             "type": "library",
             "autoload": {
@@ -927,20 +802,24 @@
             ],
             "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP. Should conform to the current spec.",
             "homepage": "https://github.com/firebase/php-jwt",
-            "time": "2017-06-27T22:17:23+00:00"
+            "keywords": [
+                "jwt",
+                "php"
+            ],
+            "time": "2020-03-25T18:49:23+00:00"
         },
         {
             "name": "google/apiclient",
-            "version": "v2.4.0",
+            "version": "v2.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client.git",
-                "reference": "cd3c37998020d91ae4eafca4f26a92da4dabba83"
+                "reference": "1fdfe942f9aaf3064e621834a5e3047fccb3a6da"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-api-php-client/zipball/cd3c37998020d91ae4eafca4f26a92da4dabba83",
-                "reference": "cd3c37998020d91ae4eafca4f26a92da4dabba83",
+                "url": "https://api.github.com/repos/googleapis/google-api-php-client/zipball/1fdfe942f9aaf3064e621834a5e3047fccb3a6da",
+                "reference": "1fdfe942f9aaf3064e621834a5e3047fccb3a6da",
                 "shasum": ""
             },
             "require": {
@@ -957,7 +836,7 @@
                 "cache/filesystem-adapter": "^0.3.2",
                 "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0",
                 "phpcompatibility/php-compatibility": "^9.2",
-                "phpunit/phpunit": "~4.8.36",
+                "phpunit/phpunit": "^4.8|^5.0",
                 "squizlabs/php_codesniffer": "~2.3",
                 "symfony/css-selector": "~2.1",
                 "symfony/dom-crawler": "~2.1"
@@ -988,20 +867,20 @@
             "keywords": [
                 "google"
             ],
-            "time": "2019-09-11T17:38:10+00:00"
+            "time": "2020-03-26T15:30:32+00:00"
         },
         {
             "name": "google/apiclient-services",
-            "version": "v0.127",
+            "version": "v0.134",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client-services.git",
-                "reference": "19eacad739807e522891bf3f911ffab4a4c29869"
+                "reference": "4237f6725a48761701101e26e4575ddb053b5d80"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/19eacad739807e522891bf3f911ffab4a4c29869",
-                "reference": "19eacad739807e522891bf3f911ffab4a4c29869",
+                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/4237f6725a48761701101e26e4575ddb053b5d80",
+                "reference": "4237f6725a48761701101e26e4575ddb053b5d80",
                 "shasum": ""
             },
             "require": {
@@ -1025,20 +904,20 @@
             "keywords": [
                 "google"
             ],
-            "time": "2020-02-17T00:24:19+00:00"
+            "time": "2020-05-10T00:25:08+00:00"
         },
         {
             "name": "google/auth",
-            "version": "v1.7.1",
+            "version": "v1.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-auth-library-php.git",
-                "reference": "39e243a7d8320b1889ab8bb4cd6f98f7af83c582"
+                "reference": "c7b295feb248f138f462a1e6b7d635e4244204c5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/39e243a7d8320b1889ab8bb4cd6f98f7af83c582",
-                "reference": "39e243a7d8320b1889ab8bb4cd6f98f7af83c582",
+                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/c7b295feb248f138f462a1e6b7d635e4244204c5",
+                "reference": "c7b295feb248f138f462a1e6b7d635e4244204c5",
                 "shasum": ""
             },
             "require": {
@@ -1077,27 +956,28 @@
                 "google",
                 "oauth2"
             ],
-            "time": "2020-02-12T20:54:50+00:00"
+            "time": "2020-03-26T19:47:36+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
-            "version": "6.5.2",
+            "version": "6.5.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "43ece0e75098b7ecd8d13918293029e555a50f82"
+                "reference": "aab4ebd862aa7d04f01a4b51849d657db56d882e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/43ece0e75098b7ecd8d13918293029e555a50f82",
-                "reference": "43ece0e75098b7ecd8d13918293029e555a50f82",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/aab4ebd862aa7d04f01a4b51849d657db56d882e",
+                "reference": "aab4ebd862aa7d04f01a4b51849d657db56d882e",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "guzzlehttp/promises": "^1.0",
                 "guzzlehttp/psr7": "^1.6.1",
-                "php": ">=5.5"
+                "php": ">=5.5",
+                "symfony/polyfill-intl-idn": "^1.11"
             },
             "require-dev": {
                 "ext-curl": "*",
@@ -1105,7 +985,6 @@
                 "psr/log": "^1.1"
             },
             "suggest": {
-                "ext-intl": "Required for Internationalized Domain Name (IDN) support",
                 "psr/log": "Required for using the Log middleware"
             },
             "type": "library",
@@ -1144,7 +1023,7 @@
                 "rest",
                 "web service"
             ],
-            "time": "2019-12-23T11:57:10+00:00"
+            "time": "2020-04-18T10:38:46+00:00"
         },
         {
             "name": "guzzlehttp/promises",
@@ -2174,20 +2053,20 @@
         },
         {
             "name": "jean85/pretty-package-versions",
-            "version": "1.2",
+            "version": "1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Jean85/pretty-package-versions.git",
-                "reference": "75c7effcf3f77501d0e0caa75111aff4daa0dd48"
+                "reference": "e3517fb11b67e798239354fe8213927d012ad8f9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Jean85/pretty-package-versions/zipball/75c7effcf3f77501d0e0caa75111aff4daa0dd48",
-                "reference": "75c7effcf3f77501d0e0caa75111aff4daa0dd48",
+                "url": "https://api.github.com/repos/Jean85/pretty-package-versions/zipball/e3517fb11b67e798239354fe8213927d012ad8f9",
+                "reference": "e3517fb11b67e798239354fe8213927d012ad8f9",
                 "shasum": ""
             },
             "require": {
-                "ocramius/package-versions": "^1.2.0",
+                "composer/package-versions-deprecated": "^1.8.0",
                 "php": "^7.0"
             },
             "require-dev": {
@@ -2221,7 +2100,7 @@
                 "release",
                 "versions"
             ],
-            "time": "2018-06-13T13:22:40+00:00"
+            "time": "2020-04-24T14:19:45+00:00"
         },
         {
             "name": "league/html-to-markdown",
@@ -2437,24 +2316,26 @@
         },
         {
             "name": "nesbot/carbon",
-            "version": "2.30.0",
+            "version": "2.33.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/briannesbitt/Carbon.git",
-                "reference": "912dff66d2690ca66abddb9b291a1df5f371d3b4"
+                "reference": "4d93cb95a80d9ffbff4018fe58ae3b7dd7f4b99b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/912dff66d2690ca66abddb9b291a1df5f371d3b4",
-                "reference": "912dff66d2690ca66abddb9b291a1df5f371d3b4",
+                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/4d93cb95a80d9ffbff4018fe58ae3b7dd7f4b99b",
+                "reference": "4d93cb95a80d9ffbff4018fe58ae3b7dd7f4b99b",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "php": "^7.1.8 || ^8.0",
+                "symfony/polyfill-mbstring": "^1.0",
                 "symfony/translation": "^3.4 || ^4.0 || ^5.0"
             },
             "require-dev": {
+                "doctrine/orm": "^2.7",
                 "friendsofphp/php-cs-fixer": "^2.14 || ^3.0",
                 "kylekatarnls/multi-tester": "^1.1",
                 "phpmd/phpmd": "^2.8",
@@ -2503,58 +2384,7 @@
                 "datetime",
                 "time"
             ],
-            "time": "2020-02-07T15:25:46+00:00"
-        },
-        {
-            "name": "ocramius/package-versions",
-            "version": "1.5.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Ocramius/PackageVersions.git",
-                "reference": "1d32342b8c1eb27353c8887c366147b4c2da673c"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Ocramius/PackageVersions/zipball/1d32342b8c1eb27353c8887c366147b4c2da673c",
-                "reference": "1d32342b8c1eb27353c8887c366147b4c2da673c",
-                "shasum": ""
-            },
-            "require": {
-                "composer-plugin-api": "^1.0.0",
-                "php": "^7.3.0"
-            },
-            "require-dev": {
-                "composer/composer": "^1.8.6",
-                "doctrine/coding-standard": "^6.0.0",
-                "ext-zip": "*",
-                "infection/infection": "^0.13.4",
-                "phpunit/phpunit": "^8.2.5",
-                "vimeo/psalm": "^3.4.9"
-            },
-            "type": "composer-plugin",
-            "extra": {
-                "class": "PackageVersions\\Installer",
-                "branch-alias": {
-                    "dev-master": "1.6.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "PackageVersions\\": "src/PackageVersions"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Marco Pivetta",
-                    "email": "ocramius@gmail.com"
-                }
-            ],
-            "description": "Composer plugin that provides efficient querying for installed package versions (no runtime IO)",
-            "time": "2019-07-17T15:49:50+00:00"
+            "time": "2020-04-20T15:05:43+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -2963,16 +2793,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "2.0.23",
+            "version": "2.0.27",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "c78eb5058d5bb1a183133c36d4ba5b6675dfa099"
+                "reference": "34620af4df7d1988d8f0d7e91f6c8a3bf931d8dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/c78eb5058d5bb1a183133c36d4ba5b6675dfa099",
-                "reference": "c78eb5058d5bb1a183133c36d4ba5b6675dfa099",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/34620af4df7d1988d8f0d7e91f6c8a3bf931d8dc",
+                "reference": "34620af4df7d1988d8f0d7e91f6c8a3bf931d8dc",
                 "shasum": ""
             },
             "require": {
@@ -3051,7 +2881,7 @@
                 "x.509",
                 "x509"
             ],
-            "time": "2019-09-17T03:41:22+00:00"
+            "time": "2020-04-04T23:17:33+00:00"
         },
         {
             "name": "psr/cache",
@@ -3200,16 +3030,16 @@
         },
         {
             "name": "psr/log",
-            "version": "1.1.2",
+            "version": "1.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "446d54b4cb6bf489fc9d75f55843658e6f25d801"
+                "reference": "0f73288fd15629204f9d42b7055f72dacbe811fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/446d54b4cb6bf489fc9d75f55843658e6f25d801",
-                "reference": "446d54b4cb6bf489fc9d75f55843658e6f25d801",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/0f73288fd15629204f9d42b7055f72dacbe811fc",
+                "reference": "0f73288fd15629204f9d42b7055f72dacbe811fc",
                 "shasum": ""
             },
             "require": {
@@ -3243,7 +3073,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2019-11-01T11:05:21+00:00"
+            "time": "2020-03-23T09:12:05+00:00"
         },
         {
             "name": "querypath/querypath",
@@ -3851,30 +3681,31 @@
         },
         {
             "name": "react/socket",
-            "version": "v1.3.0",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/socket.git",
-                "reference": "10f0629ec83ea0fa22597f348623f554227e3ca0"
+                "reference": "97522e24987365e1ed873f0f4884900747a668e0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/socket/zipball/10f0629ec83ea0fa22597f348623f554227e3ca0",
-                "reference": "10f0629ec83ea0fa22597f348623f554227e3ca0",
+                "url": "https://api.github.com/repos/reactphp/socket/zipball/97522e24987365e1ed873f0f4884900747a668e0",
+                "reference": "97522e24987365e1ed873f0f4884900747a668e0",
                 "shasum": ""
             },
             "require": {
                 "evenement/evenement": "^3.0 || ^2.0 || ^1.0",
                 "php": ">=5.3.0",
-                "react/dns": "^1.0 || ^0.4.13",
-                "react/event-loop": "^1.0 || ^0.5 || ^0.4 || ^0.3.5",
+                "react/dns": "^1.1",
+                "react/event-loop": "^1.0 || ^0.5",
                 "react/promise": "^2.6.0 || ^1.2.1",
                 "react/promise-timer": "^1.4.0",
                 "react/stream": "^1.1"
             },
             "require-dev": {
                 "clue/block-react": "^1.2",
-                "phpunit/phpunit": "^6.4 || ^5.7 || ^4.8.35"
+                "phpunit/phpunit": "^7.5 || ^6.4 || ^5.7 || ^4.8.35",
+                "react/promise-stream": "^1.2"
             },
             "type": "library",
             "autoload": {
@@ -3894,20 +3725,20 @@
                 "reactphp",
                 "stream"
             ],
-            "time": "2019-07-10T10:11:14+00:00"
+            "time": "2020-03-12T12:15:14+00:00"
         },
         {
             "name": "react/stream",
-            "version": "v1.1.0",
+            "version": "v1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/stream.git",
-                "reference": "50426855f7a77ddf43b9266c22320df5bf6c6ce6"
+                "reference": "7c02b510ee3f582c810aeccd3a197b9c2f52ff1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/stream/zipball/50426855f7a77ddf43b9266c22320df5bf6c6ce6",
-                "reference": "50426855f7a77ddf43b9266c22320df5bf6c6ce6",
+                "url": "https://api.github.com/repos/reactphp/stream/zipball/7c02b510ee3f582c810aeccd3a197b9c2f52ff1a",
+                "reference": "7c02b510ee3f582c810aeccd3a197b9c2f52ff1a",
                 "shasum": ""
             },
             "require": {
@@ -3917,7 +3748,7 @@
             },
             "require-dev": {
                 "clue/stream-filter": "~1.2",
-                "phpunit/phpunit": "^6.4 || ^5.7 || ^4.8.35"
+                "phpunit/phpunit": "^7.0 || ^6.4 || ^5.7 || ^4.8.35"
             },
             "type": "library",
             "autoload": {
@@ -3940,20 +3771,20 @@
                 "stream",
                 "writable"
             ],
-            "time": "2019-01-01T16:15:09+00:00"
+            "time": "2020-05-04T10:17:57+00:00"
         },
         {
             "name": "ringcentral/psr7",
-            "version": "1.2.2",
+            "version": "1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ringcentral/psr7.git",
-                "reference": "dcd84bbb49b96c616d1dcc8bfb9bef3f2cd53d1c"
+                "reference": "360faaec4b563958b673fb52bbe94e37f14bc686"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ringcentral/psr7/zipball/dcd84bbb49b96c616d1dcc8bfb9bef3f2cd53d1c",
-                "reference": "dcd84bbb49b96c616d1dcc8bfb9bef3f2cd53d1c",
+                "url": "https://api.github.com/repos/ringcentral/psr7/zipball/360faaec4b563958b673fb52bbe94e37f14bc686",
+                "reference": "360faaec4b563958b673fb52bbe94e37f14bc686",
                 "shasum": ""
             },
             "require": {
@@ -3998,20 +3829,20 @@
                 "stream",
                 "uri"
             ],
-            "time": "2018-01-15T21:00:49+00:00"
+            "time": "2018-05-29T20:21:04+00:00"
         },
         {
             "name": "sentry/sentry",
-            "version": "2.3.1",
+            "version": "2.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-php.git",
-                "reference": "6d736f8cefa989f6171e30e1d1bfa214f7f5ab58"
+                "reference": "b3e71feb32f1787b66a3b4fdb8686972e9c7ba94"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/6d736f8cefa989f6171e30e1d1bfa214f7f5ab58",
-                "reference": "6d736f8cefa989f6171e30e1d1bfa214f7f5ab58",
+                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/b3e71feb32f1787b66a3b4fdb8686972e9c7ba94",
+                "reference": "b3e71feb32f1787b66a3b4fdb8686972e9c7ba94",
                 "shasum": ""
             },
             "require": {
@@ -4083,20 +3914,240 @@
                 "logging",
                 "sentry"
             ],
-            "time": "2020-01-23T09:40:22+00:00"
+            "time": "2020-03-06T09:24:53+00:00"
         },
         {
-            "name": "symfony/options-resolver",
-            "version": "v5.0.4",
+            "name": "sylae/collection",
+            "version": "v0.2.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/options-resolver.git",
-                "reference": "b1ab86ce52b0c0abe031367a173005a025e30e04"
+                "url": "https://github.com/sylae/Collection.git",
+                "reference": "6a68c193baa3ef2224e7ff66a73164b533e73bcb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/options-resolver/zipball/b1ab86ce52b0c0abe031367a173005a025e30e04",
-                "reference": "b1ab86ce52b0c0abe031367a173005a025e30e04",
+                "url": "https://api.github.com/repos/sylae/Collection/zipball/6a68c193baa3ef2224e7ff66a73164b533e73bcb",
+                "reference": "6a68c193baa3ef2224e7ff66a73164b533e73bcb",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0"
+            },
+            "replace": {
+                "charlottedunois/collection": "self.version"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8.0|^7.0|^6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "CharlotteDunois\\Collect\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Charlotte Dunois",
+                    "email": "github@charuru.moe"
+                },
+                {
+                    "name": "Keira Dueck",
+                    "email": "sylae@calref.net",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "Collection, an utility to conventionally store a key-value pair.",
+            "homepage": "https://github.com/sylae/Collection",
+            "time": "2020-05-02T22:00:22+00:00"
+        },
+        {
+            "name": "sylae/eventemitter",
+            "version": "v0.1.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sylae/eventemitter.git",
+                "reference": "b9c14c03d2201bbfb81c0bf372e47770dd2f97bc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sylae/eventemitter/zipball/b9c14c03d2201bbfb81c0bf372e47770dd2f97bc",
+                "reference": "b9c14c03d2201bbfb81c0bf372e47770dd2f97bc",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1.0"
+            },
+            "replace": {
+                "charlottedunois/eventemitter": "self.version"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "CharlotteDunois\\Events\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Charlotte Dunois",
+                    "email": "github@charuru.moe"
+                },
+                {
+                    "name": "Keira Dueck",
+                    "email": "sylae@calref.net",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "This is an Event Emitter equivalent to Node.js' Event Emitter.",
+            "homepage": "https://github.com/sylae/EventEmitter",
+            "keywords": [
+                "EventEmitter",
+                "emitter",
+                "event",
+                "events"
+            ],
+            "time": "2020-05-11T10:03:36+00:00"
+        },
+        {
+            "name": "sylae/validator",
+            "version": "v0.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sylae/validator.git",
+                "reference": "d291d2c961ecd2ad9b41a3be5131fa7d06b0c815"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sylae/validator/zipball/d291d2c961ecd2ad9b41a3be5131fa7d06b0c815",
+                "reference": "d291d2c961ecd2ad9b41a3be5131fa7d06b0c815",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0"
+            },
+            "replace": {
+                "charlottedunois/validator": "self.version"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "CharlotteDunois\\Validation\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Charlotte Dunois",
+                    "email": "github@charuru.moe"
+                },
+                {
+                    "name": "Keira Dueck",
+                    "email": "sylae@calref.net",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "PHP Validator for stuff.",
+            "homepage": "https://github.com/sylae/Validator",
+            "keywords": [
+                "validation"
+            ],
+            "time": "2020-05-11T10:08:51+00:00"
+        },
+        {
+            "name": "sylae/yasmin",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sylae/Yasmin.git",
+                "reference": "89267634e7f8800ec45093ddb6dab05c767ef8d7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/89267634e7f8800ec45093ddb6dab05c767ef8d7",
+                "reference": "89267634e7f8800ec45093ddb6dab05c767ef8d7",
+                "shasum": ""
+            },
+            "require": {
+                "clue/buzz-react": "^2.6.0",
+                "ext-bcmath": "*",
+                "ext-date": "*",
+                "ext-filter": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "ext-openssl": "*",
+                "ext-pcre": "*",
+                "ext-zlib": "*",
+                "php": ">=7.1",
+                "psr/http-message": "^1.0",
+                "ratchet/pawl": "^0.3.1",
+                "react/event-loop": "^1.0|^0.5|^0.4.3",
+                "react/filesystem": "^0.1.1",
+                "react/promise": "^2.7.0",
+                "ringcentral/psr7": "^1.2",
+                "sylae/collection": "^0.2.0",
+                "sylae/eventemitter": "^0.1.5",
+                "sylae/validator": "^0.3.0"
+            },
+            "replace": {
+                "charlottedunois/yasmin": "self.version"
+            },
+            "require-dev": {
+                "charlottedunois/athena": "^0.1.1|dev-master",
+                "charlottedunois/kimberly": "^0.1.2|dev-master"
+            },
+            "suggest": {
+                "charlottedunois/athena": "For Redis-backed ratelimit bucket",
+                "charlottedunois/kimberly": "For WS encoding etf 🚀"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "CharlotteDunois\\Yasmin\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "CharlotteDunois",
+                    "email": "github@charuru.moe"
+                },
+                {
+                    "name": "Keira Dueck",
+                    "email": "sylae@calref.net",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "Yasmin is a Discord API library for PHP.",
+            "time": "2020-05-11T10:13:46+00:00"
+        },
+        {
+            "name": "symfony/options-resolver",
+            "version": "v5.0.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/options-resolver.git",
+                "reference": "3707e3caeff2b797c0bfaadd5eba723dd44e6bf1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/options-resolver/zipball/3707e3caeff2b797c0bfaadd5eba723dd44e6bf1",
+                "reference": "3707e3caeff2b797c0bfaadd5eba723dd44e6bf1",
                 "shasum": ""
             },
             "require": {
@@ -4137,20 +4188,82 @@
                 "configuration",
                 "options"
             ],
-            "time": "2020-01-04T14:08:26+00:00"
+            "time": "2020-04-06T10:40:56+00:00"
         },
         {
-            "name": "symfony/polyfill-mbstring",
-            "version": "v1.14.0",
+            "name": "symfony/polyfill-intl-idn",
+            "version": "v1.16.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "34094cfa9abe1f0f14f48f490772db7a775559f2"
+                "url": "https://github.com/symfony/polyfill-intl-idn.git",
+                "reference": "ab0af41deab94ec8dceb3d1fb408bdd038eba4dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/34094cfa9abe1f0f14f48f490772db7a775559f2",
-                "reference": "34094cfa9abe1f0f14f48f490772db7a775559f2",
+                "url": "https://api.github.com/repos/symfony/polyfill-intl-idn/zipball/ab0af41deab94ec8dceb3d1fb408bdd038eba4dc",
+                "reference": "ab0af41deab94ec8dceb3d1fb408bdd038eba4dc",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3",
+                "symfony/polyfill-mbstring": "^1.3",
+                "symfony/polyfill-php72": "^1.10"
+            },
+            "suggest": {
+                "ext-intl": "For best performance"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.16-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Polyfill\\Intl\\Idn\\": ""
+                },
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Laurent Bassin",
+                    "email": "laurent@bassin.info"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill for intl's idn_to_ascii and idn_to_utf8 functions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "idn",
+                "intl",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "time": "2020-05-08T16:50:20+00:00"
+        },
+        {
+            "name": "symfony/polyfill-mbstring",
+            "version": "v1.16.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-mbstring.git",
+                "reference": "a54881ec0ab3b2005c406aed0023c062879031e7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/a54881ec0ab3b2005c406aed0023c062879031e7",
+                "reference": "a54881ec0ab3b2005c406aed0023c062879031e7",
                 "shasum": ""
             },
             "require": {
@@ -4162,7 +4275,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.14-dev"
+                    "dev-master": "1.16-dev"
                 }
             },
             "autoload": {
@@ -4196,20 +4309,75 @@
                 "portable",
                 "shim"
             ],
-            "time": "2020-01-13T11:15:53+00:00"
+            "time": "2020-05-08T16:50:20+00:00"
         },
         {
-            "name": "symfony/polyfill-uuid",
-            "version": "v1.13.1",
+            "name": "symfony/polyfill-php72",
+            "version": "v1.16.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/polyfill-uuid.git",
-                "reference": "7d4215b6944add5073f0ec313a21e1bc2520520d"
+                "url": "https://github.com/symfony/polyfill-php72.git",
+                "reference": "42fda6d7380e5c940d7f68341ccae89d5ab9963b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-uuid/zipball/7d4215b6944add5073f0ec313a21e1bc2520520d",
-                "reference": "7d4215b6944add5073f0ec313a21e1bc2520520d",
+                "url": "https://api.github.com/repos/symfony/polyfill-php72/zipball/42fda6d7380e5c940d7f68341ccae89d5ab9963b",
+                "reference": "42fda6d7380e5c940d7f68341ccae89d5ab9963b",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.16-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php72\\": ""
+                },
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 7.2+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "time": "2020-05-08T17:28:34+00:00"
+        },
+        {
+            "name": "symfony/polyfill-uuid",
+            "version": "v1.16.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-uuid.git",
+                "reference": "6bb7ba3890d777d69d529000bf8dd2948a56c14c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-uuid/zipball/6bb7ba3890d777d69d529000bf8dd2948a56c14c",
+                "reference": "6bb7ba3890d777d69d529000bf8dd2948a56c14c",
                 "shasum": ""
             },
             "require": {
@@ -4222,7 +4390,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.13-dev"
+                    "dev-master": "1.16-dev"
                 }
             },
             "autoload": {
@@ -4255,20 +4423,20 @@
                 "portable",
                 "uuid"
             ],
-            "time": "2019-11-30T08:58:35+00:00"
+            "time": "2020-05-08T17:27:24+00:00"
         },
         {
             "name": "symfony/translation",
-            "version": "v5.0.4",
+            "version": "v5.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation.git",
-                "reference": "28e1054f1ea26c63762d9260c37cb1056ea62dbb"
+                "reference": "c3879db7a68fe3e12b41263b05879412c87b27fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation/zipball/28e1054f1ea26c63762d9260c37cb1056ea62dbb",
-                "reference": "28e1054f1ea26c63762d9260c37cb1056ea62dbb",
+                "url": "https://api.github.com/repos/symfony/translation/zipball/c3879db7a68fe3e12b41263b05879412c87b27fd",
+                "reference": "c3879db7a68fe3e12b41263b05879412c87b27fd",
                 "shasum": ""
             },
             "require": {
@@ -4332,7 +4500,7 @@
             ],
             "description": "Symfony Translation Component",
             "homepage": "https://symfony.com",
-            "time": "2020-01-21T08:40:24+00:00"
+            "time": "2020-04-12T16:45:47+00:00"
         },
         {
             "name": "symfony/translation-contracts",
@@ -4877,7 +5045,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "charlottedunois/yasmin": 20
+        "sylae/yasmin": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
