@@ -57,6 +57,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
                     'category' => $item->data->link_flair_text ?? "Unflaired",
                     'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
                     'author' => $item->data->author,
+                    'isImage' => (!strlen($item->data->selftext) > 0) && $this->checkExtension($this->data->url),
                 ];
             }
             return new Collection($newItems);
@@ -102,6 +103,11 @@ class WormMemes extends RedditProcessor implements PluginInterface
                 ->setTimestamp($item->date->timestamp);
 
             $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
+
+
+            if ($item->isImage) {
+                $embed->setImage($item->link);
+            }
 
             // appropriate wormmemes channel
             $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);

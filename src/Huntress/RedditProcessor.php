@@ -51,6 +51,7 @@ class RedditProcessor extends RSSProcessor
                     'category' => $item->data->link_flair_text ?? "Unflaired",
                     'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
                     'author' => $item->data->author,
+                    'isImage' => (!strlen($item->data->selftext) > 0) && $this->checkExtension($this->data->url),
                 ];
             }
             return new Collection($newItems);
@@ -59,6 +60,17 @@ class RedditProcessor extends RSSProcessor
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
+    }
+
+    protected function checkExtension(string $haystack): bool
+    {
+        $ext = [".jpg", ".jpeg", ".gif", ".png", ".webp"];
+        foreach ($ext as $needle) {
+            if (0 === substr_compare($haystack, $needle, -strlen($needle))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected function dataPublishingCallback(object $item): bool
@@ -74,6 +86,9 @@ class RedditProcessor extends RSSProcessor
             $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
                 ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '',
                     "https://reddit.com/user/" . $item->author);
+            if ($item->isImage) {
+                $embed->setImage($item->link);
+            }
             foreach ($this->channels as $channel) {
                 $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
             }
