@@ -87,7 +87,7 @@ class RedditProcessor extends RSSProcessor
                 ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '',
                     "https://reddit.com/user/" . $item->author);
             if ($item->isImage) {
-                $embed->setImage($item->link);
+                $embed->setImage($item->body);
             }
             foreach ($this->channels as $channel) {
                 $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);

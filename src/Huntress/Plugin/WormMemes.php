@@ -106,7 +106,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
 
 
             if ($item->isImage) {
-                $embed->setImage($item->link);
+                $embed->setImage($item->body);
             }
 
             // appropriate wormmemes channel
