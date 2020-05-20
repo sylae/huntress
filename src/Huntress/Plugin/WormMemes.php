@@ -57,7 +57,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
                     'category' => $item->data->link_flair_text ?? "Unflaired",
                     'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
                     'author' => $item->data->author,
-                    'isImage' => (!strlen($item->data->selftext) > 0) && $this->checkExtension($this->data->url),
+                    'isImage' => (!strlen($item->data->selftext) > 0) && $this->checkExtension($item->data->url),
                 ];
             }
             return new Collection($newItems);
