@@ -164,16 +164,16 @@
         },
         {
             "name": "clue/buzz-react",
-            "version": "v2.8.1",
+            "version": "v2.8.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/clue/reactphp-buzz.git",
-                "reference": "82160cb930b21ac59b5e0638ac396c539bde2723"
+                "reference": "65b441d9e914952464558fb2dbd4f57d27640c99"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/clue/reactphp-buzz/zipball/82160cb930b21ac59b5e0638ac396c539bde2723",
-                "reference": "82160cb930b21ac59b5e0638ac396c539bde2723",
+                "url": "https://api.github.com/repos/clue/reactphp-buzz/zipball/65b441d9e914952464558fb2dbd4f57d27640c99",
+                "reference": "65b441d9e914952464558fb2dbd4f57d27640c99",
                 "shasum": ""
             },
             "require": {
@@ -220,7 +220,7 @@
                 "psr-7",
                 "reactphp"
             ],
-            "time": "2020-05-19T15:25:45+00:00"
+            "time": "2020-06-02T09:43:30+00:00"
         },
         {
             "name": "clue/stream-filter",
