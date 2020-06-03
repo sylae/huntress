@@ -22,7 +22,7 @@
         "intervention/image": "^2.5",
         "league/html-to-markdown": "^4.9",
         "monolog/monolog": "^2.1",
-        "nesbot/carbon": "^2.30",
+        "nesbot/carbon": "^2.35",
         "querypath/querypath": "^3.0",
         "react/child-process": "^0.6.1",
         "sentry/sentry": "^2.3",
