@@ -25,7 +25,7 @@
         "nesbot/carbon": "^2.30",
         "querypath/querypath": "^3.0",
         "react/child-process": "^0.6.1",
-        "sentry/sentry": "^2.3",
+        "sentry/sentry": "^2.4",
         "ulrichsg/getopt-php": "^3.2"
     },
     "autoload": {
