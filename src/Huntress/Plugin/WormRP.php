@@ -177,11 +177,13 @@ class WormRP implements PluginInterface
                 } elseif ($redd[$member->id]) {
                     unset($redd[$member->id]);
                 } else {
+                    /*
                     $member->removeRole(492933723340144640, "User fell out of Active status (14 days)")->then(function (
                         $member
                     ) {
                         $member->guild->channels->get(491099441357651969)->send("Removed <@{$member->id}> from Active Users due to inactivity.");
                     });
+                    */
                     unset($redd[$member->id]);
                 }
             }
