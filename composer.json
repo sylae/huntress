@@ -20,7 +20,7 @@
         "google/apiclient": "^2.4",
         "hoa/compiler": "^3.17",
         "intervention/image": "^2.5",
-        "league/html-to-markdown": "^4.9",
+        "league/html-to-markdown": "^4.10",
         "monolog/monolog": "^2.1",
         "nesbot/carbon": "^2.30",
         "querypath/querypath": "^3.0",
