@@ -10,6 +10,7 @@ namespace Huntress\Plugin;
 
 use Carbon\Carbon;
 use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Utils\MessageHelpers;
 use CharlotteDunois\Yasmin\Utils\Snowflake;
 use Exception;
 use Huntress\Huntress;
@@ -112,13 +113,32 @@ class Management implements PluginInterface
             $embed->addField("Uptime",
                 sprintf("%s - *(connected %s)*", self::$startupTime->diffForHumans(null, true, null, 2),
                     self::$startupTime->toAtomString()));
-            $embed->addField("Loaded Plugins", implode("\n", self::getPlugins()));
+
+
+            $plugins = implode("\n", self::getPlugins());
+            if (mb_strlen($plugins) > 0) {
+                $inheritance = MessageHelpers::splitMessage($plugins,
+                    ['maxLength' => 1024]);
+                $first = true;
+                foreach ($inheritance as $i) {
+                    $embed->addField($first ? "Loaded Plugins" : "Loaded Plugins (cont.)", $i);
+                    $first = false;
+                }
+            }
 
             $deps = "";
             foreach (self::composerPackages() as $p => $v) {
                 $deps .= "[$p](https://packagist.org/packages/$p) ($v)\n";
             }
-            $embed->addField("Composer dependencies", $deps);
+            if (mb_strlen($deps) > 0) {
+                $inheritance = MessageHelpers::splitMessage($deps,
+                    ['maxLength' => 1024]);
+                $first = true;
+                foreach ($inheritance as $i) {
+                    $embed->addField($first ? "Composer dependencies" : "Composer dependencies (cont.)", $i);
+                    $first = false;
+                }
+            }
 
             return self::send($message->channel, "", ['embed' => $embed]);
         } catch (Throwable $e) {
