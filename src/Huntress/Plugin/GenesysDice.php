@@ -7,6 +7,7 @@
 
 namespace Huntress\Plugin;
 
+use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
@@ -25,9 +26,9 @@ class GenesysDice implements PluginInterface
     const rollTypes = [
         'b' => 'boost',
         'a' => 'ability',
-        'p' => 'prof',
+        'p' => 'proficiency',
         's' => 'setback',
-        'd' => 'diff',
+        'd' => 'difficulty',
         'c' => 'challenge',
     ];
 
@@ -51,7 +52,7 @@ class GenesysDice implements PluginInterface
         "prof_succ" => [744576080601677945, ["success"]],
         "prof_succ2" => [744576080576249917, ["success", "success"]],
         "prof_succadv" => [744576080622387201, ["advantage"]],
-        "prof_triumph" => [744576081163452516, []],
+        "prof_triumph" => [744576081163452516, ["triumph"]],
 
         "setback_blank" => [744576080408608818, []],
         "setback_fail" => [744576080920313903, ["failure"]],
@@ -92,7 +93,7 @@ class GenesysDice implements PluginInterface
             "ability_succadv",
             "ability_adv2",
         ],
-        'prof' => [
+        'proficiency' => [
             "prof_blank",
             "prof_succ",
             "prof_succ",
@@ -114,7 +115,7 @@ class GenesysDice implements PluginInterface
             "setback_threat",
             "setback_threat",
         ],
-        'diff' => [
+        'difficulty' => [
             "diff_blank",
             "diff_fail",
             "diff_fail2",
@@ -142,11 +143,11 @@ class GenesysDice implements PluginInterface
 
     const symbolEmoteMap = [
         "success" => 744616260364665015,
-        "threat" => 744616260427579402,
-        "triumph" => 744616260482105355,
         "advantage" => 744616260440031253,
-        "despair" => 744616260243030059,
+        "triumph" => 744616260482105355,
         "failure" => 744616260461133955,
+        "threat" => 744616260427579402,
+        "despair" => 744616260243030059,
     ];
 
     public static function register(Huntress $bot)
@@ -155,7 +156,7 @@ class GenesysDice implements PluginInterface
         $eh = EventListener::new()
             ->addCommand("g")
             ->addCommand("genesys")
-            ->setCallback([self::class, "genysysHandler"]);
+            ->setCallback([self::class, "genesysHandler"]);
         $bot->eventManager->addEventListener($eh);
     }
 
@@ -168,10 +169,73 @@ class GenesysDice implements PluginInterface
                 return $p->sendUnauthorizedMessage($data->message->channel);
             }
 
-            $usage = "Usage: `!g numDice [difficulty=6] [spec]`";
+            $string = self::arg_substr($data->message->content, 1);
+            $pool = array_fill_keys(array_values(self::rollTypes), 0);
+            foreach (mb_str_split($string) as $letter) {
+                if (!array_key_exists($letter, self::rollTypes)) {
+                    return self::error($data->message, "Invalid dice",
+                        "I don't know what `$letter` is supposed to be.\n\n" . self::usage());
+                }
+                $pool[self::rollTypes[$letter]]++;
+            }
+
+            if (array_sum($pool) == 0) {
+                return $data->message->channel->send(self::usage());
+            }
+
+            $rolls = array_fill_keys(array_keys(self::dicePipMap), []);
+            $res = array_fill_keys(array_keys(self::symbolEmoteMap), 0);
+            foreach ($pool as $type => $count) {
+                $opts = self::dicePipMap[$type];
+                $x = 0;
+                while ($x < $count) {
+                    $x++;
+                    $roll = self::dicePipMap[$type][random_int(0, count(self::dicePipMap[$type]) - 1)];
+                    $rolls[$type][] = $roll;
+                    $pips = self::diceEmoteMap[$roll][1];
+                    foreach ($pips as $pip) {
+                        $res[$pip]++;
+                    }
+                }
+            }
+
+            // roll is done! let's doll it up
+            $prettyResult = [];
+            foreach ($rolls as $name => $results) {
+                foreach ($results as $r) {
+                    $prettyResult[] = (string)$data->huntress->emojis->get(self::diceEmoteMap[$r][0]);
+                }
+            }
+
+
+            $embed = new MessageEmbed();
+            $embed->setAuthor($data->message->member->displayName,
+                $data->message->member->user->getAvatarURL(64) ?? null);
+            $embed->setColor($data->message->member->id % 0xFFFFFF);
+            $embed->setTimestamp(time());
+
+            foreach ($res as $type => $count) {
+                if ($count == 0) {
+                    $embed->addField(mb_convert_case($type, MB_CASE_TITLE), "<a:blank:504961427967311873>", true);
+                    continue;
+                }
+                $x = str_repeat((string)$data->huntress->emojis->get(self::symbolEmoteMap[$type]), $count);
+                $embed->addField(mb_convert_case($type, MB_CASE_TITLE), $x, true);
+            }
+
+            return $data->message->channel->send(implode("", $prettyResult), ['embed' => $embed]);
 
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, false);
         }
+    }
+
+    private static function usage(): string
+    {
+        $usage = "Usage: `!g (pool)`\n(pool) is a combination of letters:\n";
+        foreach (self::rollTypes as $type) {
+            $usage .= "- __" . mb_substr($type, 0, 1) . "__" . mb_substr($type, 1) . "\n";
+        }
+        return $usage;
     }
 }
