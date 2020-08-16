@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f1dd8a5fc14e887b15d689d97394c0f1",
+    "content-hash": "80aa9423fd2d134c0f0a5bc000a9be6f",
     "packages": [
         {
             "name": "cakephp/core",
@@ -4105,6 +4105,57 @@
             "time": "2020-05-11T10:03:36+00:00"
         },
         {
+            "name": "sylae/huntress",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sylae/huntress.git",
+                "reference": "3180db02d17d0ab9c3f29d7aabe2efb04b44b498"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sylae/huntress/zipball/3180db02d17d0ab9c3f29d7aabe2efb04b44b498",
+                "reference": "3180db02d17d0ab9c3f29d7aabe2efb04b44b498",
+                "shasum": ""
+            },
+            "require": {
+                "clue/block-react": "^1.3",
+                "clue/buzz-react": "^2.8",
+                "doctrine/dbal": "^2.9",
+                "ext-json": "*",
+                "league/html-to-markdown": "^4.9",
+                "monolog/monolog": "^2.1",
+                "nesbot/carbon": "^2.30",
+                "php": ">=7.3",
+                "querypath/querypath": "^3.0",
+                "sentry/sentry": "^2.3",
+                "sylae/yasmin": "dev-master"
+            },
+            "provide": {
+                "php-http/async-client-implementation": "^1"
+            },
+            "type": "project",
+            "autoload": {
+                "psr-4": {
+                    "": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Keira Dueck",
+                    "email": "sylae@calref.net"
+                }
+            ],
+            "support": {
+                "source": "https://github.com/sylae/huntress/tree/master",
+                "issues": "https://github.com/sylae/huntress/issues"
+            },
+            "time": "2020-08-16T12:58:35+00:00"
+        },
+        {
             "name": "sylae/validator",
             "version": "v0.3.0",
             "source": {
@@ -5281,13 +5332,10 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "sylae/yasmin": 20
+        "sylae/huntress": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
-    "platform": {
-        "php": ">=7.3",
-        "ext-json": "*"
-    },
+    "platform": [],
     "platform-dev": []
 }
