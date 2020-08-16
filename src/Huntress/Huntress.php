@@ -62,8 +62,8 @@ class Huntress extends Client
 
     public function __construct(array $config, LoopInterface $loop)
     {
-        $this->log = $this->setupLogger();
         $this->config = $config;
+        $this->log = $this->setupLogger();
         $this->eventManager = new EventManager($this);
         $this->registerBuiltinHooks();
 
