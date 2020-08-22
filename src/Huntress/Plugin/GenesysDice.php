@@ -154,7 +154,7 @@ class GenesysDice implements PluginInterface
     {
 
         $eh = EventListener::new()
-            ->addCommand("g")
+            // ->addCommand("g")
             ->addCommand("genesys")
             ->setCallback([self::class, "genesysHandler"]);
         $bot->eventManager->addEventListener($eh);
@@ -232,7 +232,7 @@ class GenesysDice implements PluginInterface
 
     private static function usage(): string
     {
-        $usage = "Usage: `!g (pool)`\n(pool) is a combination of letters:\n";
+        $usage = "Usage: `!genesys (pool)`\n(pool) is a combination of letters:\n";
         foreach (self::rollTypes as $type) {
             $usage .= "- __" . mb_substr($type, 0, 1) . "__" . mb_substr($type, 1) . "\n";
         }
