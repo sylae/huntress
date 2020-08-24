@@ -160,9 +160,11 @@ class GamesBot implements PluginInterface
             return $data->message->channel->send("No members with `$game` are present on this server");
         }
 
-        $members = implode(", ",
-            array_map(fn($v) => $noping ? $data->guild->members->get($v)->displayName : $data->guild->members->get($v),
-                $games[$game]));
+        $members = array_map(fn($v) => $data->guild->members->get($v), $games[$game]);
+        if ($noping) {
+            $members = array_map(fn($v) => $v->displayName, $members);
+        }
+        $members = implode(", ", $members);
 
         return $data->message->channel->send("`{$data->message->member->displayName}` wants to play `$game`\n$members");
     }
