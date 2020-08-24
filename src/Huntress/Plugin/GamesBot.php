@@ -200,11 +200,11 @@ class GamesBot implements PluginInterface
 
         $entries = $games->map(function ($v, $k) use ($data) {
             $star = in_array($data->message->member->id, $v) ? " ⭐" : "";
-            return sprintf("`%s` (%s members)%s", $k, count($v), $star);
+            return sprintf("`%s` (%s)%s", $k, count($v), $star);
         })->implode('val', PHP_EOL);
 
         if (mb_strlen($entries) > 0) {
-            $embed->setDescription("Use `!gamesbot add GAME` to add a game.\nA ⭐ indicates you have that game added");
+            $embed->setDescription("Use `!gamesbot add GAME` to add a game\nA ⭐ indicates you have that game added\nThe number in parentheses shows how many server members have that tag");
             $roles = MessageHelpers::splitMessage($entries,
                 ['maxLength' => 1024]);
             $firstRole = true;
