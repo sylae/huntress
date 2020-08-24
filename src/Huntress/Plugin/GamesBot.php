@@ -195,7 +195,7 @@ class GamesBot implements PluginInterface
         $games = new Collection(self::getGames($data->guild));
 
         // Sort by descending count, then alphabetically.
-        $games->sortCustomKey(function ($a, $b) use ($games) {
+        $games = $games->sortCustomKey(function ($a, $b) use ($games) {
             // >0 if $b should come first, <0 otherwise; fall back to strcmp.
             return (count($games[$b]) - count($games[$a])) ?: strcmp($a, $b);
         });
