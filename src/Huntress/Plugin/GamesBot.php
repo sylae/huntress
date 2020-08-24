@@ -209,7 +209,7 @@ class GamesBot implements PluginInterface
                 ['maxLength' => 1024]);
             $firstRole = true;
             foreach ($roles as $role) {
-                $embed->addField($firstRole ? "Games" : "Games (cont.)", $role);
+                $embed->addField($firstRole ? "Games" : "Games (cont.)", $role, true);
                 $firstRole = false;
             }
         }
