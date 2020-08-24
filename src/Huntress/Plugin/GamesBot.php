@@ -199,8 +199,8 @@ class GamesBot implements PluginInterface
 
 
         $entries = $games->map(function ($v, $k) use ($data) {
-            $star = in_array($data->message->member->id, $v) ? " ⭐" : "";
-            return sprintf("`%s` (%s)%s", $k, count($v), $star);
+            $star = in_array($data->message->member->id, $v) ? "⭐" : "";
+            return sprintf("%s (%s) %s", $star, count($v), $k);
         })->implode('val', PHP_EOL);
 
         if (mb_strlen($entries) > 0) {
