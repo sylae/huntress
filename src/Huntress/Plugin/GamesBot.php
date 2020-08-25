@@ -192,8 +192,13 @@ class GamesBot implements PluginInterface
 
     public static function listGameHandler(GetOpt $getOpt, EventData $data)
     {
-        // todo sorting
         $games = new Collection(self::getGames($data->guild));
+
+        // Sort by descending count, then alphabetically.
+        $games = $games->sortCustomKey(function ($a, $b) use ($games) {
+            // >0 if $b should come first, <0 otherwise; fall back to strcmp.
+            return (count($games->get($b)) - count($games->get($a))) ?: strcmp($a, $b);
+        });
 
         $embed = new MessageEmbed();
         $embed->setTitle("Games - {$data->guild->name}")
