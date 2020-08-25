@@ -197,7 +197,7 @@ class GamesBot implements PluginInterface
         // Sort by descending count, then alphabetically.
         $games = $games->sortCustomKey(function ($a, $b) use ($games) {
             // >0 if $b should come first, <0 otherwise; fall back to strcmp.
-            return (count($games[$b]) - count($games[$a])) ?: strcmp($a, $b);
+            return (count($games->get($b)) - count($games->get($a))) ?: strcmp($a, $b);
         });
 
         $embed = new MessageEmbed();
