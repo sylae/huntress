@@ -20,6 +20,7 @@ use Huntress\Huntress;
 use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use React\Promise\PromiseInterface;
 use Throwable;
 
 /**
@@ -50,6 +51,37 @@ class Dice implements Visit, PluginInterface
             ->addCommand("succ")
             ->setCallback([self::class, "v20Handler"]);
         $bot->eventManager->addEventListener($eh);
+
+        $eh = EventListener::new()
+            ->addCommand("rollchar")
+            ->setCallback([self::class, "rollChar"]);
+        $bot->eventManager->addEventListener($eh);
+    }
+
+    public static function rollChar(EventData $data): ?PromiseInterface
+    {
+        $x = [];
+        $n = 0;
+        while ($n < 6) {
+            $n++;
+            $d = [];
+            $d[] = random_int(1, 6);
+            $d[] = random_int(1, 6);
+            $d[] = random_int(1, 6);
+            $d[] = random_int(1, 6);
+            arsort($d);
+            $x[] = array_values($d);
+        }
+
+        $send = implode("\n", array_map(function ($v) {
+            $low = array_pop($v);
+            $x = implode(", ", $v);
+            $x .= ", ~~" . $low . "~~ = ";
+            $x .= array_sum($v);
+            return $x;
+        }, $x));
+
+        return $data->message->channel->send(sprintf("%s rolled a character!\n%s", $data->message->member, $send));
     }
 
     public static function processDebug(EventData $data)
