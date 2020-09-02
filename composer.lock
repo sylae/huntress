@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "061bdb2bf385959306942cc4f5343ad0",
+    "content-hash": "28fa7b71e32e242cd8384f58faa8c7cf",
     "packages": [
         {
             "name": "cakephp/core",
@@ -111,16 +111,16 @@
         },
         {
             "name": "clue/block-react",
-            "version": "v1.3.1",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/clue/reactphp-block.git",
-                "reference": "2f516b28259c203d67c4c963772dd7e9db652737"
+                "reference": "c8e7583ae55127b89d6915480ce295bac81c4f88"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/clue/reactphp-block/zipball/2f516b28259c203d67c4c963772dd7e9db652737",
-                "reference": "2f516b28259c203d67c4c963772dd7e9db652737",
+                "url": "https://api.github.com/repos/clue/reactphp-block/zipball/c8e7583ae55127b89d6915480ce295bac81c4f88",
+                "reference": "c8e7583ae55127b89d6915480ce295bac81c4f88",
                 "shasum": ""
             },
             "require": {
@@ -130,7 +130,8 @@
                 "react/promise-timer": "^1.5"
             },
             "require-dev": {
-                "phpunit/phpunit": "^6.4 || ^5.7 || ^4.8.35"
+                "phpunit/phpunit": "^9.3 || ^5.7 || ^4.8.35",
+                "react/http": "^1.0"
             },
             "type": "library",
             "autoload": {
@@ -145,7 +146,7 @@
             "authors": [
                 {
                     "name": "Christian Lück",
-                    "email": "christian@lueck.tv"
+                    "email": "christian@clue.engineering"
                 }
             ],
             "description": "Lightweight library that eases integrating async components built for ReactPHP in a traditional, blocking environment.",
@@ -160,7 +161,17 @@
                 "sleep",
                 "synchronous"
             ],
-            "time": "2019-04-09T11:45:04+00:00"
+            "funding": [
+                {
+                    "url": "https://clue.engineering/support",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/clue",
+                    "type": "github"
+                }
+            ],
+            "time": "2020-08-21T14:09:44+00:00"
         },
         {
             "name": "clue/buzz-react",
