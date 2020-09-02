@@ -14,7 +14,7 @@
     "php": ">=7.3",
     "ext-json": "*",
     "sylae/yasmin": "dev-master",
-    "clue/block-react": "^1.3",
+    "clue/block-react": "^1.4",
     "clue/buzz-react": "^2.8",
     "doctrine/dbal": "^2.10",
     "league/html-to-markdown": "^4.9",
