@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -28,6 +28,7 @@ use Throwable;
 class Management implements PluginInterface
 {
     use PluginHelperTrait;
+
     /**
      *
      * @var Carbon
@@ -220,13 +221,13 @@ class Management implements PluginInterface
     public static function ping(Huntress $bot, Message $message): ?Promise
     {
         try {
-            $message_tx = Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
-            $dstamp_tx = Carbon::createFromTimestampMs((int) (Snowflake::deconstruct($message->id)->timestamp * 1000));
+            $message_tx = Carbon::createFromTimestampMs((int)(round(microtime(true) * 1000)));
+            $dstamp_tx = Carbon::createFromTimestampMs((int)(Snowflake::deconstruct($message->id)->timestamp * 1000));
             return self::send($message->channel, "Pong!")->then(function (
                 Message $message
             ) use ($message_tx, $dstamp_tx) {
-                $message_rx = Carbon::createFromTimestampMs((int) (round(microtime(true) * 1000)));
-                $dstamp_rx = Carbon::createFromTimestampMs((int) (Snowflake::deconstruct($message->id)->timestamp * 1000));
+                $message_rx = Carbon::createFromTimestampMs((int)(round(microtime(true) * 1000)));
+                $dstamp_rx = Carbon::createFromTimestampMs((int)(Snowflake::deconstruct($message->id)->timestamp * 1000));
 
                 $v = [
                     number_format(($message_rx->format("U.u") - $message_tx->format("U.u")) * 1000),

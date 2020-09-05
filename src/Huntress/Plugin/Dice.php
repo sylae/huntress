@@ -1,6 +1,6 @@
 <?php
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -94,7 +94,9 @@ class Dice implements Visit, PluginInterface
         try {
             // don't do anything if another dicebot with the same prefix is here!
             $count = self::getMembersWithPermission($data->channel,
-                Permissions::PERMISSIONS['SEND_MESSAGES'] | Permissions::PERMISSIONS['VIEW_CHANNEL'])->filter(function (GuildMember $v) {
+                Permissions::PERMISSIONS['SEND_MESSAGES'] | Permissions::PERMISSIONS['VIEW_CHANNEL'])->filter(function (
+                GuildMember $v
+            ) {
                 return in_array($v->id, self::KNOWN_DICEBOTS);
             })->count();
             if ($count > 0) {
@@ -182,8 +184,8 @@ class Dice implements Visit, PluginInterface
             case '#roll':
                 $children[0]->accept($this, $a, $eldnah);
                 $acc = function ($b) use ($a, $acc) {
-                    $size = (int) $b;
-                    $num = (int) $a();
+                    $size = (int)$b;
+                    $num = (int)$a();
                     if ($size < 1 || $num < 1) {
                         throw new \RuntimeException('Dice can only use positive integers.');
                     }
@@ -249,7 +251,7 @@ class Dice implements Visit, PluginInterface
                 if ('id' === $element->getValueToken()) {
                     return $value;
                 } else {
-                    $out = (float) $value;
+                    $out = (float)$value;
                 }
                 $acc = function () use ($out, $acc) {
                     return $acc($out);

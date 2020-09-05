@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -143,7 +143,7 @@ class Match implements PluginInterface
             $getOpt->addCommands($commands);
             try {
                 $args = substr(strstr($message->content, " "), 1);
-                $getOpt->process((string) $args);
+                $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
                 return self::send($message->channel, $getOpt->getHelpText());
             }
@@ -164,8 +164,8 @@ class Match implements PluginInterface
                     $message->client->config['evalUsers'])) { // todo: actual permission stuff
                 return self::unauthorized($message);
             }
-            $title = (string) $getOpt->getOperand('title');
-            $period = (string) $getOpt->getOperand('period');
+            $title = (string)$getOpt->getOperand('title');
+            $period = (string)$getOpt->getOperand('period');
             $time = self::readTime($period);
             $id = Snowflake::generate();
             $qb = DatabaseFactory::get()->createQueryBuilder();
@@ -282,7 +282,7 @@ class Match implements PluginInterface
             $match = $match[0];
             $match['created'] = new Carbon($match['created']);
             $match['duedate'] = new Carbon($match['duedate']);
-            $match = (object) $match;
+            $match = (object)$match;
         }
 
         $match->entries = (new Collection($db->createQueryBuilder()->select("*")->from("match_competitors")->where('idMatch = ?')->setParameter(0,
@@ -315,7 +315,7 @@ class Match implements PluginInterface
     public static function announceMatch(GetOpt $getOpt, Message $message)
     {
         try {
-            $anon = !((bool) $getOpt->getOption("no-anonymous"));
+            $anon = !((bool)$getOpt->getOption("no-anonymous"));
             if (!in_array($message->author->id,
                 $message->client->config['evalUsers'])) { // todo: actual permission stuff
                 return self::unauthorized($message);
@@ -360,7 +360,7 @@ class Match implements PluginInterface
             });
             $prom = self::send($channel, "A match is available for voting!\n" . implode(", ", $getOpt->getOption("cc")),
                 ['embed' => $embed]);
-            if ((bool) $getOpt->getOption("pin")) {
+            if ((bool)$getOpt->getOption("pin")) {
                 $prom->then(function ($announcement) use ($message) {
                     $message->channel->send("Announcement sent!");
                     return $announcement->pin();
@@ -376,7 +376,7 @@ class Match implements PluginInterface
     public static function tallyMatch(GetOpt $getOpt, Message $message)
     {
         try {
-            $anon = !((bool) $getOpt->getOption("no-anonymous"));
+            $anon = !((bool)$getOpt->getOption("no-anonymous"));
             $match = Snowflake::parse($getOpt->getOperand('match'));
             $info = self::getMatchInfo($match, $message->guild);
 
@@ -425,7 +425,7 @@ class Match implements PluginInterface
             ]);
             try {
                 $args = substr(strstr($message->content, " "), 1);
-                $getOpt->process((string) $args);
+                $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
                 return self::send($message->channel, $getOpt->getHelpText());
             }
@@ -462,7 +462,9 @@ class Match implements PluginInterface
                             }
                         }
                     }
-                    $msg = $quest->reactions->map(function (MessageReaction $mr, $id
+                    $msg = $quest->reactions->map(function (
+                        MessageReaction $mr,
+                        $id
                     ) use ($reactions) {
                         return $mr->emoji->name . ' ' . ($reactions[$id] ?? 0);
                     })->implode(null, PHP_EOL);

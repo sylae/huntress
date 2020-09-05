@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -156,7 +156,7 @@ class CauldronEmoteHub implements PluginInterface
 
                 $guildcount[$emote->guild->id] = true;
 
-                $s[] = sprintf("%s `%s` - Found on %s, %s", (string) $emote, $emote->name, $emote->guild->name,
+                $s[] = sprintf("%s `%s` - Found on %s, %s", (string)$emote, $emote->name, $emote->guild->name,
                     $sim_str);
             }
             if (count($s) == 0) {

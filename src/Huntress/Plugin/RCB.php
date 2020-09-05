@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
@@ -49,7 +49,7 @@ class RCB extends RSSProcessor implements PluginInterface
                 }
                 $newest = max($newest, $published);
                 if ($item->kind == "t1") { // comment
-                    $newItems[] = (object) [
+                    $newItems[] = (object)[
                         'title' => "Comment on post: " . $item->data->link_title,
                         'link' => "https://www.reddit.com" . $item->data->permalink,
                         'date' => $published,
@@ -59,7 +59,7 @@ class RCB extends RSSProcessor implements PluginInterface
                         'isImage' => false,
                     ];
                 } elseif ($item->kind == "t3") { // post
-                    $newItems[] = (object) [
+                    $newItems[] = (object)[
                         'title' => $item->data->title,
                         'link' => "https://www.reddit.com" . $item->data->permalink,
                         'date' => $published,

@@ -1,6 +1,6 @@
 <?php
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -291,8 +291,10 @@ class Role implements PluginInterface
         }
     }
 
-    private static function addInheritance(\CharlotteDunois\Yasmin\Models\Role $source, \CharlotteDunois\Yasmin\Models\Role $dest)
-    {
+    private static function addInheritance(
+        \CharlotteDunois\Yasmin\Models\Role $source,
+        \CharlotteDunois\Yasmin\Models\Role $dest
+    ) {
         $query = $source->client->db->prepare('REPLACE INTO roles_inherit (`idRoleSource`, `idRoleDest`, `idGuild`) VALUES(?, ?, ?)',
             ['integer', 'integer', 'integer']);
         $query->bindValue(1, $source->id);

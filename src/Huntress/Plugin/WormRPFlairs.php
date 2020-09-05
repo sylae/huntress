@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -90,7 +90,7 @@ class WormRPFlairs implements PluginInterface
 
                 try {
                     $args = substr(strstr($data->message->content, " "), 1);
-                    $getOpt->process((string) $args);
+                    $getOpt->process((string)$args);
                 } catch (ArgumentException $exception) {
                     return $response->edit($getOpt->getHelpText());
                 }
@@ -116,7 +116,7 @@ class WormRPFlairs implements PluginInterface
                 $wikiURL = "https://wormrp.syl.ae/w/api.php?action=parse&format=json&text=%7B%7Bflair%7C%2Fu%2F" . urlencode($redditUser) . "%7D%7D&contentmodel=wikitext";
                 $chain = URLHelpers::getHTTPClient()->get($wikiURL)->then(function (ResponseInterface $response) {
                     // get new flair tag
-                    $text = json_decode((string) $response->getBody())->parse->text->{'*'};
+                    $text = json_decode((string)$response->getBody())->parse->text->{'*'};
                     $flair = trim(html5qp($text, 'p')->text());
                     if (mb_strlen($flair) > 64) {
                         // attempt to shorten it to make it maybe fit.
@@ -213,7 +213,7 @@ class WormRPFlairs implements PluginInterface
 
             try {
                 $args = substr(strstr($message->content, " "), 1);
-                $getOpt->process((string) $args);
+                $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
                 return self::send($message->channel,
                     $getOpt->getHelpText() . "Note: if you're getting this but everything looks correct, try `!rep -- <character> <rep>` instead.");
@@ -237,7 +237,10 @@ class WormRPFlairs implements PluginInterface
 
     private static function editRep(string $char, string $rep, Huntress $bot, EventData $data): ?Promise
     {
-        $chain = $data->message->channel->send(":crystal_ball: Checking params...")->then(function ($message) use ($rep, $data) {
+        $chain = $data->message->channel->send(":crystal_ball: Checking params...")->then(function ($message) use (
+            $rep,
+            $data
+        ) {
             // check rep is valid
             $cd = [];
             $cd['myMessage'] = $message;
@@ -264,7 +267,7 @@ class WormRPFlairs implements PluginInterface
             ) use ($cd) {
                 // first we get a csrf token...
                 self::setCookiesIfApplicable($response);
-                $cd['csrf'] = json_decode((string) $response->getBody())->query->tokens->csrftoken;
+                $cd['csrf'] = json_decode((string)$response->getBody())->query->tokens->csrftoken;
                 return $cd;
             });
         })->then(function (array $cd) use ($char) {
@@ -277,7 +280,7 @@ class WormRPFlairs implements PluginInterface
             ) use ($cd) {
                 // get new flair tag
                 self::setCookiesIfApplicable($response);
-                $text = json_decode((string) $response->getBody())->parse->text->{'*'};
+                $text = json_decode((string)$response->getBody())->parse->text->{'*'};
                 $cd['flair'] = trim(html5qp($text, 'p')->text());
                 if (mb_strlen($cd['flair']) > 64) {
                     // attempt to shorten it to make it maybe fit.
@@ -348,7 +351,7 @@ class WormRPFlairs implements PluginInterface
             ['Cookie' => self::cookieString()])->then(function (
             ResponseInterface $response
         ) use ($cd, $browser, $bot) {
-            $cd['userinfo'] = json_decode((string) $response->getBody())->query->userinfo;
+            $cd['userinfo'] = json_decode((string)$response->getBody())->query->userinfo;
             if (array_key_exists('anon', $cd['userinfo'])) {
                 // actually log in!
                 return $browser->get("https://wormrp.syl.ae/w/api.php?action=query&meta=tokens&type=login&format=json",
@@ -357,7 +360,7 @@ class WormRPFlairs implements PluginInterface
                 ) use ($cd) {
                     // first we get a login token...
                     self::setCookiesIfApplicable($response);
-                    $cd['logintoken'] = json_decode((string) $response->getBody())->query->tokens->logintoken;
+                    $cd['logintoken'] = json_decode((string)$response->getBody())->query->tokens->logintoken;
                     return $cd;
                 })->then(function (array $cd) use ($bot, $browser) {
                     // then we actually log in!
@@ -372,7 +375,7 @@ class WormRPFlairs implements PluginInterface
                         ResponseInterface $response
                     ) use ($cd) {
                         self::setCookiesIfApplicable($response);
-                        $cd['loginresp2'] = (string) $response->getBody();
+                        $cd['loginresp2'] = (string)$response->getBody();
                         return $cd;
                     });
                 });
@@ -392,7 +395,7 @@ class WormRPFlairs implements PluginInterface
             foreach ($response->getHeader('Set-Cookie') as $cookie) {
                 $parts = explode(";", $cookie);
                 $first = array_shift($parts);
-                list ($name, $data) = explode("=", $first, 2);
+                [$name, $data] = explode("=", $first, 2);
                 $jar[trim($name)] = ['data' => trim($data)];
                 foreach ($parts as $part) {
                     $x = explode("=", $part);
@@ -410,7 +413,7 @@ class WormRPFlairs implements PluginInterface
             ['Cookie' => self::cookieString()])->then(function (
             string $data
         ) use ($char, $cd) {
-            $data = (array) json_decode($data)->query->pages;
+            $data = (array)json_decode($data)->query->pages;
             if (count($data) != 1) {
                 return reject("Something's hella fucked up, please @ keira.");
             }
@@ -453,7 +456,7 @@ class WormRPFlairs implements PluginInterface
                 ResponseInterface $response
             ) use ($cd) {
                 self::setCookiesIfApplicable($response);
-                $cd['editresp'] = json_decode((string) $response->getBody());
+                $cd['editresp'] = json_decode((string)$response->getBody());
                 return $cd;
             });
         });

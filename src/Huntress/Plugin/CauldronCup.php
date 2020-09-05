@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -126,7 +126,7 @@ NOTE;
             $getOpt->addCommands($commands);
             try {
                 $args = substr(strstr($data->message->content, " "), 1);
-                $getOpt->process((string) $args);
+                $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
                 return self::send($data->message->channel, $getOpt->getHelpText());
             }
@@ -215,12 +215,12 @@ NOTE;
                 case "compa":
                 case "a":
                     $user = self::parseGuildUser($message->guild, $v);
-                    self::setValue($message->client, $matchID, 'idCompA', (int) $user->id);
+                    self::setValue($message->client, $matchID, 'idCompA', (int)$user->id);
                     return self::summonUser($user, $message->channel);
                 case "compb":
                 case "b":
                     $user = self::parseGuildUser($message->guild, $v);
-                    self::setValue($message->client, $matchID, 'idCompB', (int) $user->id);
+                    self::setValue($message->client, $matchID, 'idCompB', (int)$user->id);
                     return self::summonUser($user, $message->channel);
                 case "chara":
                     self::setValue($message->client, $matchID, 'charA', $v);

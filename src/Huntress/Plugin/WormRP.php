@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -448,7 +448,8 @@ class WormRP implements PluginInterface
         try {
             $timeStart = microtime(true);
             $b64 = base64_encode(json_encode([
-                'sheetID' => self::APPROVAL_SHEET, 'sheetRange' => 'Queue!A11:L',
+                'sheetID' => self::APPROVAL_SHEET,
+                'sheetRange' => 'Queue!A11:L',
             ]));
             $cmd = 'php scripts/pushGoogleSheet.php ' . $b64;
             $data->huntress->log->debug("Running $cmd");
@@ -491,8 +492,11 @@ class WormRP implements PluginInterface
         }
     }
 
-    private static function queueHandlerProcess(string $childData, Message $response, float $timeStart): PromiseInterface
-    {
+    private static function queueHandlerProcess(
+        string $childData,
+        Message $response,
+        float $timeStart
+    ): PromiseInterface {
         try {
             $embed = new MessageEmbed();
             $embed->setTitle("WormRP Approval Queue");

@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -29,6 +29,7 @@ use Throwable;
 class PCT implements PluginInterface
 {
     use PluginHelperTrait;
+
     const RANKS = [
         [463601286260981763, "Recruit"],
         [486760992521584640, "Squaddie"],
@@ -76,7 +77,7 @@ class PCT implements PluginInterface
             })
             ->then(function (GuildMember $member) {
                 return self::send($member->guild->channels->get(397462075896627221),
-                    sprintf("Welcome to PCT, %s!", (string) $member));
+                    sprintf("Welcome to PCT, %s!", (string)$member));
             });
     }
 

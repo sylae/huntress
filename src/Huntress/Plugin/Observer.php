@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -24,10 +24,10 @@ use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
-use function React\Promise\all;
 use React\Promise\ExtendedPromiseInterface as Promise;
-use function Sentry\captureException;
 use Throwable;
+use function React\Promise\all;
+use function Sentry\captureException;
 
 /**
  * Moderation logging and user reporting

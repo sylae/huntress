@@ -1,6 +1,6 @@
 <?php
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -50,7 +50,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
                     continue;
                 }
                 $newest = max($newest, $published);
-                $newItems[] = (object) [
+                $newItems[] = (object)[
                     'title' => $item->data->title,
                     'link' => "https://www.reddit.com" . $item->data->permalink,
                     'date' => $published,

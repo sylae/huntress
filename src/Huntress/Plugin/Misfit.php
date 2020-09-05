@@ -1,6 +1,6 @@
 <?php
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -66,7 +66,7 @@ class Misfit implements PluginInterface
 
             case 'set':
                 $state = self::state();
-                $state[$tp[2]] = [(int) $tp[4], $tp[3]];
+                $state[$tp[2]] = [(int)$tp[4], $tp[3]];
                 $state = self::state($state);
                 return self::ls($data->message, $state);
             default:

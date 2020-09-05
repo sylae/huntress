@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
@@ -80,7 +80,7 @@ class PermissionFrontend implements PluginInterface
             $getOpt->addCommands($commands);
             try {
                 $args = substr(strstr($data->message->content, " "), 1);
-                $getOpt->process((string) $args);
+                $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
                 return self::send($data->message->channel, "```\n" . $getOpt->getHelpText() . "```");
             }
@@ -263,8 +263,12 @@ class PermissionFrontend implements PluginInterface
         }
     }
 
-    private static function hasPermissionPermission(int $setting, int $target, EventData $data, array &$overridePermissions = []): bool
-    {
+    private static function hasPermissionPermission(
+        int $setting,
+        int $target,
+        EventData $data,
+        array &$overridePermissions = []
+    ): bool {
 
         $default = false;
         if ($setting == P::SETTING_GLOBAL || $target == P::TARGET_BOTADMIN) {

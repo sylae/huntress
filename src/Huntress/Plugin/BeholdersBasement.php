@@ -1,7 +1,7 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
+/*
+ * Copyright (c) 2020 Keira Dueck <sylae@calref.net>
  * Use of this source code is governed by the MIT license, which
  * can be found in the LICENSE file.
  */
@@ -83,7 +83,7 @@ class BeholdersBasement implements PluginInterface
             $getOpt->addCommands($commands);
             try {
                 $args = substr(strstr($data->message->content, " "), 1);
-                $getOpt->process((string) $args);
+                $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
                 return self::send($data->message->channel, $getOpt->getHelpText());
             }
@@ -109,11 +109,14 @@ class BeholdersBasement implements PluginInterface
             return self::error($message, "Invalid user",
                 "I couldn't figure out who that is. Try using their tag or @ing them?");
         }
-        return self::createGameAndRoom($gm, $message, (bool) $getOpt->getOption("private"));
+        return self::createGameAndRoom($gm, $message, (bool)$getOpt->getOption("private"));
     }
 
-    private static function createGameAndRoom(GuildMember $gm, Message $message, bool $private = false): PromiseInterface
-    {
+    private static function createGameAndRoom(
+        GuildMember $gm,
+        Message $message,
+        bool $private = false
+    ): PromiseInterface {
         try {
             $id = Snowflake::generate();
 
@@ -136,24 +139,32 @@ class BeholdersBasement implements PluginInterface
                         $perms = [];
                         if ($private) {
                             $perms[] = [
-                                'type' => 'role', 'id' => $message->guild->id,
+                                'type' => 'role',
+                                'id' => $message->guild->id,
                                 'deny' => Permissions::PERMISSIONS['VIEW_CHANNEL'],
                             ];
                         }
                         $perms[] = [
-                            'type' => 'member', 'id' => $gm->id,
+                            'type' => 'member',
+                            'id' => $gm->id,
                             'allow' => Permissions::PERMISSIONS['VIEW_CHANNEL'] | Permissions::PERMISSIONS['MANAGE_MESSAGES'] | Permissions::PERMISSIONS['MANAGE_CHANNELS'],
                         ];
                         $perms[] = [
-                            'type' => 'role', 'id' => self::MODS, 'allow' => Permissions::PERMISSIONS['VIEW_CHANNEL'],
+                            'type' => 'role',
+                            'id' => self::MODS,
+                            'allow' => Permissions::PERMISSIONS['VIEW_CHANNEL'],
                         ];
                         $perms[] = [
-                            'type' => 'role', 'id' => $role->id, 'allow' => Permissions::PERMISSIONS['VIEW_CHANNEL'],
+                            'type' => 'role',
+                            'id' => $role->id,
+                            'allow' => Permissions::PERMISSIONS['VIEW_CHANNEL'],
                         ];
 
                         $channel->setPermissionOverwrites($perms,
                             "Created on behalf of {$message->author->tag} from {$message->getJumpURL()}");
-                        return $message->channel->send("<@&{$role->id}> and matching category have been added. Please rename them at your leisure.")->then(function ($m2) use ($role, $gm) {
+                        return $message->channel->send("<@&{$role->id}> and matching category have been added. Please rename them at your leisure.")->then(function (
+                            $m2
+                        ) use ($role, $gm) {
                             return $gm->addRole($role);
                         });
                     } catch (Throwable $e) {
