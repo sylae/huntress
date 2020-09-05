@@ -83,9 +83,9 @@ class Localization implements PluginInterface
                 $query->bindValue(1, $data->message->author->id);
                 $query->bindValue(2, $zone->getName());
                 $query->execute();
-                $string = "Your timezone has been updated to **%s**.\nI have your local time as **%s**\n\nIf this was incorrect, please use one of the values in <https://www.php.net/manual/en/timezones.php>.";
+                $string = "Your timezone has been updated to **%s**.\nI have your local time as **%s**\n\nIf this was incorrect, please use one of the values in <https://www.php.net/manual/en/timezones.php>.\n*Note:* In most cases you should use the Continent/City values, as they will automatically compensate for Daylight Savings for your region.";
             } else {
-                $string = "Your timezone is currently set to **%s**.\nI have your local time as **%s**\n\nTo update, run `!timezone NewTimeZone` with one of the values in <https://www.php.net/manual/en/timezones.php>.";
+                $string = "Your timezone is currently set to **%s**.\nI have your local time as **%s**\n\nTo update, run `!timezone NewTimeZone` with one of the values in <https://www.php.net/manual/en/timezones.php>.\n*Note:* In most cases you should use the Continent/City values, as they will automatically compensate for Daylight Savings for your region.";
             }
             $tz = new UserLocale($data->message->author);
             $now_tz = $tz->applyTimezone($now);
