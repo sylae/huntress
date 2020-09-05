@@ -74,21 +74,21 @@ class Remind implements PluginInterface
 
             $time = \CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($rem['idMessage'])->timestamp;
             $text = $rem['message'];
+            $url = sprintf("https://canary.discordapp.com/channels/%s/%s/%s", $channel->guild->id, $channel->id,
+                $rem['idMessage']);
 
             $embed = new MessageEmbed();
             $embed->setAuthor($member->displayName, $member->user->getAvatarURL(64) ?? null);
             $embed->setColor($member->id % 0xFFFFFF);
             $embed->setTimestamp($time);
             $embed->setTitle("Reminder!");
-            $embed->setURL(sprintf("https://canary.discordapp.com/channels/%s/%s/%s", $channel->guild->id, $channel->id,
-                $rem['idMessage']));
             $embed->setDescription($text);
 
             $query = $bot->db->prepare('DELETE FROM remind WHERE (`idMessage` = ?)', ['integer']);
             $query->bindValue(1, $rem['idMessage']);
             $query->execute();
 
-            return $channel->send($member, ['embed' => $embed]);
+            return $channel->send($member . ": " . $url, ['embed' => $embed]);
 
         } catch (Throwable $e) {
             captureException($e);
