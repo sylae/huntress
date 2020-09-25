@@ -9,6 +9,7 @@
 namespace Huntress;
 
 use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageReaction;
@@ -118,10 +119,12 @@ class EventManager
             case "channelDelete":
             case "channelPinsUpdate":
             case "channelUpdate":
-                // provides: guild channel
+                // provides: ?guild channel
                 $data = new EventData;
                 $data->channel = $args[0];
-                $data->guild = $args[0]->getGuild();
+                if ($data->channel instanceof GuildChannelInterface) {
+                    $data->guild = $args[0]->getGuild();
+                }
                 break;
             case "roleCreate":
             case "roleDelete":
