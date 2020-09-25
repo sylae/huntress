@@ -9,6 +9,7 @@ namespace Huntress\Plugin;
 
 
 use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\DMChannel;
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
@@ -28,6 +29,7 @@ use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\PromiseInterface;
 use Throwable;
+use function React\Promise\all;
 
 class GamesBot implements PluginInterface
 {
@@ -86,7 +88,10 @@ class GamesBot implements PluginInterface
                     GetOpt::REQUIRED_ARGUMENT))->setDescription("The player being removed (default: self)"),
             ]);
             $commands[] = Command::create('list',
-                [self::class, 'listGameHandler'])->setDescription('Show valid game tags')->addOperands([]);
+                [self::class, 'listGameHandler'])->setDescription('Show valid game tags')->addOperands([])->addOptions([
+                (new Option(null, "no-dm",
+                    GetOpt::REQUIRED_ARGUMENT))->setDescription("Display the list here instead of DMing it"),
+            ]);
 
             $commands[] = Command::create('ping',
                 [self::class, 'pingGameHandler'])->setDescription('Ping members with a game tag')->addOperands([
@@ -226,7 +231,18 @@ class GamesBot implements PluginInterface
             }
         }
 
-        return $data->message->channel->send("", ['embed' => $embed]);
+
+        if ($getOpt->getOption("no-dm")) {
+            return $data->message->channel->send("", ['embed' => $embed]);
+        } else {
+            $r = [];
+            $r[] = $data->message->channel->send("📨");
+            $r[] = $data->message->author->createDM()->then(function (DMChannel $dm) use ($embed) {
+                return $dm->send("", ['embed' => $embed]);
+            });
+            return all($r);
+        }
+
     }
 
     public static function getHelp(): string
