@@ -90,7 +90,7 @@ class GamesBot implements PluginInterface
             $commands[] = Command::create('list',
                 [self::class, 'listGameHandler'])->setDescription('Show valid game tags')->addOperands([])->addOptions([
                 (new Option(null, "no-dm",
-                    GetOpt::REQUIRED_ARGUMENT))->setDescription("Display the list here instead of DMing it"),
+                    GetOpt::NO_ARGUMENT))->setDescription("Display the list here instead of DMing it"),
             ]);
 
             $commands[] = Command::create('ping',
