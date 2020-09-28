@@ -60,6 +60,9 @@ class WormRP implements PluginInterface
                 "pollActiveCheck",
             ])->setPeriodic(10));
 
+            $bot->eventManager->addURLEvent("https://syl.ae/wormrp/roles.php", 60,
+                [self::class, "wikiRoleHandler"]);
+
             $wiki = new RSSProcessor($bot, 'WikiRecentChanges',
                 'https://wormrp.syl.ae/w/api.php?urlversion=2&action=feedrecentchanges&feedformat=rss&hideminor=true',
                 60,
@@ -117,6 +120,48 @@ class WormRP implements PluginInterface
         $t3->addColumn("flair", "string",
             ['customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]);
         $t3->setPrimaryKey(["redditName"]);
+    }
+
+    public static function wikiRoleHandler(string $string, Huntress $bot)
+    {
+        $x = json_decode($string, true);
+        $autoRoles = $x['roles'];
+        $data = $x['data'];
+
+        $guild = $bot->guilds->get(118981144464195584);
+        $modlog = $guild->channels->get(491099441357651969);
+
+        $x = [];
+        foreach ($data as $id => $roles) {
+            if (!$guild->members->has($id)) {
+                continue;
+            }
+            $member = $guild->members->get($id);
+            foreach ($autoRoles as $tag => $roleID) {
+                $has = $member->roles->has($roleID);
+                $should = in_array($tag, $roles);
+
+                if ($has && !$should) {
+                    $x[] = $member->removeRole($roleID, "Huntress role management")->then(function () use (
+                        $modlog,
+                        $tag,
+                        $member
+                    ) {
+                        return $modlog->send("[HRM Wiki] Removed the `$tag` role from $member");
+                    });
+                }
+                if (!$has && $should) {
+                    $x[] = $member->addRole($roleID, "Huntress role management")->then(function () use (
+                        $modlog,
+                        $tag,
+                        $member
+                    ) {
+                        return $modlog->send("[HRM Wiki] Added the `$tag` role to $member");
+                    });
+                }
+            }
+        }
+        return all($x);
     }
 
     public static function pollComments(string $string, Huntress $bot)
