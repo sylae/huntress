@@ -46,7 +46,7 @@ class State implements PluginInterface
 
         $ctxt = self::arg_substr($data->message->content, 1, 1) ?? null;
         if (mb_strlen($ctxt) == 0) {
-            return $data->message->channel->send("Usage: `!state [channel] then the rest of your message");
+            return $data->message->channel->send("Usage: `!state [channel] then the rest of your message`");
         }
 
         if (is_null($x = self::channelMention($ctxt, $data->message->guild))) {
@@ -61,7 +61,7 @@ class State implements PluginInterface
         $id = \Huntress\Snowflake::format(\Huntress\Snowflake::generate());
 
         if (mb_strlen($state) == 0) {
-            return $data->message->channel->send("Usage: `!state [channel] then the rest of your message");
+            return $data->message->channel->send("Usage: `!state [channel] then the rest of your message`");
         }
 
         $embed = new MessageEmbed();
