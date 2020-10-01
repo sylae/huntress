@@ -70,7 +70,7 @@ class Event implements PluginInterface
 
     private static function createCalendarEmbed(Guild $guild, string $tz = "UTC"): MessageEmbed
     {
-        $query = $guild->client->db->query("select * from event where idGuild = {$guild->id} and time >= now()");
+        $query = $guild->client->db->query("select * from event where idGuild = {$guild->id} and time >= now() order by time ASC");
         $x = [];
         foreach ($query->fetchAll() as $rem) {
             $time = new Carbon($rem['time']);
