@@ -175,7 +175,7 @@ class Event implements PluginInterface
                     $bot->log->debug("event_calendar links to non-text channel {$rem['idChannel']}");
                     continue;
                 }
-                return $channel->fetchMessage($rem['idMessage'])->then(function (Message $message) {
+                $p[] = $channel->fetchMessage($rem['idMessage'])->then(function (Message $message) {
                     if ($message->author->id != $message->client->user->id) {
                         return;
                     }
