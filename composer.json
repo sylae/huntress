@@ -19,7 +19,7 @@
     "doctrine/dbal": "^2.10",
     "league/html-to-markdown": "^4.9",
     "monolog/monolog": "^2.1",
-    "nesbot/carbon": "^2.39",
+    "nesbot/carbon": "^2.41",
     "querypath/querypath": "^3.0",
     "sentry/sentry": "^2.3"
   },
