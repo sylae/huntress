@@ -237,6 +237,12 @@ class Match implements PluginInterface
                 return self::send($message->channel,
                     "<:disdain:450830477562085407>");
             }
+
+            // bots and webhooks dont get to vote
+            if ($message->author->bot || $message->author->webhook) {
+                return self::send($message->channel, "bots and webhooks dont get to vote.");
+            }
+
             $match = Snowflake::parse($getOpt->getOperand('match'));
             $entry = Snowflake::parse($getOpt->getOperand('entry'));
 
