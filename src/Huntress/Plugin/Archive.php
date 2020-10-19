@@ -42,7 +42,7 @@ class Archive implements PluginInterface
             }
 
             $ch = self::getChannel(self::arg_substr($data->message->content, 1, 1), $data->huntress);
-            $data->message->channel->send("Beginning $ch archival...");
+            $data->message->channel->send("Beginning $ch (`#{$ch->name}`) archival...");
 
             return self::_archive($ch, $data);
         } catch (\Throwable $e) {
