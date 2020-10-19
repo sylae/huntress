@@ -11,6 +11,7 @@ namespace Huntress\Plugin;
 use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\Permissions;
 use CharlotteDunois\Yasmin\Models\TextChannel;
 use Huntress\EventData;
 use Huntress\EventListener;
@@ -42,9 +43,14 @@ class Archive implements PluginInterface
             }
 
             $ch = self::getChannel(self::arg_substr($data->message->content, 1, 1), $data->huntress);
-            $data->message->channel->send("Beginning $ch (`#{$ch->name}`) archival...");
+            if ($ch->permissionsFor($data->guild->me)->has(Permissions::PERMISSIONS['VIEW_CHANNEL']) && $ch->permissionsFor($data->guild->me)->has(Permissions::PERMISSIONS['READ_MESSAGE_HISTORY'])) {
+                $data->message->channel->send("Beginning $ch (`#{$ch->name}`) archival...");
+                return self::_archive($ch, $data);
+            } else {
+                return $data->message->channel->send("I don't have read access to that channel! Verify I have VIEW_CHANNEL and READ_MESSAGE_HISTORY and try again.");
+            }
 
-            return self::_archive($ch, $data);
+
         } catch (\Throwable $e) {
             return self::exceptionHandler($data->message, $e);
         }
