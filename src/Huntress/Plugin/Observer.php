@@ -13,6 +13,7 @@ use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\MessageAttachment;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Models\MessageReaction;
 use CharlotteDunois\Yasmin\Models\TextChannel;
@@ -172,8 +173,9 @@ class Observer implements PluginInterface
 
         if (count($message->attachments) > 0) {
             $att = [];
+            /** @var MessageAttachment $attach */
             foreach ($message->attachments as $attach) {
-                $att[] = "{$attach->url} (" . number_format($attach->size) . " bytes)";
+                $att[] = "{$attach->filename} (" . number_format($attach->size) . " bytes)";
             }
             $embed->addField("Attachments", implode("\n", $att));
         }
@@ -226,10 +228,26 @@ class Observer implements PluginInterface
 
             $embed = self::embedMessage($reaction->message, 0xcc0000);
 
+            $opts = ['embed' => $embed];
+            if ($reaction->message->attachments->count() > 0) {
+                $opts['files'] = $reaction->message->attachments->map(function (MessageAttachment $att) {
+                    return ['name' => $att->filename, 'path' => $att->url];
+                });
+            }
+
             $member = $reaction->message->guild->members->get($user->id);
             $msg = "**⚠ Reported message** - reported by {$member->displayName} in {$reaction->message->channel} - " . $reaction->message->getJumpURL();
             return all([
-                $reaction->message->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]),
+                $reaction->message->guild->channels->get($info['idChannel'])->send($msg, $opts)->then(function (
+                    Message $newMsg
+                ) use ($reaction) {
+                    $x = [];
+                    foreach ($reaction->message->embeds as $e) {
+                        $e->setTimestamp($e->timestamp); // bugfix
+                        $x[] = $newMsg->channel->send("", ['embed' => $e]);
+                    }
+                    return all($x);
+                }),
                 $reaction->remove($member->user),
             ]);
         } catch (Throwable $e) {
