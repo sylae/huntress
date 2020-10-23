@@ -16,7 +16,7 @@
     "sylae/yasmin": "dev-master",
     "clue/block-react": "^1.4",
     "clue/buzz-react": "^2.8",
-    "doctrine/dbal": "^2.10",
+    "doctrine/dbal": "^2.12",
     "league/html-to-markdown": "^4.9",
     "monolog/monolog": "^2.1",
     "nesbot/carbon": "^2.39",
