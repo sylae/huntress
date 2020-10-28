@@ -4739,12 +4739,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/huntress.git",
-                "reference": "ca5c25bd7947d49e5512ce3b00a8c9613ccb78b1"
+                "reference": "4d0832fa5dfcf963f2a678c73b221e43eaccad4d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/huntress/zipball/ca5c25bd7947d49e5512ce3b00a8c9613ccb78b1",
-                "reference": "ca5c25bd7947d49e5512ce3b00a8c9613ccb78b1",
+                "url": "https://api.github.com/repos/sylae/huntress/zipball/4d0832fa5dfcf963f2a678c73b221e43eaccad4d",
+                "reference": "4d0832fa5dfcf963f2a678c73b221e43eaccad4d",
                 "shasum": ""
             },
             "require": {
@@ -4783,7 +4783,7 @@
                 "source": "https://github.com/sylae/huntress/tree/master",
                 "issues": "https://github.com/sylae/huntress/issues"
             },
-            "time": "2020-09-25T05:30:20+00:00"
+            "time": "2020-10-28T09:28:06+00:00"
         },
         {
             "name": "sylae/validator",
@@ -4846,12 +4846,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/Yasmin.git",
-                "reference": "22b367ee0d02f3ff58afc4af510a861851befda9"
+                "reference": "968a1b7cbde6bc8d2da8250277a936a8a694cfc0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/22b367ee0d02f3ff58afc4af510a861851befda9",
-                "reference": "22b367ee0d02f3ff58afc4af510a861851befda9",
+                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/968a1b7cbde6bc8d2da8250277a936a8a694cfc0",
+                "reference": "968a1b7cbde6bc8d2da8250277a936a8a694cfc0",
                 "shasum": ""
             },
             "require": {
@@ -4877,10 +4877,6 @@
             },
             "replace": {
                 "charlottedunois/yasmin": "self.version"
-            },
-            "require-dev": {
-                "charlottedunois/athena": "^0.1.1|dev-master",
-                "charlottedunois/kimberly": "^0.1.2|dev-master"
             },
             "suggest": {
                 "charlottedunois/athena": "For Redis-backed ratelimit bucket",
@@ -4913,7 +4909,7 @@
                 "issues": "https://github.com/sylae/Yasmin/issues",
                 "source": "https://github.com/sylae/Yasmin/tree/master"
             },
-            "time": "2020-05-11T13:22:21+00:00"
+            "time": "2020-10-28T09:24:11+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
