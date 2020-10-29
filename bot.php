@@ -46,6 +46,11 @@ set_exception_handler(function (Throwable $e) {
     $scope = new Scope();
     $scope->setExtra('fatal', true);
     Hub::getCurrent()->getClient()->captureException($e, $scope);
+    if (property_exists($e, "xdebug_message")) {
+        echo $e->xdebug_message;
+    } else {
+        echo $e->getMessage() . PHP_EOL . PHP_EOL . $e->getTraceAsString();
+    }
 });
 
 if (PHP_SAPI != "cli") {
