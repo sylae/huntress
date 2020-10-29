@@ -111,7 +111,7 @@ class Huntress extends Client
 
     private function setupLogger(): Logger
     {
-        $l_console = new StreamHandler(STDERR, "debug"); // for some reason it doesnt like it being passed by var? idfk
+        $l_console = new StreamHandler(STDERR, $this->config['logLevel']);
         $l_console->setFormatter(new LineFormatter(null, null, true, true));
         $l_template = new Logger("Bot");
         $l_template->pushHandler($l_console);
