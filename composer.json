@@ -12,7 +12,6 @@
   "prefer-stable": true,
   "require": {
     "google/apiclient": "^2.4",
-    "hoa/compiler": "^3.17",
     "intervention/image": "^2.5",
     "react/child-process": "^0.6.1",
     "ulrichsg/getopt-php": "^3.2",
