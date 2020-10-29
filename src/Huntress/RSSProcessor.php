@@ -15,7 +15,6 @@ use Doctrine\DBAL\Schema\Schema;
 use League\HTMLToMarkdown\HtmlConverter;
 use Throwable;
 use function qp;
-use function Sentry\captureException;
 
 /**
  * Unified class for handling RSS and other syndication systems.
@@ -119,7 +118,7 @@ class RSSProcessor
                     continue;
                 }
                 $newest = max($newest, $published);
-                $newItems[] = (object) [// todo: make this its own class
+                $newItems[] = (object)[// todo: make this its own class
                     'title' => $item->find('title')->text(),
                     'link' => $item->find('link')->text(),
                     'date' => $published,
@@ -129,7 +128,6 @@ class RSSProcessor
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
@@ -161,7 +159,6 @@ class RSSProcessor
                 $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
             }
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }

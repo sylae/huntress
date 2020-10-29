@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Throwable;
-use function Sentry\captureException;
 
 /**
  * Description of RedditProcessor
@@ -44,7 +43,7 @@ class RedditProcessor extends RSSProcessor
                     continue;
                 }
                 $newest = max($newest, $published);
-                $newItems[] = (object) [
+                $newItems[] = (object)[
                     'title' => $item->data->title,
                     'link' => "https://www.reddit.com" . $item->data->permalink,
                     'date' => $published,
@@ -56,7 +55,6 @@ class RedditProcessor extends RSSProcessor
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
@@ -93,7 +91,6 @@ class RedditProcessor extends RSSProcessor
                 $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
             }
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }

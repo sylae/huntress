@@ -23,6 +23,3 @@ $config['logLevel'] = \Monolog\Logger::INFO;
 $config['evalUsers'] = [
 //    '297969955356540929', // keira
 ];
-
-// connection url for Sentry error management.
-$config['sentry'] = ['dsn' => 'https://xxx@sentry.io/xxx'];

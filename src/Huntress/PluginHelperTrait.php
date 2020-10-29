@@ -25,10 +25,7 @@ use League\HTMLToMarkdown\HtmlConverter;
 use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 use React\Promise\RejectedPromise;
-use Sentry\State\Scope;
 use Throwable;
-use function Sentry\captureException;
-use function Sentry\withScope;
 
 /**
  *
@@ -45,20 +42,8 @@ trait PluginHelperTrait
     public static function exceptionHandler(
         Message $message,
         Throwable $e,
-        bool $showTrace = false,
-        bool $sentry = true
+        bool $showTrace = false
     ): ExtendedPromiseInterface {
-        if ($sentry && !$e instanceof UserErrorException) {
-            withScope(function (Scope $scope) use ($e, $message): void {
-                $scope->setUser(['id' => $message->author->id ?? null, 'username' => $message->author->tag ?? null]);
-                $scope->setTag('plugin', get_called_class() ?? null);
-                $scope->setExtra('message', $message->getJumpURL() ?? null);
-                $scope->setExtra('content', $message->content ?? null);
-                $scope->setExtra('channel', $message->channel->name ?? null);
-                $scope->setExtra('guild', $message->guild->name ?? null);
-                captureException($e);
-            });
-        }
         $msg = $e->getFile() . ":" . $e->getLine() . PHP_EOL . PHP_EOL . $e->getMessage();
         if ($showTrace) {
             $msg .= PHP_EOL;
@@ -209,7 +194,7 @@ trait PluginHelperTrait
         preg_match_all($regex, $s, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
             $r[] = [
-                'animated' => (bool) $match[1],
+                'animated' => (bool)$match[1],
                 'name' => $match[2],
                 'id' => $match[3],
             ];
@@ -276,8 +261,10 @@ trait PluginHelperTrait
         }
     }
 
-    public static function getMembersWithPermission(GuildChannelInterface $channel, int $permission = Permissions::PERMISSIONS['VIEW_CHANNEL']): GuildMemberStorage
-    {
+    public static function getMembersWithPermission(
+        GuildChannelInterface $channel,
+        int $permission = Permissions::PERMISSIONS['VIEW_CHANNEL']
+    ): GuildMemberStorage {
         return $channel->getGuild()->members->filter(function (GuildMember $v) use ($channel, $permission) {
             return $v->permissionsIn($channel)->has($permission);
         });

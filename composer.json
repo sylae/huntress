@@ -11,17 +11,13 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=7.3",
-    "ext-json": "*",
+    "php": ">=8.0",
     "sylae/yasmin": "dev-master",
-    "clue/block-react": "^1.4",
-    "clue/buzz-react": "^2.8",
-    "doctrine/dbal": "^2.10",
-    "league/html-to-markdown": "^4.9",
+    "doctrine/dbal": "^2.12",
+    "league/html-to-markdown": "^4.10",
     "monolog/monolog": "^2.1",
-    "nesbot/carbon": "^2.39",
-    "querypath/querypath": "^3.0",
-    "sentry/sentry": "^2.3"
+    "nesbot/carbon": "^2.41",
+    "querypath/querypath": "^3.0"
   },
   "autoload": {
     "psr-4": {

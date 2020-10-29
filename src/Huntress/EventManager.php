@@ -19,7 +19,6 @@ use Exception;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
 use function React\Promise\all;
-use function Sentry\captureException;
 
 /**
  * Description of EventManager
@@ -58,12 +57,10 @@ class EventManager
                     try {
                         return $callable($data, $bot);
                     } catch (Throwable $e) {
-                        captureException($e);
                         $bot->log->warning($e->getMessage(), ['exception' => $e]);
                     }
                 });
             } catch (Throwable $e) {
-                captureException($e);
                 $bot->log->warning($e->getMessage(), ['exception' => $e]);
             }
         })->setPeriodic($interval));

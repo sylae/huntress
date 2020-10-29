@@ -17,7 +17,6 @@ use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Exception;
 use Throwable;
-use function Sentry\captureException;
 
 /**
  * Hold the database
@@ -93,7 +92,6 @@ class DatabaseFactory
                     if ($e->getErrorCode() == 1826) {
                         $bot->log->debug("[DB] ignoring foreign key duplication error 1826 - dbal bug!");
                     } else {
-                        captureException($e);
                         throw $e;
                     }
                 }

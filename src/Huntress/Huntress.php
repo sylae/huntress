@@ -21,7 +21,6 @@ use Monolog\Registry;
 use React\EventLoop\LoopInterface;
 use ReflectionClass;
 use Throwable;
-use function Sentry\captureException;
 
 /**
  * This is the main Huntress class, mostly backend stuff tbh.
@@ -154,26 +153,22 @@ class Huntress extends Client
             try {
                 $this->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
             } catch (Throwable $e) {
-                captureException($e);
                 $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
             }
             if (preg_match($preg, $message->content, $match)) {
                 try {
                     $this->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
                 } catch (Throwable $e) {
-                    captureException($e);
                     $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
                 }
             }
         } catch (Throwable $e) {
-            captureException($e);
             $this->log->warning("Uncaught message processing exception!", ['exception' => $e]);
         }
     }
 
     public function errorHandler(Throwable $e): void
     {
-        captureException($e);
         $this->log->warning("Uncaught error!", ['exception' => $e]);
     }
 }
