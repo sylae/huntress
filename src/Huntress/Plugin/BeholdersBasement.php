@@ -27,7 +27,6 @@ use Huntress\PluginInterface;
 use Huntress\Snowflake;
 use React\Promise\PromiseInterface;
 use Throwable;
-use function Sentry\captureException;
 
 /**
  * Games server!
@@ -209,7 +208,6 @@ class BeholdersBasement implements PluginInterface
             $track = mb_strtolower(array_pop($track));
             return $bot->guilds->get(619043630187020299)->setIcon($track, "owo trigger");
         } catch (Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }

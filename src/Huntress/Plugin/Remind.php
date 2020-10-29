@@ -22,7 +22,6 @@ use Huntress\PluginInterface;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
 use function React\Promise\all;
-use function Sentry\captureException;
 
 class Remind implements PluginInterface
 {
@@ -56,7 +55,6 @@ class Remind implements PluginInterface
             }
             return all($p);
         } catch (Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -91,7 +89,6 @@ class Remind implements PluginInterface
             return $channel->send($member . ": " . $url, ['embed' => $embed]);
 
         } catch (Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }

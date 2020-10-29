@@ -14,7 +14,6 @@ use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
-use function Sentry\captureException;
 
 class TelephoneDelay implements PluginInterface
 {
@@ -61,7 +60,6 @@ class TelephoneDelay implements PluginInterface
                     return $data->message->channel->send("usage: `!telephone reset|ls`");
             }
         } catch (\Throwable $e) {
-            captureException($e);
             $data->message->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -88,7 +86,6 @@ class TelephoneDelay implements PluginInterface
                 self::state($state);
             }
         } catch (\Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -100,7 +97,6 @@ class TelephoneDelay implements PluginInterface
             $state[] = $data->message->content;
             self::state($state);
         } catch (\Throwable $e) {
-            captureException($e);
             $data->message->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }

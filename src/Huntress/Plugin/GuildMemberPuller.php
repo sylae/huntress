@@ -15,7 +15,6 @@ use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\PromiseInterface;
 use function React\Promise\all;
-use function Sentry\captureException;
 
 class GuildMemberPuller implements PluginInterface
 {
@@ -39,7 +38,6 @@ class GuildMemberPuller implements PluginInterface
                     $bot->log->debug(sprintf("Guild %s (%s) members fetched!", $g->id, $g->name));
                 }, function ($e) use ($bot) {
                     $bot->log->warning($e->getMessage() ?? $e, ['exception' => $e]);
-                    captureException($e);
                 });
             }
             return null;

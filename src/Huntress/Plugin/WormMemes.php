@@ -17,7 +17,6 @@ use Huntress\PluginInterface;
 use Huntress\RedditProcessor;
 use Huntress\RSSProcessor;
 use Throwable;
-use function Sentry\captureException;
 
 class WormMemes extends RedditProcessor implements PluginInterface
 {
@@ -62,7 +61,6 @@ class WormMemes extends RedditProcessor implements PluginInterface
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
@@ -112,7 +110,6 @@ class WormMemes extends RedditProcessor implements PluginInterface
             // appropriate wormmemes channel
             $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }

@@ -19,7 +19,6 @@ use Huntress\RedditProcessor;
 use React\ChildProcess\Process;
 use React\Promise\Deferred;
 use Throwable;
-use function Sentry\captureException;
 
 class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
 {
@@ -61,7 +60,6 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
@@ -150,7 +148,6 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
                 });
             }
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }

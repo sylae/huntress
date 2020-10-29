@@ -27,7 +27,6 @@ use React\Promise\PromiseInterface;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
 use function React\Promise\all;
-use function Sentry\captureException;
 
 class Event implements PluginInterface
 {
@@ -184,7 +183,6 @@ class Event implements PluginInterface
             }
             return all($p);
         } catch (Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }

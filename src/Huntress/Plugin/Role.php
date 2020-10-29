@@ -21,7 +21,6 @@ use Huntress\PluginInterface;
 use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 use Throwable;
-use function Sentry\captureException;
 
 
 /**
@@ -102,7 +101,6 @@ class Role implements PluginInterface
                 }
             }
         } catch (Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }

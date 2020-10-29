@@ -28,7 +28,6 @@ use Huntress\PluginInterface;
 use React\Promise\ExtendedPromiseInterface as Promise;
 use Throwable;
 use function React\Promise\all;
-use function Sentry\captureException;
 
 /**
  * Moderation logging and user reporting
@@ -153,7 +152,6 @@ class Observer implements PluginInterface
             $msg = "🗑 Message deleted - from {$message->channel}";
             return $message->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
         } catch (Throwable $e) {
-            captureException($e);
             $message->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -204,7 +202,6 @@ class Observer implements PluginInterface
             }
             return all($prom);
         } catch (Throwable $e) {
-            captureException($e);
             $channel->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -251,7 +248,6 @@ class Observer implements PluginInterface
                 $reaction->remove($member->user),
             ]);
         } catch (Throwable $e) {
-            captureException($e);
             $reaction->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -278,7 +274,6 @@ class Observer implements PluginInterface
             $msg = "👋 Member joined";
             return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
         } catch (Throwable $e) {
-            captureException($e);
             $member->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -322,7 +317,6 @@ class Observer implements PluginInterface
             $msg = "💨 Member left (or was banned)";
             return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
         } catch (Throwable $e) {
-            captureException($e);
             $member->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }

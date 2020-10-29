@@ -16,7 +16,6 @@ use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RSSProcessor;
 use Throwable;
-use function Sentry\captureException;
 
 class RCB extends RSSProcessor implements PluginInterface
 {
@@ -72,7 +71,6 @@ class RCB extends RSSProcessor implements PluginInterface
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
@@ -109,7 +107,6 @@ class RCB extends RSSProcessor implements PluginInterface
                 $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
             }
         } catch (Throwable $e) {
-            captureException($e);
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }

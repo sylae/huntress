@@ -30,7 +30,6 @@ use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 use Throwable;
 use function React\Promise\all;
-use function Sentry\captureException;
 
 /**
  * Simple builtin to show user information
@@ -189,7 +188,6 @@ class WormRP implements PluginInterface
                 $query->execute();
             }
         } catch (Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
@@ -241,7 +239,6 @@ class WormRP implements PluginInterface
                 }
             }
         } catch (Throwable $e) {
-            captureException($e);
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
