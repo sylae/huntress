@@ -277,7 +277,7 @@ NOTE;
         $matchCup = $channel->client->db->createQueryBuilder()->select("*")->from("ccup")->where('idMatch = ?')->setParameter(0,
             $matchID)->execute()->fetchAll();
 
-        $matchObj = Match::getMatchInfo($matchID, $channel->guild);
+        $matchObj = MatchVoting::getMatchInfo($matchID, $channel->guild);
 
         if (count($matchCup) != 1) {
             throw new Exception("No match bound to this channel.");
@@ -332,7 +332,7 @@ NOTE;
 
             $match = $message->client->db->createQueryBuilder()->select("*")->from("ccup")->where('idMatch = ?')->setParameter(0,
                 $matchID)->execute()->fetchAll();
-            $info = Match::getMatchInfo($matchID, $message->guild);
+            $info = MatchVoting::getMatchInfo($matchID, $message->guild);
 
             $embed = new MessageEmbed();
             $embed->setTitle(self::NAME . " - {$match[0]['round']}, {$match[0]['theme']}");

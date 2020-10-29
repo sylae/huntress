@@ -39,7 +39,7 @@ use function React\Promise\all;
  *
  * @author Keira Sylae Aro <sylae@calref.net>
  */
-class Match implements PluginInterface
+class MatchVoting implements PluginInterface
 {
     use PluginHelperTrait;
 
