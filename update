@@ -1,4 +1,4 @@
 #!/bin/sh -x
 
 git pull --recurse-submodules
-composer install --no-progress
+composer install --no-progress --ignore-platform-reqs
