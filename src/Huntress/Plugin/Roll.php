@@ -50,7 +50,7 @@ class Roll implements PluginInterface
             })->count();
             if ($count > 0) {
                 $data->huntress->log->info("Not rolling due to another bot with matching prefix.");
-                return;
+                return null;
             }
 
             $p = new Permission("p.dice.roll", $data->huntress, true);
