@@ -79,6 +79,23 @@ class WormRP implements PluginInterface
             ->addGuild(118981144464195584)
             ->setCallback([self::class, "queueHandler"])
         );
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addEvent("agendaPluginConf")
+            ->setCallback(function (Collection $c) {
+                $c->set(118981144464195584, [
+                    'staffRole' => 456321111945248779,
+                    'tiebreakerRole' => 492912331857199115,
+                    'quorum' => (2 / 3),
+                    'voteTypes' => [
+                        "For" => 394653535863570442,
+                        "Against" => 394653616050405376,
+                        "Abstain" => "👀",
+                        "Absent" => null,
+                    ],
+                ]);
+            })
+        );
     }
 
     public static function fetchAccount(
