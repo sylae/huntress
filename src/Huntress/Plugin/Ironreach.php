@@ -8,6 +8,7 @@
 namespace Huntress\Plugin;
 
 
+use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\PermissionOverwrite;
 use CharlotteDunois\Yasmin\Models\Permissions;
@@ -45,6 +46,23 @@ class Ironreach implements PluginInterface
             ->addCommand("jury")
             ->setCallback([self::class, "jury"]);
         $bot->eventManager->addEventListener($eh);
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addEvent("agendaPluginConf")
+            ->setCallback(function (Collection $c) {
+                $c->set(673383165943087115, [
+                    'staffRole' => 741883050278912050,
+                    'tiebreakerRole' => self::COMREP_ROLE,
+                    'quorum' => (2 / 3),
+                    'voteTypes' => [
+                        "For" => 747168156866314282,
+                        "Against" => 747168184246861914,
+                        "Abstain" => "👀",
+                        "Absent" => null,
+                    ],
+                ]);
+            })
+        );
     }
 
     public static function jury(EventData $data): ?PromiseInterface
