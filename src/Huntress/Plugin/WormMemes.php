@@ -45,7 +45,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
             $newItems = [];
             foreach ($items as $item) {
                 $published = Carbon::createFromTimestamp($item->data->created_utc);
-                if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
+                if ($published <= $lastPub) {
                     continue;
                 }
                 $newest = max($newest, $published);
@@ -109,6 +109,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
 
             // appropriate wormmemes channel
             $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+            $this->huntress->channels->get(771610178781052949)->send("", ['embed' => $embed]);
         } catch (Throwable $e) {
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
