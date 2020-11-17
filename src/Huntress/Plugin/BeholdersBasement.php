@@ -57,6 +57,91 @@ class BeholdersBasement implements PluginInterface
             ->addGuild(619043630187020299)
             ->setCallback([self::class, "prideDice"]);
         $bot->eventManager->addEventListener($eh3);
+
+        $eh4 = EventListener::new()
+            ->addCommand("sr")
+            ->addGuild(619043630187020299)
+            ->setCallback([self::class, "srHandler"]);
+        $bot->eventManager->addEventListener($eh4);
+    }
+
+    public static function srHandler(EventData $data)
+    {
+        try {
+            $p = new Permission("p.dice.roll.shadowrun", $data->huntress, true);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+
+            $usage = "Usage: `!sr numDice`";
+
+            $parts = self::_split($data->message->content);
+            if (count($parts) < 2 || count($parts) > 4 || !is_numeric($parts[1])) {
+                return $data->message->channel->send($usage);
+            } else {
+                $num = $parts[1];
+                if ($num < 1 || $num > 100) {
+                    return $data->message->channel->send("wtf how many dice is this");
+                }
+            }
+
+            $rolls = [];
+            $hits = 0;
+            $explodes = 0;
+            $glitches = 0;
+            $count = 0;
+
+            $keycaps = [
+                1 => '~~1~~',
+                2 => '2',
+                3 => '3',
+                4 => '4',
+                5 => '__5__',
+                6 => '__**6**__',
+            ];
+
+            while ($count < $num) {
+                $count++;
+                $r = random_int(1, 6);
+                if ($r == 1) {
+                    $glitches++;
+                } elseif ($r == 5) {
+                    $hits++;
+                } elseif ($r == 6) {
+                    $hits++;
+                    $explodes++;
+                }
+                $rolls[] = $r;
+            }
+
+            asort($rolls);
+            $rolls = array_map(fn($v) => $keycaps[$v], $rolls);
+
+            $isGlitch = ($num / 2 <= $glitches);
+            $isCritGlitch = ($isGlitch && $hits == 0);
+
+            if ($hits > 0) {
+                $ex = ($explodes > 0) ? " (**$explodes** may explode)" : "";
+                $m = "$hits hits{$ex}!";
+            } else {
+                $m = "Failure";
+            }
+
+            if ($isCritGlitch) {
+                $m .= "\n**Critical Glitch!**";
+            } elseif ($isGlitch) {
+                $m .= "\nGlitch!";
+            }
+
+            $message = sprintf("%s rolled **%s** dice\n%s\n%s",
+                $data->message->member,
+                $num,
+                $m, implode(" ", $rolls));
+            return $data->message->channel->send($message);
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e, false);
+        }
     }
 
     public static function commandListener(EventData $data)
