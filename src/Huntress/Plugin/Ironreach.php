@@ -9,10 +9,12 @@ namespace Huntress\Plugin;
 
 
 use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\PermissionOverwrite;
 use CharlotteDunois\Yasmin\Models\Permissions;
 use CharlotteDunois\Yasmin\Models\TextChannel;
+use CharlotteDunois\Yasmin\Models\VoiceChannel;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
@@ -42,10 +44,21 @@ class Ironreach implements PluginInterface
         }
 
 
-        $eh = EventListener::new()
+        $bot->eventManager->addEventListener(EventListener::new()
             ->addCommand("jury")
-            ->setCallback([self::class, "jury"]);
-        $bot->eventManager->addEventListener($eh);
+            ->setCallback([self::class, "jury"])
+        );
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->setPeriodic(60 * 60)
+            ->setCallback([self::class, "voiceChatChange"])
+        );
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("vc")
+            ->addGuild(673383165943087115)
+            ->setCallback([self::class, "voiceChat"])
+        );
 
         $bot->eventManager->addEventListener(EventListener::new()
             ->addEvent("agendaPluginConf")
@@ -63,6 +76,48 @@ class Ironreach implements PluginInterface
                 ]);
             })
         );
+    }
+
+    public static function voiceChat(EventData $data)
+    {
+        try {
+            $p = new Permission("p.ironreach.changevc", $data->huntress, false);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+            return self::voiceChatChange($data->huntress)->then(function ($guild) use ($data) {
+                return $data->message->react("😤");
+            });
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e);
+        }
+    }
+
+    public static function voiceChatChange(Huntress $bot): ?PromiseInterface
+    {
+        try {
+            $channels = $bot->guilds->get(673383165943087115)->channels->filter(function (GuildChannelInterface $v) {
+                return (
+                    $v instanceof VoiceChannel &&
+                    $v->parent->id == 673383165943087117 &&
+                    $v->members->count() == 0
+                );
+            });
+
+            $tracks = new Collection(explode("\n", file_get_contents("data/ironreach.txt")));
+            var_dump($tracks->all());
+            $track = $tracks->random($channels->count())->all();
+
+            $x = [];
+            /** @var VoiceChannel $channel */
+            foreach ($channels as $channel) {
+                $x[] = $channel->setName(array_pop($track));
+            }
+            return all($x);
+        } catch (Throwable $e) {
+            $bot->log->warning($e->getMessage(), ['exception' => $e]);
+        }
     }
 
     public static function jury(EventData $data): ?PromiseInterface
