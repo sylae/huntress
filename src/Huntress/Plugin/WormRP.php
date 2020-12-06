@@ -25,7 +25,6 @@ use Huntress\PluginInterface;
 use Huntress\RSSProcessor;
 use React\ChildProcess\Process;
 use React\Promise\Deferred;
-use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 use Throwable;
 use function React\Promise\all;
@@ -67,8 +66,13 @@ class WormRP implements PluginInterface
                 [504159510965911563]);
             $wiki->showBody = false;
         }
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "linkAccount", [self::class, "accountLinkHandler"]);
 
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("linkAccount")
+            ->addCommand("linkaccount")
+            ->addGuild(118981144464195584)
+            ->setCallback([self::class, "accountLinkHandler"])
+        );
         $bot->eventManager->addEventListener(EventListener::new()
             ->addCommand("character")
             ->addGuild(118981144464195584)
@@ -254,25 +258,21 @@ class WormRP implements PluginInterface
         }
     }
 
-    public static function accountLinkHandler(
-        Huntress $bot,
-        Message $message
-    ): ?ExtendedPromiseInterface {
-        if ($message->guild->id != 118981144464195584) {
-            return null;
-        }
-        if (!$message->member->roles->has(456321111945248779)) {
-            return self::unauthorized($message);
+    public static function accountLinkHandler(EventData $data): ?PromiseInterface
+    {
+        if (!$data->message->member->roles->has(456321111945248779)) {
+            return self::unauthorized($data->message);
         } else {
             try {
-                $args = self::_split($message->content);
+                $args = self::_split($data->message->content);
                 if (count($args) < 3) {
-                    return self::error($message, "You dipshit :open_mouth:", "!linkAccount redditName discordName");
+                    return self::error($data->message, "You dipshit :open_mouth:",
+                        "!linkAccount redditName discordName");
                 }
-                $user = self::parseGuildUser($message->guild, $args[2]);
+                $user = self::parseGuildUser($data->message->guild, $args[2]);
 
                 if (is_null($user)) {
-                    return self::error($message, "Error", "I don't know who the hell {$args[2]} is :(");
+                    return self::error($data->message, "Error", "I don't know who the hell {$args[2]} is :(");
                 }
 
                 $query = DatabaseFactory::get()->prepare('INSERT INTO wormrp_users (`user`, `redditName`) VALUES(?, ?) '
@@ -281,10 +281,10 @@ class WormRP implements PluginInterface
                 $query->bindValue(2, $args[1]);
                 $query->execute();
 
-                return self::send($message->channel,
+                return self::send($data->message->channel,
                     "Added/updated {$user->user->tag} ({$user->id}) to tracker with reddit username /u/{$args[1]}.");
             } catch (Throwable $e) {
-                return self::exceptionHandler($message, $e, true);
+                return self::exceptionHandler($data->message, $e, true);
             }
         }
     }
