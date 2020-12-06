@@ -194,7 +194,7 @@ class WormRP implements PluginInterface
                 ];
             }
             $query = $bot->db->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`, `flair`) VALUES(?, ?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=VALUES(`lastSubActivity`), `flair`=VALUES(`flair`);',
+                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=GREATEST(`lastSubActivity`, VALUES(`lastSubActivity`)), `flair`=VALUES(`flair`);',
                 ['string', 'datetime', 'string']);
             foreach ($users as $name => $data) {
                 $query->bindValue(1, $name);

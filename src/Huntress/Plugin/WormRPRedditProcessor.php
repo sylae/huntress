@@ -107,6 +107,14 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             // send to discord
             $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
 
+            // update flair check thing
+            $query = $this->huntress->db->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
+                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=GREATEST(`lastSubActivity`, VALUES(`lastSubActivity`));',
+                ['string', 'datetime', 'string']);
+            $query->bindValue(1, $item->author);
+            $query->bindValue(2, $item->date);
+            $query->execute();
+
             // send to approval queue sheet
             if ($channel == 386943351062265888) {
                 $allowed = ["Equipment", "Lore", "Character"];
