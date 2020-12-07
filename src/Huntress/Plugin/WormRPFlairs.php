@@ -223,7 +223,7 @@ class WormRPFlairs implements PluginInterface
                 $message->client, $data)->then(function (
                 $res
             ) use ($message) {
-                return $res['myMessage']->edit("`{$res['wikipage']}` has been updated.\n{$res['cmd']}");
+                return $res['myMessage']->edit("`{$res['wikipage']}` has been updated.");
                 // return self::dump($message->channel, $res);
             }, function ($e) use ($message) {
                 return self::error($message, "Editing rep failed!", $e);
@@ -288,12 +288,6 @@ class WormRPFlairs implements PluginInterface
                 }
                 return $cd;
             });
-        })->then(function (array $cd) {
-            // push the flair to the subreddit!
-            $user = escapeshellarg($cd['reddituser']);
-            $flair = escapeshellarg($cd['flair']);
-            $cd['cmd'] = `wormrpflair $user $flair`;
-            return $cd;
         });
         return $chain;
     }
