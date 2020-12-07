@@ -346,7 +346,7 @@ class WormRPFlairs implements PluginInterface
             ResponseInterface $response
         ) use ($cd, $browser, $bot) {
             $cd['userinfo'] = json_decode((string)$response->getBody())->query->userinfo;
-            if (array_key_exists('anon', $cd['userinfo'])) {
+            if (array_key_exists('anon', (array)$cd['userinfo'])) {
                 // actually log in!
                 return $browser->get("https://wormrp.syl.ae/w/api.php?action=query&meta=tokens&type=login&format=json",
                     ['Cookie' => self::cookieString()])->then(function (
