@@ -14,6 +14,7 @@ use Huntress\Huntress;
 use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\RedditProcessor;
 use React\Promise\PromiseInterface;
 use function React\Promise\all;
 
@@ -32,6 +33,12 @@ class Masturbatorium implements PluginInterface
             ->addCommand("verify")
             ->addGuild(349058708304822273)
             ->setCallback([self::class, "process"]));
+
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not adding RSS event on testing.");
+        } else {
+            new RedditProcessor($bot, "HadesNSFW", "HadesNSFW", 60, [662898203103985664]);
+        }
     }
 
     public static function process(EventData $data): ?PromiseInterface
