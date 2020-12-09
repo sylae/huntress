@@ -76,14 +76,18 @@ class Archive implements PluginInterface
                 try {
                     if ($msgs->count() == 0) {
                         $format = self::encodeMessages($carry);
+                        $fname = "{$ch->id}_{$ch->name}.json";
                         if (strlen($format) > (2 ** 20)) {
-                            $file = ['name' => $ch->id . ".json.gz", 'data' => gzencode($format)];
+                            $file = ['name' => $fname . ".gz", 'data' => gzencode($format)];
                         } else {
-                            $file = ['name' => $ch->id . ".json", 'data' => $format];
+                            $file = ['name' => $fname, 'data' => $format];
                         }
+                        file_put_contents("temp/" . $file['name'], $file['data']);
                         return $data->message->channel->send("Done! {$carry->count()} messages saved.", [
                             'files' => [$file],
-                        ]);
+                        ])->then(null, function ($e) use ($data) {
+                            return $data->message->channel->send("Done! Upload failed but you can grab it out of " . getcwd() . "/temp/");
+                        });
                     } else {
                         if (is_null($carry)) {
                             $carry = $msgs;
