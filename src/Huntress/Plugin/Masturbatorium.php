@@ -38,6 +38,7 @@ class Masturbatorium implements PluginInterface
             $bot->log->debug("Not adding RSS event on testing.");
         } else {
             new RedditProcessor($bot, "HadesNSFW", "HadesNSFW", 60, [662898203103985664]);
+            new RedditProcessor($bot, "HornyOnMaid", "HornyOnMaid", 60, [702911932277063730]);
         }
     }
 
