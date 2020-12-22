@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2fddc6be1dfb1210188ee8bc9621eed0",
+    "content-hash": "abf8352ae35f51bda0330d919ae8c245",
     "packages": [
         {
             "name": "cakephp/core",
@@ -3136,6 +3136,50 @@
                 "source": "https://github.com/sylae/validator/tree/v0.3.0"
             },
             "time": "2020-05-11T10:08:51+00:00"
+        },
+        {
+            "name": "sylae/word-count",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sylae/word-count.git",
+                "reference": "647875b60a206267c0d70bfc49a5f0667133b468"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sylae/word-count/zipball/647875b60a206267c0d70bfc49a5f0667133b468",
+                "reference": "647875b60a206267c0d70bfc49a5f0667133b468",
+                "shasum": ""
+            },
+            "require": {
+                "ext-intl": "*",
+                "php": "~7.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Keira Dueck",
+                    "email": "sylae@calref.net"
+                }
+            ],
+            "description": "PHP port of the Javascript iarna/word-count",
+            "support": {
+                "issues": "https://github.com/sylae/word-count/issues",
+                "source": "https://github.com/sylae/word-count/tree/master"
+            },
+            "time": "2019-06-19T12:26:04+00:00"
         },
         {
             "name": "sylae/yasmin",
