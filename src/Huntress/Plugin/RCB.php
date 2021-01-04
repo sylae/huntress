@@ -28,6 +28,8 @@ class RCB extends RSSProcessor implements PluginInterface
         } else {
             new self($bot, "rcbNaziWatchNP", "https://www.reddit.com/user/Nationalist_Patriot.json", 30,
                 [604464023013949445]);
+            new self($bot, "rcbNaziWatchTGG", "https://www.reddit.com/user/TheGreatGimmick.json", 30,
+                [604464023013949445]);
         }
     }
 
