@@ -17,8 +17,10 @@ use Huntress\DatabaseFactory;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\Snowflake;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
 use function React\Promise\all;
@@ -101,6 +103,7 @@ class Remind implements PluginInterface
         $t->addColumn("idChannel", "bigint", ["unsigned" => true]);
         $t->addColumn("timeRemind", "datetime");
         $t->addColumn("message", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("snow", "bigint", ["unsigned" => true]);
         $t->setPrimaryKey(["idMessage"]);
     }
 
@@ -110,8 +113,11 @@ class Remind implements PluginInterface
             $time = self::arg_substr($data->message->content, 1, 1);
             $text = self::arg_substr($data->message->content, 2);
 
-            if (!$time) {
+            if (!$time || $time === 'help') {
                 return $data->message->channel->send(self::getHelp());
+            }
+            elseif ($time === 'del' || $time === 'delete') {
+                return self::deleteReminder($data, $text);
             }
             if (!$text) {
                 $text = "*No reminder message left*";
@@ -132,6 +138,9 @@ class Remind implements PluginInterface
                 return $data->message->channel->send("I couldn't figure out what time `$time` is :(");
             }
 
+            // generate a unique identifier for removal
+            $snow = Snowflake::generate();
+
             $embed = new MessageEmbed();
             $embed->setAuthor($data->message->member->displayName,
                 $data->message->member->user->getAvatarURL(64) ?? null);
@@ -143,8 +152,9 @@ class Remind implements PluginInterface
             $tzinfo = sprintf("%s (%s)", $time->getTimezone()->toRegionName(), $time->getTimezone()->toOffsetName());
             $embed->addField("Detected Time",
                 $time->toDayDateTimeString() . PHP_EOL . $tzinfo . PHP_EOL . $time->longRelativeToNowDiffForHumans(2));
+            $embed->setFooter(sprintf("Delete with `!rem del %s`", Snowflake::format($snow)));
 
-            self::addReminder($data->message, $time, $text);
+            self::addReminder($data->message, $time, $text, $snow);
 
             return $data->message->channel->send("", ['embed' => $embed]);
 
@@ -169,16 +179,40 @@ HELP;
 
     }
 
-    private static function addReminder(Message $message, Carbon $time, string $text)
+    public static function deleteReminder(EventData $data, string $code): ?Promise
+    {
+        /** @var \Doctrine\DBAL\Connection $db */
+        $message = $data->message;
+        $db = $message->client->db;
+        $snow = Snowflake::parse($code);
+        $reminder = $db->executeQuery("SELECT * FROM remind WHERE (`snow` = ?)", [$snow])->fetch();
+
+        if (!$reminder) {
+            return $message->channel->send("No reminder matching `$code` was found.");
+        }
+        if ($message->member->id !== $reminder['idMember']) {
+            $p = new Permission('p.reminder.delete', $data->huntress, false);
+            if (!$p->resolve()) {
+                return $message->channel->send("You cannot delete a reminder created by another user.");
+            }
+        }
+        $stmt = $db->prepare('DELETE FROM remind WHERE (`snow` = ?)', ['integer']);
+        $stmt->bindValue(1, $snow);
+        $stmt->execute();
+        return $message->channel->send("Reminder deleted.");
+    }
+
+    private static function addReminder(Message $message, Carbon $time, string $text, int $snow)
     {
         $time->setTimezone("UTC");
-        $query = $message->client->db->prepare('REPLACE INTO remind (`idMessage`, `idMember`, `idChannel`, `timeRemind`, `message`) VALUES(?, ?, ?, ?, ?)',
-            ['integer', 'integer', 'integer', 'datetime', 'string']);
+        $query = $message->client->db->prepare('REPLACE INTO remind (`idMessage`, `idMember`, `idChannel`, `timeRemind`, `message`, `snow`) VALUES(?, ?, ?, ?, ?, ?)',
+            ['integer', 'integer', 'integer', 'datetime', 'string', 'integer']);
         $query->bindValue(1, $message->id);
         $query->bindValue(2, $message->member->id);
         $query->bindValue(3, $message->channel->id);
         $query->bindValue(4, $time);
         $query->bindValue(5, $text);
+        $query->bindValue(6, $snow);
         $query->execute();
 
     }
