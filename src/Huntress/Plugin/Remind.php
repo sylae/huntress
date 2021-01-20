@@ -98,13 +98,13 @@ class Remind implements PluginInterface
     public static function db(Schema $schema): void
     {
         $t = $schema->createTable("remind");
+        $t->addColumn("idReminder", "bigint", ["unsigned" => true]);
         $t->addColumn("idMessage", "bigint", ["unsigned" => true]);
         $t->addColumn("idMember", "bigint", ["unsigned" => true]);
         $t->addColumn("idChannel", "bigint", ["unsigned" => true]);
         $t->addColumn("timeRemind", "datetime");
         $t->addColumn("message", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
-        $t->addColumn("snow", "bigint", ["unsigned" => true]);
-        $t->setPrimaryKey(["idMessage"]);
+        $t->setPrimaryKey(["idReminder"]);
     }
 
     public static function remindMe(EventData $data): ?Promise
@@ -139,7 +139,7 @@ class Remind implements PluginInterface
             }
 
             // generate a unique identifier for removal
-            $snow = Snowflake::generate();
+            $id = Snowflake::generate();
 
             $embed = new MessageEmbed();
             $embed->setAuthor($data->message->member->displayName,
@@ -152,9 +152,9 @@ class Remind implements PluginInterface
             $tzinfo = sprintf("%s (%s)", $time->getTimezone()->toRegionName(), $time->getTimezone()->toOffsetName());
             $embed->addField("Detected Time",
                 $time->toDayDateTimeString() . PHP_EOL . $tzinfo . PHP_EOL . $time->longRelativeToNowDiffForHumans(2));
-            $embed->setFooter(sprintf("Delete with `!rem del %s`", Snowflake::format($snow)));
+            $embed->setFooter(sprintf("Reminder %s", Snowflake::format($id)));
 
-            self::addReminder($data->message, $time, $text, $snow);
+            self::addReminder($data->message, $time, $text, $id);
 
             return $data->message->channel->send("", ['embed' => $embed]);
 
@@ -172,6 +172,9 @@ class Remind implements PluginInterface
 - a relative time, such as "5 hours" "next tuesday" "5h45m". Avoid words like "in" and "at" because I don't understand them.
 - an absolute time, such as "september 3rd" "2025-02-18" "5:00am". I'm pretty versatile but if I have trouble `YYYY-MM-DD HH:MM:SS AM/PM` will almost always work.
 
+To delete a pending reminder, use the command: `!remind delete (id)`. The `(id)` value is given in the
+footer of the confirmation message when the reminder is created.
+
 Notes:
 - I will use your timezone if you've told it to me via the `!timezone` command, or UTC otherwise.
 - If you have spaces in your `(when)` then you need to wrap it in double quotes, or escape the spaces. Sorry!
@@ -184,35 +187,36 @@ HELP;
         /** @var \Doctrine\DBAL\Connection $db */
         $message = $data->message;
         $db = $message->client->db;
-        $snow = Snowflake::parse($code);
-        $reminder = $db->executeQuery("SELECT * FROM remind WHERE (`snow` = ?)", [$snow])->fetch();
+        $id = Snowflake::parse($code);
+        $reminder = $db->executeQuery("SELECT * FROM remind WHERE (`idReminder` = ?)", [$id])->fetch();
 
         if (!$reminder) {
             return $message->channel->send("No reminder matching `$code` was found.");
         }
         if ($message->member->id !== $reminder['idMember']) {
             $p = new Permission('p.reminder.delete', $data->huntress, false);
+            $p->addMessageContext($data->message);
             if (!$p->resolve()) {
                 return $message->channel->send("You cannot delete a reminder created by another user.");
             }
         }
-        $stmt = $db->prepare('DELETE FROM remind WHERE (`snow` = ?)', ['integer']);
-        $stmt->bindValue(1, $snow);
+        $stmt = $db->prepare('DELETE FROM remind WHERE (`idReminder` = ?)', ['integer']);
+        $stmt->bindValue(1, $id);
         $stmt->execute();
         return $message->channel->send("Reminder deleted.");
     }
 
-    private static function addReminder(Message $message, Carbon $time, string $text, int $snow)
+    private static function addReminder(Message $message, Carbon $time, string $text, int $id)
     {
         $time->setTimezone("UTC");
-        $query = $message->client->db->prepare('REPLACE INTO remind (`idMessage`, `idMember`, `idChannel`, `timeRemind`, `message`, `snow`) VALUES(?, ?, ?, ?, ?, ?)',
+        $query = $message->client->db->prepare('REPLACE INTO remind (`idReminder`, `idMessage`, `idMember`, `idChannel`, `timeRemind`, `message`) VALUES(?, ?, ?, ?, ?, ?)',
             ['integer', 'integer', 'integer', 'datetime', 'string', 'integer']);
-        $query->bindValue(1, $message->id);
-        $query->bindValue(2, $message->member->id);
-        $query->bindValue(3, $message->channel->id);
-        $query->bindValue(4, $time);
-        $query->bindValue(5, $text);
-        $query->bindValue(6, $snow);
+        $query->bindValue(1, $id);
+        $query->bindValue(2, $message->id);
+        $query->bindValue(3, $message->member->id);
+        $query->bindValue(4, $message->channel->id);
+        $query->bindValue(5, $time);
+        $query->bindValue(6, $text);
         $query->execute();
 
     }
