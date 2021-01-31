@@ -114,6 +114,12 @@ class Ironreach implements PluginInterface
             foreach ($channels as $channel) {
                 $x[] = $channel->setName(array_pop($track));
             }
+
+            /** @var TextChannel $vtc */
+            $vtc = $bot->guilds->get(673383165943087115)->channels->get(747227035495170218);
+            $w = ['voice', 'text', 'chat'];
+            $vtc->setName($w[array_rand($w)] ."-".$w[array_rand($w)]."-".$w[array_rand($w)]);
+
             return all($x);
         } catch (Throwable $e) {
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
