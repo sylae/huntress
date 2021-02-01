@@ -59,15 +59,15 @@ class Stonks implements PluginInterface
 
     public function stonks(EventData $event): PromiseInterface
     {
-        if (self::arg_substr($event->message->content, 1, 1) === 'search') {
+        $args = self::_split($event->message->content);
+        if ($args[1] === 'search') {
             return $this->search($event);
         }
-
-        $args = explode(' ', strtoupper(self::arg_substr($event->message->content, 1) ?? ''));
+        $symbols = array_map('strtoupper', array_slice($args, 1));
         $now = time();
 
         // Check which quotes must be refreshed.
-        $refresh = array_filter($args, function($symbol) use ($now) {
+        $refresh = array_filter($symbols, function($symbol) use ($now) {
            return !isset($this->cache[$symbol]) || $this->cache[$symbol]['time'] + $this->ttl < $now;
         });
 
@@ -96,9 +96,9 @@ class Stonks implements PluginInterface
         }
 
         // Format data.
-        return $promise->then(function () use ($channel, $args) {
+        return $promise->then(function () use ($channel, $symbols) {
             $promises = [];
-            foreach ($args as $symbol) {
+            foreach ($symbols as $symbol) {
                 if (isset($this->cache[$symbol])) {
                     /** @var \Aran\YahooFinanceApi\Results\Quote $quote */
                     ['time' => $time, 'quote' => $quote] = $this->cache[$symbol];
@@ -113,17 +113,17 @@ class Stonks implements PluginInterface
     }
 
     public function search(EventData $event): PromiseInterface {
-        $arg = self::arg_substr($event->message->content, 2);
+        $search = self::arg_substr($event->message->content, 2);
         $channel = $event->message->channel;
 
         return $channel->send('Searching...')
-            ->then(function () use ($arg) {
-                return $this->client->search($arg);
+            ->then(function () use ($search) {
+                return $this->client->search($search);
             })
-            ->then(function ($results) use ($arg, $channel) {
+            ->then(function ($results) use ($search, $channel) {
                 $embed = new MessageEmbed();
                 $count = count($results);
-                $embed->setTitle("{$count} results for `{$arg}`");
+                $embed->setTitle("{$count} results for \"*{$search}*\"");
                 foreach ($results as $result) {
                     $embed->addField(
                         $result->getSymbol(),
@@ -182,7 +182,7 @@ class Stonks implements PluginInterface
                 )
             );
         }
-        $embed->setFooter(sprintf("Updated: %s", date('Y-m-d H:i:s', $time)));
+        $embed->setTimestamp($time);
         return $embed;
     }
 
