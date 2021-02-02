@@ -101,7 +101,7 @@ class Stonks implements PluginInterface
                 if (isset($this->cache[$symbol])) {
                     /** @var \Aran\YahooFinanceApi\Results\Quote $quote */
                     ['time' => $time, 'quote' => $quote] = $this->cache[$symbol];
-                    $promises[] = $channel->send('', ['embed' => $this->formatQuote($symbol, $quote, $time)]);
+                    $promises[] = $channel->send('', ['embed' => $this->formatQuote($quote, $time)]);
                 }
                 else {
                     $promises[] = $channel->send(sprintf("No results returned for $symbol"));
@@ -131,10 +131,10 @@ class Stonks implements PluginInterface
             });
     }
 
-    private function formatQuote(string $symbol, Quote $quote, int $time): MessageEmbed {
+    private function formatQuote(Quote $quote, int $time): MessageEmbed {
         $currency = $quote->getCurrency();
         $embed = new MessageEmbed();
-        $embed->setTitle("{$symbol} ({$quote->getFullExchangeName()})");
+        $embed->setTitle("{$quote->getSymbol()} ({$quote->getFullExchangeName()})");
         $embed->addField(
             'Ask / Bid',
             "{$currency} {$quote->getAsk()} / {$currency} {$quote->getBid()}"
