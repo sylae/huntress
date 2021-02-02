@@ -29,6 +29,8 @@ class Stonks implements PluginInterface
 
     public const CACHE_TTL = 300;
 
+    public const MAX_SYMBOLS = 5;
+
     /**
      * @var \Aran\YahooFinanceApi\ApiClient
      */
@@ -38,13 +40,13 @@ class Stonks implements PluginInterface
     private array $cache;
 
     /** @var int */
-    private int $ttl;
+    private int $cache_ttl;
 
     public function __construct(Huntress $bot)
     {
         $this->client = ApiClientFactory::createFromLoop($bot->getLoop());
         $this->cache = [];
-        $this->ttl = static::CACHE_TTL;
+        $this->cache_ttl = static::CACHE_TTL;
     }
 
     public static function register(Huntress $bot): void
@@ -69,7 +71,7 @@ class Stonks implements PluginInterface
         // Check which quotes must be refreshed.
         $refresh = array_filter($symbols, fn($symbol) => (
             !isset($this->cache[$symbol]) ||
-            $this->cache[$symbol]['time'] + $this->ttl < $now
+            $this->cache[$symbol]['time'] + $this->cache_ttl < $now
         ));
 
         $channel = $event->message->channel;
