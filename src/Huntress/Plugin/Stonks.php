@@ -125,7 +125,11 @@ class Stonks implements PluginInterface
             ->then(function ($results) use ($search, $channel) {
                 $embed = new MessageEmbed();
                 $count = count($results);
-                $embed->setTitle("{$count} results for \"*{$search}*\"");
+                $embed->setTitle(sprintf(
+                    '%d results for "*%s*"',
+                    $count,
+                    addcslashes($search, '*\\')
+                ));
                 foreach ($results as $result) {
                     $embed->addField(
                         $result->getSymbol(),
