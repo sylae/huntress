@@ -63,7 +63,7 @@ class Stonks implements PluginInterface
         if ($args[1] === 'search') {
             return $this->search($event);
         }
-        $symbols = array_map('strtoupper', array_slice($args, 1));
+        $symbols = array_map('mb_strtoupper', array_slice($args, 1));
         $now = time();
 
         // Check which quotes must be refreshed.
