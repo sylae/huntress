@@ -67,9 +67,10 @@ class Stonks implements PluginInterface
         $now = time();
 
         // Check which quotes must be refreshed.
-        $refresh = array_filter($symbols, function($symbol) use ($now) {
-           return !isset($this->cache[$symbol]) || $this->cache[$symbol]['time'] + $this->ttl < $now;
-        });
+        $refresh = array_filter($symbols, fn($symbol) => (
+            !isset($this->cache[$symbol]) ||
+            $this->cache[$symbol]['time'] + $this->ttl < $now
+        ));
 
         $channel = $event->message->channel;
 
@@ -77,9 +78,7 @@ class Stonks implements PluginInterface
         if ($refresh) {
             // Get new data.
             $promise = $channel->send('Loading stock data...')
-                ->then(function () use ($refresh) {
-                    return $this->client->getQuotes($refresh);
-                })
+                ->then(fn() => $this->client->getQuotes($refresh))
                 ->then(function ($data) use ($now) {
                     foreach ($data as $i => $quote) {
                         // Do not cache errors.
@@ -117,9 +116,7 @@ class Stonks implements PluginInterface
         $channel = $event->message->channel;
 
         return $channel->send('Searching...')
-            ->then(function () use ($search) {
-                return $this->client->search($search);
-            })
+            ->then(fn() => $this->client->search($search))
             ->then(function ($results) use ($search, $channel) {
                 $embed = new MessageEmbed();
                 $count = count($results);
