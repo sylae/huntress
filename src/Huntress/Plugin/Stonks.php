@@ -42,16 +42,16 @@ class Stonks implements PluginInterface
     /** @var int */
     private int $cache_ttl;
 
-    public function __construct(Huntress $bot)
+    public function __construct(Huntress $bot, int $cache_ttl)
     {
         $this->client = ApiClientFactory::createFromLoop($bot->getLoop());
         $this->cache = [];
-        $this->cache_ttl = static::CACHE_TTL;
+        $this->cache_ttl = $cache_ttl;
     }
 
     public static function register(Huntress $bot): void
     {
-        $instance = new static($bot);
+        $instance = new static($bot, static::CACHE_TTL);
         $bot->eventManager->addEventListener(
             EventListener::new()
                 ->addCommand('stonks')
