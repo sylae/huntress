@@ -42,16 +42,20 @@ class Stonks implements PluginInterface
     /** @var int */
     private int $cache_ttl;
 
-    public function __construct(Huntress $bot, int $cache_ttl)
+    /** @var int */
+    private int $max_symbols;
+
+    public function __construct(Huntress $bot, int $cache_ttl, int $max_symbols)
     {
         $this->client = ApiClientFactory::createFromLoop($bot->getLoop());
         $this->cache = [];
         $this->cache_ttl = $cache_ttl;
+        $this->max_symbols = $max_symbols;
     }
 
     public static function register(Huntress $bot): void
     {
-        $instance = new static($bot, static::CACHE_TTL);
+        $instance = new static($bot, static::CACHE_TTL, static::MAX_SYMBOLS);
         $bot->eventManager->addEventListener(
             EventListener::new()
                 ->addCommand('stonks')
@@ -65,7 +69,8 @@ class Stonks implements PluginInterface
         if ($args[1] === 'search') {
             return $this->search($event);
         }
-        $symbols = array_map('mb_strtoupper', array_slice($args, 1));
+        // Take up to $max_requests symbols to avoid spam.
+        $symbols = array_map('mb_strtoupper', array_slice($args, 1, $this->max_symbols));
         $now = time();
 
         // Check which quotes must be refreshed.
