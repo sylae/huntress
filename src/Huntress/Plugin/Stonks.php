@@ -111,9 +111,14 @@ class Stonks implements PluginInterface
         });
     }
 
-    public function search(EventData $event): PromiseInterface {
+    public function search(EventData $event): ?PromiseInterface {
         $search = self::arg_substr($event->message->content, 2);
         $channel = $event->message->channel;
+
+        // Refuse to search for an empty string.
+        if (!$search) {
+            return NULL;
+        }
 
         return $channel->send('Searching...')
             ->then(fn() => $this->client->search($search))
