@@ -11,6 +11,7 @@ use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\PromiseInterface;
@@ -65,6 +66,14 @@ class Stonks implements PluginInterface
 
     public function stonks(EventData $event): PromiseInterface
     {
+        $channel = $event->message->channel;
+
+        // Check for permission.
+        $permission = new Permission('p.stonks', $event->huntress, TRUE);
+        $permission->addMessageContext($event->message);
+        if (!$permission->resolve()) {
+            return $permission->sendUnauthorizedMessage($channel);
+        }
         $args = self::_split($event->message->content);
         if ($args[1] === 'search') {
             return $this->search($event);
@@ -78,8 +87,6 @@ class Stonks implements PluginInterface
             !isset($this->cache[$symbol]) ||
             $this->cache[$symbol]['time'] + $this->cache_ttl < $now
         ));
-
-        $channel = $event->message->channel;
 
         /** @var PromiseInterface $promise*/
         if ($refresh) {
