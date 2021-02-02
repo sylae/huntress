@@ -46,6 +46,16 @@ class Stonks implements PluginInterface
     /** @var int */
     private int $max_symbols;
 
+    /**
+     * Construct a new plugin instance.
+     *
+     * @param \Huntress\Huntress $bot
+     *   Huntress instance (required for the main event loop).
+     * @param int $cache_ttl
+     *   Cache TTL in seconds.
+     * @param int $max_symbols
+     *   Max symbols per request.
+     */
     public function __construct(Huntress $bot, int $cache_ttl, int $max_symbols)
     {
         $this->client = ApiClientFactory::createFromLoop($bot->getLoop());
@@ -54,6 +64,11 @@ class Stonks implements PluginInterface
         $this->max_symbols = $max_symbols;
     }
 
+    /**
+     * Create and register a plugin instance.
+     *
+     * @param \Huntress\Huntress $bot
+     */
     public static function register(Huntress $bot): void
     {
         $instance = new static($bot, static::CACHE_TTL, static::MAX_SYMBOLS);
@@ -64,6 +79,13 @@ class Stonks implements PluginInterface
         );
     }
 
+    /**
+     * Respond to a regular !stonks command.
+     *
+     * @param \Huntress\EventData $event
+     *
+     * @return \React\Promise\PromiseInterface
+     */
     public function stonks(EventData $event): PromiseInterface
     {
         $channel = $event->message->channel;
@@ -74,6 +96,7 @@ class Stonks implements PluginInterface
         if (!$permission->resolve()) {
             return $permission->sendUnauthorizedMessage($channel);
         }
+        // Split arguments and check for "search" at start (case-sensitive).
         $args = self::_split($event->message->content);
         if ($args[1] === 'search') {
             return $this->search($event);
@@ -95,7 +118,6 @@ class Stonks implements PluginInterface
                 ->then(fn() => $this->client->getQuotes($refresh))
                 ->then(function ($data) use ($now) {
                     foreach ($data as $i => $quote) {
-                        // Do not cache errors.
                         $this->cache[$quote->getSymbol()] = [
                             'time'  => $now,
                             'quote' => $quote,
@@ -108,7 +130,7 @@ class Stonks implements PluginInterface
             $promise = resolve();
         }
 
-        // Format data.
+        // Format and print data.
         return $promise->then(function () use ($channel, $symbols) {
             $promises = [];
             foreach ($symbols as $symbol) {
@@ -125,6 +147,13 @@ class Stonks implements PluginInterface
         });
     }
 
+    /**
+     * Respond to a !stonks search command.
+     *
+     * @param \Huntress\EventData $event
+     *
+     * @return \React\Promise\PromiseInterface|null
+     */
     public function search(EventData $event): ?PromiseInterface {
         $search = self::arg_substr($event->message->content, 2);
         $channel = $event->message->channel;
@@ -154,6 +183,15 @@ class Stonks implements PluginInterface
             });
     }
 
+    /**
+     * Create a MessageEmbed with formatted Quote data.
+     *
+     * @param \Aran\YahooFinanceApi\Results\Quote $quote
+     * @param int $time
+     *
+     * @return \CharlotteDunois\Yasmin\Models\MessageEmbed
+     * @throws \Exception
+     */
     private function formatQuote(Quote $quote, int $time): MessageEmbed {
         $currency = $quote->getCurrency();
         $embed = new MessageEmbed();
