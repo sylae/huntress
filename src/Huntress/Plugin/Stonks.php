@@ -158,34 +158,49 @@ class Stonks implements PluginInterface
         $currency = $quote->getCurrency();
         $embed = new MessageEmbed();
         $embed->setTitle("{$quote->getSymbol()} ({$quote->getFullExchangeName()})");
-        $embed->addField(
-            'Ask / Bid',
-            "{$currency} {$quote->getAsk()} / {$currency} {$quote->getBid()}"
-        );
         if ($quote->getMarketState()) {
             $embed->addField(
                 'Market state',
                 $quote->getMarketState()
             );
         }
-        $embed->addField(
-            'Opening price',
-            sprintf('%s %.2f', $currency, $quote->getRegularMarketOpen())
-        );
-        $embed->addField(
-            $quote->getMarketState() === 'REGULAR' ? 'Market price' : 'Closing price',
-            sprintf(
-                '%s %.2f, (%+.3f%%)',
-                $currency, $quote->getRegularMarketPrice(),
-                $quote->getRegularMarketChangePercent()
-            )
-        );
+        if ($quote->getRegularMarketPreviousClose()) {
+            $embed->addField(
+                'Previous closing price',
+                sprintf("{$currency} %.2f", $quote->getRegularMarketPreviousClose())
+            );
+        }
+        if ($quote->getRegularMarketOpen()) {
+            $embed->addField(
+                'Opening price',
+                sprintf("{$currency} %.2f", $quote->getRegularMarketOpen())
+            );
+        }
+        if ($quote->getRegularMarketPrice()) {
+            $embed->addField(
+                $quote->getMarketState() === 'REGULAR' ? 'Market price' : 'Closing price',
+                sprintf(
+                    "{$currency} %.2f, (%+.3f%%)",
+                    $quote->getRegularMarketPrice(),
+                    $quote->getRegularMarketChangePercent()
+                )
+            );
+        }
+        if ($quote->getRegularMarketDayLow() && $quote->getRegularMarketDayHigh()) {
+            $embed->addField(
+                'Day Low / Day High',
+                sprintf(
+                    "{$currency} %.2f / {$currency} %.2f",
+                    $quote->getRegularMarketDayLow(),
+                    $quote->getRegularMarketDayHigh()
+                )
+            );
+        }
         if ($quote->getPostMarketPrice()) {
             $embed->addField(
                 'Post-Market price',
                 sprintf(
-                    '%s %.2f, (%+.3f%%)',
-                    $currency,
+                    "{$currency} %.2f, (%+.3f%%)",
                     $quote->getPostMarketPrice(),
                     $quote->getPostMarketChangePercent()
                 )
@@ -195,10 +210,19 @@ class Stonks implements PluginInterface
             $embed->addField(
                 'Pre-Market price',
                 sprintf(
-                    '%s %.2f, (%+.3f%%)',
-                    $currency,
+                    "{$currency} %.2f, (%+.3f%%)",
                     $quote->getPreMarketPrice(),
                     $quote->getPreMarketChangePercent()
+                )
+            );
+        }
+        if ($quote->getAsk() && $quote->getBid()) {
+            $embed->addField(
+                'Ask / Bid',
+                sprintf(
+                    "{$currency} %.2f / {$currency} %.2f",
+                    $quote->getAsk(),
+                    $quote->getBid()
                 )
             );
         }
