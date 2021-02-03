@@ -131,13 +131,19 @@ class Stonks implements PluginInterface
         }
 
         // Format and print data.
-        return $promise->then(function () use ($channel, $symbols) {
+        return $promise->then(function () use ($channel, $symbols, $event) {
             $promises = [];
             foreach ($symbols as $symbol) {
                 if (isset($this->cache[$symbol])) {
                     /** @var \Aran\YahooFinanceApi\Results\Quote $quote */
                     ['time' => $time, 'quote' => $quote] = $this->cache[$symbol];
-                    $promises[] = $channel->send('', ['embed' => $this->formatQuote($quote, $time)]);
+                    $embed = $this->formatQuote($quote, $time);
+                    $embed->setAuthor(
+                        $event->message->member->displayName,
+                        $event->message->member->user->getAvatarURL(64)
+                    );
+                    $embed->setColor($event->message->member->id % 0xFFFFFF);
+                    $promises[] = $channel->send('', ['embed' => $embed]);
                 }
                 else {
                     $promises[] = $channel->send(sprintf("No results returned for $symbol"));
@@ -195,23 +201,26 @@ class Stonks implements PluginInterface
     private function formatQuote(Quote $quote, int $time): MessageEmbed {
         $currency = $quote->getCurrency();
         $embed = new MessageEmbed();
-        $embed->setTitle("{$quote->getSymbol()} ({$quote->getFullExchangeName()})");
+        $embed->setTitle("{$quote->getSymbol()} ({$quote->getShortName()})");
         if ($quote->getMarketState()) {
             $embed->addField(
                 'Market state',
-                $quote->getMarketState()
+                $quote->getMarketState(),
+                true
             );
         }
         if ($quote->getRegularMarketPreviousClose()) {
             $embed->addField(
                 'Previous closing price',
-                sprintf("{$currency} %.2f", $quote->getRegularMarketPreviousClose())
+                sprintf("{$currency} %.2f", $quote->getRegularMarketPreviousClose()),
+                true
             );
         }
         if ($quote->getRegularMarketOpen()) {
             $embed->addField(
                 'Opening price',
-                sprintf("{$currency} %.2f", $quote->getRegularMarketOpen())
+                sprintf("{$currency} %.2f", $quote->getRegularMarketOpen()),
+                true
             );
         }
         if ($quote->getRegularMarketPrice()) {
@@ -221,18 +230,13 @@ class Stonks implements PluginInterface
                     "{$currency} %.2f, (%+.3f%%)",
                     $quote->getRegularMarketPrice(),
                     $quote->getRegularMarketChangePercent()
-                )
+                ),
+                true
             );
         }
         if ($quote->getRegularMarketDayLow() && $quote->getRegularMarketDayHigh()) {
-            $embed->addField(
-                'Day Low / Day High',
-                sprintf(
-                    "{$currency} %.2f / {$currency} %.2f",
-                    $quote->getRegularMarketDayLow(),
-                    $quote->getRegularMarketDayHigh()
-                )
-            );
+            $embed->addField('Day Low', sprintf("{$currency} %.2f", $quote->getRegularMarketDayLow()), true);
+            $embed->addField('Day High', sprintf("{$currency} %.2f", $quote->getRegularMarketDayHigh()), true);
         }
         if ($quote->getPostMarketPrice()) {
             $embed->addField(
@@ -241,7 +245,8 @@ class Stonks implements PluginInterface
                     "{$currency} %.2f, (%+.3f%%)",
                     $quote->getPostMarketPrice(),
                     $quote->getPostMarketChangePercent()
-                )
+                ),
+                true
             );
         }
         if ($quote->getPreMarketPrice()) {
@@ -251,7 +256,8 @@ class Stonks implements PluginInterface
                     "{$currency} %.2f, (%+.3f%%)",
                     $quote->getPreMarketPrice(),
                     $quote->getPreMarketChangePercent()
-                )
+                ),
+                true
             );
         }
         if ($quote->getAsk() && $quote->getBid()) {
@@ -261,9 +267,11 @@ class Stonks implements PluginInterface
                     "{$currency} %.2f / {$currency} %.2f",
                     $quote->getAsk(),
                     $quote->getBid()
-                )
+                ),
+                true
             );
         }
+        $embed->setFooter(sprintf('%s traded at %s', $quote->getQuoteType(), $quote->getFullExchangeName()));
         $embed->setTimestamp($time);
         return $embed;
     }
