@@ -43,15 +43,20 @@ class RedditProcessor extends RSSProcessor
                     continue;
                 }
                 $newest = max($newest, $published);
-                $newItems[] = (object)[
-                    'title' => $item->data->title,
-                    'link' => "https://www.reddit.com" . $item->data->permalink,
-                    'date' => $published,
-                    'category' => $item->data->link_flair_text ?? "Unflaired",
-                    'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                    'author' => $item->data->author,
-                    'isImage' => (!strlen($item->data->selftext) > 0) && $this->checkExtension($item->data->url),
-                ];
+
+                $x = $this->getObject();
+                $x->title = $item->data->title;
+                $x->link = "https://www.reddit.com" . $item->data->permalink;
+                $x->date = $published;
+                $x->category = $item->data->link_flair_text ?? "Unflaired";
+                $x->author = $item->data->author;
+                $x->color = $item->data->link_flair_background_color ?? null;
+                $x->body = (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url;
+                if ($this->checkExtension($item->data->url)) {
+                    $x->image = $item->data->url;
+                }
+
+                $newItems[] = $x;
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
@@ -71,29 +76,12 @@ class RedditProcessor extends RSSProcessor
         return false;
     }
 
-    protected function dataPublishingCallback(object $item): bool
+    protected function formatItemCallback(RSSItem $item): MessageEmbed
     {
-        try {
-            if (mb_strlen($item->body) > 500) {
-                $item->body = substr($item->body, 0, 500) . "...";
-            }
-            if (mb_strlen($item->title) > 250) {
-                $item->body = substr($item->title, 0, 250) . "...";
-            }
-            $embed = new MessageEmbed();
-            $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
-                ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '',
-                    "https://reddit.com/user/" . $item->author);
-            if ($item->isImage) {
-                $embed->setImage($item->body);
-            }
-            foreach ($this->channels as $channel) {
-                $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
-            }
-        } catch (Throwable $e) {
-            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
-            return false;
-        }
-        return true;
+        $embed = parent::formatItemCallback($item);
+        $embed->setAuthor($item->author, '',"https://reddit.com/user/" . $item->author);
+
+        return $embed;
     }
+
 }

@@ -93,7 +93,10 @@ class RSSProcessor
     {
         $collect = $this->dataProcessingCallback($string)->sortCustom([$this, 'sortObjects']);
         $this->huntress->log->debug("[RSS] {$this->id} - There are " . $collect->count() . " items to post.");
+
+        /** @var RSSItem $item */
         foreach ($collect as $item) {
+            $item->channels = $this->channelCheckCallback($item, $this->channels);
             $this->dataPublishingCallback($item);
         }
         if ($collect->count() > 0) {
@@ -118,13 +121,15 @@ class RSSProcessor
                     continue;
                 }
                 $newest = max($newest, $published);
-                $newItems[] = (object)[// todo: make this its own class
-                    'title' => $item->find('title')->text(),
-                    'link' => $item->find('link')->text(),
-                    'date' => $published,
-                    'category' => $item->find('category')->text(),
-                    'body' => (new HtmlConverter(['strip_tags' => true]))->convert($item->find('description')->text()),
-                ];
+
+                $x = $this->getObject();
+                $x->title = $item->find('title')->text();
+                $x->link = $item->find('link')->text();
+                $x->date = $published;
+                $x->category = $item->find('category')->text();
+                $x->body = (new HtmlConverter(['strip_tags' => true]))->convert($item->find('description')->text());
+
+                $newItems[] = $x;
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
@@ -144,18 +149,26 @@ class RSSProcessor
         return Carbon::createFromTimestamp(0);
     }
 
-    protected function dataPublishingCallback(object $item): bool
+    /**
+     * Override to change the "default" item deets.
+     * @return RSSItem
+     */
+    protected function getObject(): RSSItem {
+        $x = new RSSItem();
+        $x->channels = $this->channels;
+        if (is_int($this->itemColor)) {
+            $x->color = $this->itemColor;
+        }
+
+        return $x;
+    }
+
+    protected function dataPublishingCallback(RSSItem $item): bool
     {
         try {
-            $embed = new MessageEmbed();
-            $embed->setTitle($item->title)->setURL($item->link)->setTimestamp($item->date->timestamp)->setFooter($item->category);
-            if ($this->showBody) {
-                $embed->setDescription(substr($item->body, 0, 2040));
-            }
-            if (is_int($this->itemColor)) {
-                $embed->setColor($this->itemColor);
-            }
-            foreach ($this->channels as $channel) {
+            $embed = $this->formatItemCallback($item);
+
+            foreach ($item->channels as $channel) {
                 $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
             }
         } catch (Throwable $e) {
@@ -176,6 +189,59 @@ class RSSProcessor
         $query->bindValue(1, $this->id);
         $query->bindValue(2, $time);
         $query->execute();
+    }
+
+    /**
+     * Override this method to customize which channel data goes to.
+     *
+     * @param RSSItem $item
+     * @param array  $channels
+     *
+     * @return array the new array of channels to send to
+     */
+    protected function channelCheckCallback(RSSItem $item, array $channels): array {
+        return $channels;
+    }
+
+    /**
+     * Override to perform any modifications to the MessageEmbed
+     *
+     * @param RSSItem $item
+     *
+     * @return MessageEmbed
+     */
+    protected function formatItemCallback(RSSItem $item): MessageEmbed {
+
+        if (mb_strlen($item->body) > 500) {
+            $item->body = substr($item->body, 0, 500) . "...";
+        }
+        if (mb_strlen($item->title) > 250) {
+            $item->body = substr($item->title, 0, 250) . "...";
+        }
+        $embed = new MessageEmbed();
+        $embed->setTitle($item->title)->setURL($item->link)->setTimestamp($item->date->timestamp);
+
+        if ($this->showBody) {
+            $embed->setDescription(substr($item->body, 0, 2040));
+        }
+
+        if (is_int($item->color)) {
+            $embed->setColor($item->color);
+        }
+
+        if(mb_strlen($item->author) > 0) {
+            $embed->setAuthor($item->author);
+        }
+
+        if(mb_strlen($item->category) > 0) {
+            $embed->setFooter($item->category);
+        }
+
+        if(mb_strlen($item->image) > 0) {
+            $embed->setImage($item->image);
+        }
+
+        return $embed;
     }
 
     public function sortObjects($a, $b): int
