@@ -56,6 +56,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
                     'category' => $item->data->link_flair_text ?? "Unflaired",
                     'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
                     'author' => $item->data->author,
+                    'color' => $item->data->link_flair_background_color ?? null,
                 ];
             }
             return new Collection($newItems);
@@ -95,6 +96,14 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             $embed = new MessageEmbed();
             $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
                 ->setTimestamp($item->date->timestamp);
+
+            if (is_string($item->color)) {
+                try {
+                    $embed->setColor($item->color);
+                } catch (\InvalidArgumentException $e) {
+                    $this->huntress->log->error("Unknown color '{$item->color}' in MessageEmbed. Ignoring.");
+                }
+            }
 
             $redditUser = WormRP::fetchAccount($this->huntress->channels->get($channel)->guild, $item->author);
             if ($redditUser instanceof GuildMember) {

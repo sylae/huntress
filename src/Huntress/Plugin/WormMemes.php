@@ -108,7 +108,6 @@ class WormMemes extends RedditProcessor implements PluginInterface
                 } catch (\InvalidArgumentException $e) {
                     $this->huntress->log->error("Unknown color '{$item->color}' in MessageEmbed. Ignoring.");
                 }
-
             }
 
             $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
