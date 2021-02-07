@@ -11,6 +11,7 @@ namespace Huntress\Plugin;
 use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use CharlotteDunois\Yasmin\Utils\DataHelpers;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
@@ -57,6 +58,7 @@ class WormMemes extends RedditProcessor implements PluginInterface
                     'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
                     'author' => $item->data->author,
                     'isImage' => (!strlen($item->data->selftext) > 0) && $this->checkExtension($item->data->url),
+                    'color' => $item->data->link_flair_background_color ?? null,
                 ];
             }
             return new Collection($newItems);
@@ -99,6 +101,15 @@ class WormMemes extends RedditProcessor implements PluginInterface
             $embed = new MessageEmbed();
             $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
                 ->setTimestamp($item->date->timestamp);
+
+            if (is_string($item->color)) {
+                try {
+                    $embed->setColor($item->color);
+                } catch (\InvalidArgumentException $e) {
+                    $this->huntress->log->error("Unknown color '{$item->color}' in MessageEmbed. Ignoring.");
+                }
+
+            }
 
             $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
 
