@@ -14,6 +14,7 @@ use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\RSSItem;
 use Huntress\RSSProcessor;
 use Throwable;
 
@@ -49,27 +50,21 @@ class RCB extends RSSProcessor implements PluginInterface
                     continue;
                 }
                 $newest = max($newest, $published);
+                $x = new RSSItem();
+                $x->date = $published;
+                $x->category = $item->data->link_flair_text ?? "Unflaired";
+                $x->link = "https://www.reddit.com" . $item->data->permalink;
+                $x->author = $item->data->author;
+
                 if ($item->kind == "t1") { // comment
-                    $newItems[] = (object)[
-                        'title' => "Comment on post: " . $item->data->link_title,
-                        'link' => "https://www.reddit.com" . $item->data->permalink,
-                        'date' => $published,
-                        'category' => $item->data->link_flair_text ?? "Unflaired",
-                        'body' => $item->data->body,
-                        'author' => $item->data->author,
-                        'isImage' => false,
-                    ];
+                    $x->title = "Comment on post: " . $item->data->link_title;
+                    $x->body = $item->data->body;
                 } elseif ($item->kind == "t3") { // post
-                    $newItems[] = (object)[
-                        'title' => $item->data->title,
-                        'link' => "https://www.reddit.com" . $item->data->permalink,
-                        'date' => $published,
-                        'category' => $item->data->link_flair_text ?? "Unflaired",
-                        'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                        'author' => $item->data->author,
-                        'isImage' => (!strlen($item->data->selftext) > 0) && $this->checkExtension($item->data->url),
-                    ];
+                    $x->title = $item->data->title;
+                    $x->body = (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url;
+
                 }
+                $newItems[] = $x;
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
@@ -77,42 +72,4 @@ class RCB extends RSSProcessor implements PluginInterface
             return new Collection();
         }
     }
-
-    protected function checkExtension(string $haystack): bool
-    {
-        $ext = [".jpg", ".jpeg", ".gif", ".png", ".webp"];
-        foreach ($ext as $needle) {
-            if (0 === substr_compare($haystack, $needle, -strlen($needle))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected function dataPublishingCallback(object $item): bool
-    {
-        try {
-            if (mb_strlen($item->body) > 500) {
-                $item->body = substr($item->body, 0, 500) . "...";
-            }
-            if (mb_strlen($item->title) > 250) {
-                $item->body = substr($item->title, 0, 250) . "...";
-            }
-            $embed = new MessageEmbed();
-            $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
-                ->setTimestamp($item->date->timestamp)->setAuthor($item->author, '',
-                    "https://reddit.com/user/" . $item->author);
-            if ($item->isImage) {
-                $embed->setImage($item->body);
-            }
-            foreach ($this->channels as $channel) {
-                $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
-            }
-        } catch (Throwable $e) {
-            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
-            return false;
-        }
-        return true;
-    }
-
 }

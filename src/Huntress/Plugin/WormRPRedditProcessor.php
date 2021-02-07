@@ -16,6 +16,7 @@ use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RedditProcessor;
+use Huntress\RSSItem;
 use React\ChildProcess\Process;
 use React\Promise\Deferred;
 use Throwable;
@@ -33,88 +34,33 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
         }
     }
 
-    protected function dataProcessingCallback(string $string): Collection
+    protected function channelCheckCallback(RSSItem $item, array $channels): array
     {
-        try {
-            $items = json_decode($string)->data->children ?? null;
-            if (!is_countable($items)) {
-                return new Collection([]);
-            }
-            $lastPub = $this->getLastRSS();
-            $newest = $lastPub;
-            $newItems = [];
-            foreach ($items as $item) {
-                $published = Carbon::createFromTimestamp($item->data->created_utc);
-                if ($published <= $lastPub || is_null($item->data->link_flair_text)) {
-                    continue;
-                }
-                $newest = max($newest, $published);
-                $newItems[] = (object)[
-                    'title' => $item->data->title,
-                    'link' => "https://www.reddit.com" . $item->data->permalink,
-                    'date' => $published,
-                    'category' => $item->data->link_flair_text ?? "Unflaired",
-                    'body' => (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url,
-                    'author' => $item->data->author,
-                    'color' => $item->data->link_flair_background_color ?? null,
-                ];
-            }
-            return new Collection($newItems);
-        } catch (Throwable $e) {
-            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
-            return new Collection();
+        $channels[] = match ($item->category) {
+            "Character", "Equipment", "Lore", "Group" => 386943351062265888,
+            "Meta" => 118981144464195584,
+            default => 409043591881687041,
+        };
+        return parent::channelCheckCallback($item, $channels);
+    }
+
+    protected function formatItemCallback(RSSItem $item): MessageEmbed
+    {
+        $embed = parent::formatItemCallback($item);
+
+        $redditUser = WormRP::fetchAccount($this->huntress->guilds->get(118981144464195584), $item->author);
+        if ($redditUser instanceof GuildMember) {
+            $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL(),
+                "https://reddit.com/user/" . $item->author);
+        } else {
+            $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
         }
     }
 
-    protected function dataPublishingCallback(object $item): bool
+    protected function dataPublishingCallback(RSSItem $item): bool
     {
         try {
-            if (mb_strlen($item->body) > 500) {
-                $item->body = substr($item->body, 0, 500) . "...";
-            }
-            if (mb_strlen($item->title) > 250) {
-                $item->body = substr($item->title, 0, 250) . "...";
-            }
-
-            switch ($item->category) {
-                case "Character":
-                case "Equipment":
-                case "Lore":
-                case "Group":
-                    $channel = 386943351062265888; // the_list
-                    break;
-                case "Meta":
-                    $channel = 118981144464195584; // general
-                    break;
-                case "Event":
-                case "Patrol":
-                case "Non-Canon":
-                default:
-                    $channel = 409043591881687041; // events
-            }
-
-            $embed = new MessageEmbed();
-            $embed->setTitle($item->title)->setURL($item->link)->setDescription($item->body)->setFooter($item->category)
-                ->setTimestamp($item->date->timestamp);
-
-            if (is_string($item->color)) {
-                try {
-                    $embed->setColor($item->color);
-                } catch (\InvalidArgumentException $e) {
-                    $this->huntress->log->error("Unknown color '{$item->color}' in MessageEmbed. Ignoring.");
-                }
-            }
-
-            $redditUser = WormRP::fetchAccount($this->huntress->channels->get($channel)->guild, $item->author);
-            if ($redditUser instanceof GuildMember) {
-                $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL(),
-                    "https://reddit.com/user/" . $item->author);
-            } else {
-                $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
-            }
-
-            // send to discord
-            $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+            parent::dataProcessingCallback($item);
 
             // update flair check thing
             $query = $this->huntress->db->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
@@ -125,7 +71,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             $query->execute();
 
             // send to approval queue sheet
-            if ($channel == 386943351062265888) {
+            if (in_array(386943351062265888, $item->channels)) {
                 $allowed = ["Equipment", "Lore", "Character"];
                 if (!in_array($item->category, $allowed)) {
                     $item->category = "Other";
