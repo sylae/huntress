@@ -11,6 +11,7 @@ namespace Huntress;
 use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use CharlotteDunois\Yasmin\Utils\DataHelpers;
 use Throwable;
 
 /**
@@ -50,7 +51,7 @@ class RedditProcessor extends RSSProcessor
                 $x->date = $published;
                 $x->category = $item->data->link_flair_text ?? "Unflaired";
                 $x->author = $item->data->author;
-                $x->color = $item->data->link_flair_background_color ?? null;
+                $x->color = DataHelpers::resolveColor($item->data->link_flair_background_color) ?? null;
                 $x->body = (strlen($item->data->selftext) > 0) ? $item->data->selftext : $item->data->url;
                 if ($this->checkExtension($item->data->url)) {
                     $x->image = $item->data->url;
