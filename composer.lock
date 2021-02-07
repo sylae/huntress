@@ -3290,12 +3290,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/huntress.git",
-                "reference": "c60a7e9e7559368a0ac1e3e7dd6a33967abdea1f"
+                "reference": "317e05967793f975c5194f416ed8892122cdc246"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/huntress/zipball/c60a7e9e7559368a0ac1e3e7dd6a33967abdea1f",
-                "reference": "c60a7e9e7559368a0ac1e3e7dd6a33967abdea1f",
+                "url": "https://api.github.com/repos/sylae/huntress/zipball/317e05967793f975c5194f416ed8892122cdc246",
+                "reference": "317e05967793f975c5194f416ed8892122cdc246",
                 "shasum": ""
             },
             "require": {
@@ -3330,7 +3330,7 @@
                 "source": "https://github.com/sylae/huntress/tree/master",
                 "issues": "https://github.com/sylae/huntress/issues"
             },
-            "time": "2021-02-07T11:00:28+00:00"
+            "time": "2021-02-07T15:31:16+00:00"
         },
         {
             "name": "sylae/validator",
