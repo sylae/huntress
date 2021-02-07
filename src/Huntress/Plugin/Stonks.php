@@ -11,6 +11,7 @@ use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\PromiseInterface;
@@ -29,6 +30,8 @@ class Stonks implements PluginInterface
 
     public const CACHE_TTL = 300;
 
+    public const MAX_SYMBOLS = 5;
+
     /**
      * @var \Aran\YahooFinanceApi\ApiClient
      */
@@ -38,18 +41,37 @@ class Stonks implements PluginInterface
     private array $cache;
 
     /** @var int */
-    private int $ttl;
+    private int $cache_ttl;
 
-    public function __construct(Huntress $bot)
+    /** @var int */
+    private int $max_symbols;
+
+    /**
+     * Construct a new plugin instance.
+     *
+     * @param \Huntress\Huntress $bot
+     *   Huntress instance (required for the main event loop).
+     * @param int $cache_ttl
+     *   Cache TTL in seconds.
+     * @param int $max_symbols
+     *   Max symbols per request.
+     */
+    public function __construct(Huntress $bot, int $cache_ttl, int $max_symbols)
     {
         $this->client = ApiClientFactory::createFromLoop($bot->getLoop());
         $this->cache = [];
-        $this->ttl = static::CACHE_TTL;
+        $this->cache_ttl = $cache_ttl;
+        $this->max_symbols = $max_symbols;
     }
 
+    /**
+     * Create and register a plugin instance.
+     *
+     * @param \Huntress\Huntress $bot
+     */
     public static function register(Huntress $bot): void
     {
-        $instance = new static($bot);
+        $instance = new static($bot, static::CACHE_TTL, static::MAX_SYMBOLS);
         $bot->eventManager->addEventListener(
             EventListener::new()
                 ->addCommand('stonks')
@@ -57,22 +79,37 @@ class Stonks implements PluginInterface
         );
     }
 
+    /**
+     * Respond to a regular !stonks command.
+     *
+     * @param \Huntress\EventData $event
+     *
+     * @return \React\Promise\PromiseInterface
+     */
     public function stonks(EventData $event): PromiseInterface
     {
+        $channel = $event->message->channel;
+
+        // Check for permission.
+        $permission = new Permission('p.stonks', $event->huntress, TRUE);
+        $permission->addMessageContext($event->message);
+        if (!$permission->resolve()) {
+            return $permission->sendUnauthorizedMessage($channel);
+        }
+        // Split arguments and check for "search" at start (case-sensitive).
         $args = self::_split($event->message->content);
         if ($args[1] === 'search') {
             return $this->search($event);
         }
-        $symbols = array_map('mb_strtoupper', array_slice($args, 1));
+        // Take up to $max_requests symbols to avoid spam.
+        $symbols = array_map('mb_strtoupper', array_slice($args, 1, $this->max_symbols));
         $now = time();
 
         // Check which quotes must be refreshed.
         $refresh = array_filter($symbols, fn($symbol) => (
             !isset($this->cache[$symbol]) ||
-            $this->cache[$symbol]['time'] + $this->ttl < $now
+            $this->cache[$symbol]['time'] + $this->cache_ttl < $now
         ));
-
-        $channel = $event->message->channel;
 
         /** @var PromiseInterface $promise*/
         if ($refresh) {
@@ -81,7 +118,6 @@ class Stonks implements PluginInterface
                 ->then(fn() => $this->client->getQuotes($refresh))
                 ->then(function ($data) use ($now) {
                     foreach ($data as $i => $quote) {
-                        // Do not cache errors.
                         $this->cache[$quote->getSymbol()] = [
                             'time'  => $now,
                             'quote' => $quote,
@@ -94,14 +130,20 @@ class Stonks implements PluginInterface
             $promise = resolve();
         }
 
-        // Format data.
-        return $promise->then(function () use ($channel, $symbols) {
+        // Format and print data.
+        return $promise->then(function () use ($channel, $symbols, $event) {
             $promises = [];
             foreach ($symbols as $symbol) {
                 if (isset($this->cache[$symbol])) {
                     /** @var \Aran\YahooFinanceApi\Results\Quote $quote */
                     ['time' => $time, 'quote' => $quote] = $this->cache[$symbol];
-                    $promises[] = $channel->send('', ['embed' => $this->formatQuote($symbol, $quote, $time)]);
+                    $embed = $this->formatQuote($quote, $time);
+                    $embed->setAuthor(
+                        $event->message->member->displayName,
+                        $event->message->member->user->getAvatarURL(64)
+                    );
+                    $embed->setColor($event->message->member->id % 0xFFFFFF);
+                    $promises[] = $channel->send('', ['embed' => $embed]);
                 }
                 else {
                     $promises[] = $channel->send(sprintf("No results returned for $symbol"));
@@ -111,16 +153,32 @@ class Stonks implements PluginInterface
         });
     }
 
-    public function search(EventData $event): PromiseInterface {
+    /**
+     * Respond to a !stonks search command.
+     *
+     * @param \Huntress\EventData $event
+     *
+     * @return \React\Promise\PromiseInterface|null
+     */
+    public function search(EventData $event): ?PromiseInterface {
         $search = self::arg_substr($event->message->content, 2);
         $channel = $event->message->channel;
+
+        // Refuse to search for an empty string.
+        if (!$search) {
+            return NULL;
+        }
 
         return $channel->send('Searching...')
             ->then(fn() => $this->client->search($search))
             ->then(function ($results) use ($search, $channel) {
                 $embed = new MessageEmbed();
                 $count = count($results);
-                $embed->setTitle("{$count} results for \"*{$search}*\"");
+                $embed->setTitle(sprintf(
+                    '%d results for "*%s*"',
+                    $count,
+                    addcslashes($search, '*\\')
+                ));
                 foreach ($results as $result) {
                     $embed->addField(
                         $result->getSymbol(),
@@ -131,54 +189,89 @@ class Stonks implements PluginInterface
             });
     }
 
-    private function formatQuote(string $symbol, Quote $quote, int $time): MessageEmbed {
+    /**
+     * Create a MessageEmbed with formatted Quote data.
+     *
+     * @param \Aran\YahooFinanceApi\Results\Quote $quote
+     * @param int $time
+     *
+     * @return \CharlotteDunois\Yasmin\Models\MessageEmbed
+     * @throws \Exception
+     */
+    private function formatQuote(Quote $quote, int $time): MessageEmbed {
         $currency = $quote->getCurrency();
         $embed = new MessageEmbed();
-        $embed->setTitle("{$symbol} ({$quote->getFullExchangeName()})");
-        $embed->addField(
-            'Ask / Bid',
-            "{$currency} {$quote->getAsk()} / {$currency} {$quote->getBid()}"
-        );
+        $embed->setTitle("{$quote->getSymbol()} ({$quote->getShortName()})");
         if ($quote->getMarketState()) {
             $embed->addField(
                 'Market state',
-                $quote->getMarketState()
+                $quote->getMarketState(),
+                true
             );
         }
-        $embed->addField(
-            'Opening price',
-            sprintf('%s %.2f', $currency, $quote->getRegularMarketOpen())
-        );
-        $embed->addField(
-            $quote->getMarketState() === 'REGULAR' ? 'Market price' : 'Closing price',
-            sprintf(
-                '%s %.2f, (%+.3f%%)',
-                $currency, $quote->getRegularMarketPrice(),
-                $quote->getRegularMarketChangePercent()
-            )
-        );
+        if ($quote->getRegularMarketPreviousClose()) {
+            $embed->addField(
+                'Previous closing price',
+                sprintf("{$currency} %.2f", $quote->getRegularMarketPreviousClose()),
+                true
+            );
+        }
+        if ($quote->getRegularMarketOpen()) {
+            $embed->addField(
+                'Opening price',
+                sprintf("{$currency} %.2f", $quote->getRegularMarketOpen()),
+                true
+            );
+        }
+        if ($quote->getRegularMarketPrice()) {
+            $embed->addField(
+                $quote->getMarketState() === 'REGULAR' ? 'Market price' : 'Closing price',
+                sprintf(
+                    "{$currency} %.2f, (%+.3f%%)",
+                    $quote->getRegularMarketPrice(),
+                    $quote->getRegularMarketChangePercent()
+                ),
+                true
+            );
+        }
+        if ($quote->getRegularMarketDayLow() && $quote->getRegularMarketDayHigh()) {
+            $embed->addField('Day Low', sprintf("{$currency} %.2f", $quote->getRegularMarketDayLow()), true);
+            $embed->addField('Day High', sprintf("{$currency} %.2f", $quote->getRegularMarketDayHigh()), true);
+        }
         if ($quote->getPostMarketPrice()) {
             $embed->addField(
                 'Post-Market price',
                 sprintf(
-                    '%s %.2f, (%+.3f%%)',
-                    $currency,
+                    "{$currency} %.2f, (%+.3f%%)",
                     $quote->getPostMarketPrice(),
                     $quote->getPostMarketChangePercent()
-                )
+                ),
+                true
             );
         }
         if ($quote->getPreMarketPrice()) {
             $embed->addField(
                 'Pre-Market price',
                 sprintf(
-                    '%s %.2f, (%+.3f%%)',
-                    $currency,
+                    "{$currency} %.2f, (%+.3f%%)",
                     $quote->getPreMarketPrice(),
                     $quote->getPreMarketChangePercent()
-                )
+                ),
+                true
             );
         }
+        if ($quote->getAsk() && $quote->getBid()) {
+            $embed->addField(
+                'Ask / Bid',
+                sprintf(
+                    "{$currency} %.2f / {$currency} %.2f",
+                    $quote->getAsk(),
+                    $quote->getBid()
+                ),
+                true
+            );
+        }
+        $embed->setFooter(sprintf('%s traded at %s', $quote->getQuoteType(), $quote->getFullExchangeName()));
         $embed->setTimestamp($time);
         return $embed;
     }
