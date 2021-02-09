@@ -55,6 +55,8 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
         } else {
             $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
         }
+
+        return $embed;
     }
 
     protected function dataPublishingCallback(RSSItem $item): bool
