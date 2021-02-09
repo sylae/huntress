@@ -60,7 +60,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
     protected function dataPublishingCallback(RSSItem $item): bool
     {
         try {
-            parent::dataProcessingCallback($item);
+            parent::dataPublishingCallback($item);
 
             // update flair check thing
             $query = $this->huntress->db->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
