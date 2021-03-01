@@ -61,6 +61,36 @@ class ServerActivityMonitor
         }
     }
 
+    public function getGraphs(array $sizes): array
+    {
+        $files = [];
+        $exe = (PHP_OS == "WINNT") ? "wsl TZ=UTC rrdtool" : " TZ=UTC rrdtool";
+        $filename = "temp/serveractivity/{$this->guild->id}_messages.rrd";
+        foreach ($sizes as $k => $v) {
+            $command = "$exe graph - " .
+                "--start end-$v " .
+                "--imgformat PNG " .
+                "--title \"{$this->guild->name} message rates\" " .
+                "--vertical-label \"messages per second\" " .
+                "--width 480 " .
+                "--height 160 " .
+                "--watermark \"Timezone: UTC\" " .
+                "--use-nan-for-all-missing-data " .
+                "--lower-limit 0 " .
+                "DEF:avgrate=$filename:messages:AVERAGE " .
+                "DEF:avgbotrate=$filename:botmessages:AVERAGE " .
+                "DEF:maxrate=$filename:messages:MAX " .
+                "DEF:maxbotrate=$filename:botmessages:MAX " .
+                "LINE1:avgrate#FF0000FF:all (avg) " .
+                "LINE1:avgbotrate#0000FFFF:bots (avg) " .
+                "LINE1:maxrate#FF000040:all (peak) " .
+                "LINE1:maxbotrate#0000FF40:bots (peak) " .
+                "";
+            $files[$k] = `$command`;
+        }
+        return $files;
+    }
+
     public function addMessage(Message $message)
     {
         $this->messages++;

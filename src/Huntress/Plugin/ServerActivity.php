@@ -18,6 +18,7 @@ use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\ServerActivityMonitor;
 use React\Promise\PromiseInterface;
+use Throwable;
 
 /**
  * Use rrdtool to track some server statistics
@@ -43,6 +44,11 @@ class ServerActivity implements PluginInterface
         $bot->eventManager->addEventListener(EventListener::new()
             ->setPeriodic(6)
             ->setCallback([self::class, "updateRRD"])
+        );
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("messagestats")
+            ->setCallback([self::class, "statsHandler"])
         );
     }
 
@@ -94,5 +100,38 @@ class ServerActivity implements PluginInterface
         self::getSAM($data->guild);
 
         return null;
+    }
+
+    public static function statsHandler(EventData $data): ?PromiseInterface
+    {
+        try {
+            $p = new Permission("p.serveractivity.view", $data->huntress, true);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve()) {
+                return $p->sendUnauthorizedMessage($data->message->channel);
+            }
+
+            $sizes = [];
+            $sizes['day'] = '1d';
+            $sizes['week'] = '1w';
+
+            if (self::arg_substr($data->message->content, 1, 1) ?? "" == "all") {
+                $sizes['month'] = '1m';
+                $sizes['year'] = '1y';
+            }
+
+            $sam = self::getSAM($data->guild);
+
+            $files = [];
+            foreach ($sam->getGraphs($sizes) as $k => $d) {
+                $files[] = ['name' => "{$data->guild->id}_messageactivity_$k.png", 'data' => $d];
+            }
+
+            return $data->message->channel->send("", ['files' => $files])->then(null,
+                fn($e) => self::exceptionHandler($data->message, $e, true));
+
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e, true);
+        }
     }
 }
