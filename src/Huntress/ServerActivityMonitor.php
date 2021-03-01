@@ -42,15 +42,15 @@ class ServerActivityMonitor
             "RRA:AVERAGE:0.5:1:1440 " . // 1 day @ 1 minute resolution
             "RRA:AVERAGE:0.5:15:672 " . // 1 week @ 15 minute resolution
             "RRA:AVERAGE:0.5:60:720 " . // 30 days @ 1 hour resolution
-            "RRA:AVERAGE:0.5:1440:365" . // 365 days @ 1 day resolution
+            "RRA:AVERAGE:0.5:1440:365 " . // 365 days @ 1 day resolution
             "RRA:LAST:0.5:1:1440 " . // 1 day @ 1 minute resolution
             "RRA:LAST:0.5:15:672 " . // 1 week @ 15 minute resolution
             "RRA:LAST:0.5:60:720 " . // 30 days @ 1 hour resolution
-            "RRA:LAST:0.5:1440:365" . // 365 days @ 1 day resolution
+            "RRA:LAST:0.5:1440:365 " . // 365 days @ 1 day resolution
             "RRA:MAX:0.5:1:1440 " . // 1 day @ 1 minute resolution
             "RRA:MAX:0.5:15:672 " . // 1 week @ 15 minute resolution
             "RRA:MAX:0.5:60:720 " . // 30 days @ 1 hour resolution
-            "RRA:MAX:0.5:1440:365" . // 365 days @ 1 day resolution
+            "RRA:MAX:0.5:1440:365 " . // 365 days @ 1 day resolution
             ""; // 365 days @ 1 day resolution
 
         if (!file_exists($filename) || $force) {
