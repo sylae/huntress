@@ -77,12 +77,6 @@ class ServerActivity implements PluginInterface
 
     public static function messageRX(EventData $data): ?PromiseInterface
     {
-        $p = new Permission("p.serveractivity.track", $data->huntress, true);
-        $p->addMessageContext($data->message);
-        if (!$p->resolve()) {
-            return null;
-        }
-
         $sam = self::getSAM($data->guild);
         $sam->addMessage($data->message);
 
