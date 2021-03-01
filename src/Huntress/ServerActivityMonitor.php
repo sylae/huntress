@@ -66,11 +66,12 @@ class ServerActivityMonitor
         $files = [];
         $exe = (PHP_OS == "WINNT") ? "wsl TZ=UTC rrdtool" : " TZ=UTC rrdtool";
         $filename = "temp/serveractivity/{$this->guild->id}_messages.rrd";
+        $safename = escapeshellarg("{$this->guild->name} message rates");
         foreach ($sizes as $k => $v) {
             $command = "$exe graph - " .
                 "--start end-$v " .
                 "--imgformat PNG " .
-                "--title \"{$this->guild->name} message rates\" " .
+                "--title $safename " .
                 "--vertical-label \"messages per second\" " .
                 "--width 480 " .
                 "--height 160 " .
@@ -81,10 +82,10 @@ class ServerActivityMonitor
                 "DEF:avgbotrate=$filename:botmessages:AVERAGE " .
                 "DEF:maxrate=$filename:messages:MAX " .
                 "DEF:maxbotrate=$filename:botmessages:MAX " .
-                "LINE1:avgrate#FF0000FF:all (avg) " .
-                "LINE1:avgbotrate#0000FFFF:bots (avg) " .
-                "LINE1:maxrate#FF000040:all (peak) " .
-                "LINE1:maxbotrate#0000FF40:bots (peak) " .
+                "'LINE1:avgrate#FF0000FF:all (avg)' " .
+                "'LINE1:avgbotrate#0000FFFF:bots (avg)' " .
+                "'LINE1:maxrate#FF000040:all (peak)' " .
+                "'LINE1:maxbotrate#0000FF40:bots (peak)' " .
                 "";
             $files[$k] = `$command`;
         }
