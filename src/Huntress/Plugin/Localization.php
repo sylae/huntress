@@ -89,7 +89,7 @@ class Localization implements PluginInterface
             }
             $tz = new UserLocale($data->message->author);
             $now_tz = $tz->applyTimezone($now);
-            return self::send($data->message->channel, sprintf($string, $tz->timezone ?? "<unset (default UTC)>",
+            return $data->message->reply(sprintf($string, $tz->timezone ?? "<unset (default UTC)>",
                 $tz->localeSandbox(function () use ($now_tz) {
                     return $now_tz->toDayDateTimeString();
                 })));
@@ -129,7 +129,7 @@ class Localization implements PluginInterface
             $time = trim($time);
             $time = self::readTime($time, $user_tz);
         } catch (\Throwable $e) {
-            return $data->message->channel->send("I couldn't figure out what time `$time` is :(");
+            return $data->message->reply("I couldn't figure out what time `$time` is :(");
         }
 
         // grab everyone's zone
@@ -184,7 +184,7 @@ class Localization implements PluginInterface
         $embed->setTitle("Translated times for users in channel");
         $embed->setDescription("Don't see your timezone? Use the `!timezone` command.");
 
-        return $data->message->channel->send(implode(PHP_EOL, $warn) ?? "", ['embed' => $embed]);
+        return $data->message->reply(implode(PHP_EOL, $warn) ?? "", ['embed' => $embed]);
     }
 
     public static function fetchTimezone(GuildMember $member): ?string

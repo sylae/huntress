@@ -88,7 +88,18 @@ class Remind implements PluginInterface
             $query->bindValue(1, $rem['idMessage']);
             $query->execute();
 
-            return $channel->send($member . ": " . $url, ['embed' => $embed]);
+            return $channel->fetchMessage($rem['idMessage'])->always(function ($x) use (
+                $channel,
+                $member,
+                $url,
+                $embed
+            ) {
+                if ($x instanceof Message) {
+                    return $x->reply($member . ": " . $url, ['embed' => $embed]);
+                } else {
+                    return $channel->send($member . ": " . $url, ['embed' => $embed]);
+                }
+            });
 
         } catch (Throwable $e) {
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
@@ -114,9 +125,8 @@ class Remind implements PluginInterface
             $text = self::arg_substr($data->message->content, 2);
 
             if (!$time || $time === 'help') {
-                return $data->message->channel->send(self::getHelp());
-            }
-            elseif ($time === 'del' || $time === 'delete') {
+                return $data->message->reply(self::getHelp());
+            } elseif ($time === 'del' || $time === 'delete') {
                 return self::deleteReminder($data, $text);
             }
             if (!$text) {
@@ -135,7 +145,7 @@ class Remind implements PluginInterface
                 $time = self::readTime($time, $user_tz);
                 $time->setTimezone($user_tz);
             } catch (Throwable $e) {
-                return $data->message->channel->send("I couldn't figure out what time `$time` is :(");
+                return $data->message->reply("I couldn't figure out what time `$time` is :(");
             }
 
             // generate a unique identifier for removal
@@ -156,7 +166,7 @@ class Remind implements PluginInterface
 
             self::addReminder($data->message, $time, $text, $id);
 
-            return $data->message->channel->send("", ['embed' => $embed]);
+            return $data->message->reply("", ['embed' => $embed]);
 
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, false);
@@ -191,19 +201,19 @@ HELP;
         $reminder = $db->executeQuery("SELECT * FROM remind WHERE (`idReminder` = ?)", [$id])->fetch();
 
         if (!$reminder) {
-            return $message->channel->send("No reminder matching `$code` was found.");
+            return $message->reply("No reminder matching `$code` was found.");
         }
         if ($message->member->id !== $reminder['idMember']) {
             $p = new Permission('p.reminder.delete', $data->huntress, false);
             $p->addMessageContext($data->message);
             if (!$p->resolve()) {
-                return $message->channel->send("You cannot delete a reminder created by another user.");
+                return $message->reply("You cannot delete a reminder created by another user.");
             }
         }
         $stmt = $db->prepare('DELETE FROM remind WHERE (`idReminder` = ?)', ['integer']);
         $stmt->bindValue(1, $id);
         $stmt->execute();
-        return $message->channel->send("Reminder deleted.");
+        return $message->reply("Reminder deleted.");
     }
 
     private static function addReminder(Message $message, Carbon $time, string $text, int $id)

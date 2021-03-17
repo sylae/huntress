@@ -187,7 +187,7 @@ NOTE;
                     $p1 = $channel->send(sprintf(self::NOTE, $round, $theme))->then(function (Message $m) {
                         return $m->pin();
                     });
-                    $p2 = $message->channel->send("<#{$channel->id}> :ok_hand:");
+                    $p2 = $message->reply("<#{$channel->id}> :ok_hand:");
                     return all([$p1, $p2]);
                 } catch (Throwable $e) {
                     self::exceptionHandler($message, $e);

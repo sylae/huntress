@@ -83,8 +83,10 @@ class ServerActivity implements PluginInterface
 
     public static function messageRX(EventData $data): ?PromiseInterface
     {
-        $sam = self::getSAM($data->guild);
-        $sam->addMessage($data->message);
+        if (!is_null($data->guild)) {
+            $sam = self::getSAM($data->guild);
+            $sam->addMessage($data->message);
+        }
 
         return null;
     }
@@ -127,7 +129,7 @@ class ServerActivity implements PluginInterface
                 $files[] = ['name' => "{$data->guild->id}_messageactivity_$k.png", 'data' => $d];
             }
 
-            return $data->message->channel->send("", ['files' => $files])->then(null,
+            return $data->message->reply("", ['files' => $files])->then(null,
                 fn($e) => self::exceptionHandler($data->message, $e, true));
 
         } catch (Throwable $e) {

@@ -52,7 +52,7 @@ class Whoa implements PluginInterface
 
         $args = self::_split($data->message->content);
         if (count($args) >= 2 && $args[1] == "help") {
-            return $data->message->channel->send("usage: `!whoa`\n" .
+            return $data->message->reply("usage: `!whoa`\n" .
                 "Set a slowmode that expires after a bit.\n\n" .
                 "Optional args: `!whoa SLOWNESS DURATION`\n" .
                 "SLOWNESS = slowmode amount in seconds. Default: " . self::DEFAULTWHOA . "sec.\n" .
@@ -96,7 +96,7 @@ class Whoa implements PluginInterface
         );
         $embed->setTimestamp(time() + $length);
 
-        $x[] = $data->message->channel->send("", ['embed' => $embed]);
+        $x[] = $data->message->reply("", ['embed' => $embed]);
 
         return all($x);
     }

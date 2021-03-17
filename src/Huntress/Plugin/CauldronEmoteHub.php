@@ -110,8 +110,7 @@ class CauldronEmoteHub implements PluginInterface
                     $emotes[0]['name'])->then(function (Emoji $emote) use ($data) {
                     return self::send($data->message->channel, "Imported the emote {$emote->name} ({$emote->id})");
                 }, function ($e) use ($data) {
-                    return self::send($data->message->channel,
-                        "Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
+                    return $data->message->reply("Failed to import emote!\n" . json_encode($e, JSON_PRETTY_PRINT));
                 });
             } catch (Throwable $e) {
                 return self::exceptionHandler($data->message, $e, true);
@@ -168,7 +167,7 @@ class CauldronEmoteHub implements PluginInterface
                 }
             }
 
-            return self::send($data->message->channel, implode(PHP_EOL, $s), ['split' => true]);
+            return $data->message->reply(implode(PHP_EOL, $s), ['split' => true]);
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e);
         }

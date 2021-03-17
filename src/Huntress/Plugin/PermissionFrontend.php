@@ -82,11 +82,11 @@ class PermissionFrontend implements PluginInterface
                 $args = substr(strstr($data->message->content, " "), 1);
                 $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
-                return self::send($data->message->channel, "```\n" . $getOpt->getHelpText() . "```");
+                return $data->message->reply("```\n" . $getOpt->getHelpText() . "```");
             }
             $command = $getOpt->getCommand();
             if (is_null($command)) {
-                return self::send($data->message->channel, "```\n" . $getOpt->getHelpText() . "```");
+                return $data->message->reply("```\n" . $getOpt->getHelpText() . "```");
             }
             return call_user_func($command->getHandler(), $getOpt, $data);
         } catch (Throwable $e) {
@@ -151,7 +151,7 @@ class PermissionFrontend implements PluginInterface
         $str[] = "";
         $str[] = "The final value is $end.";
 
-        return $data->message->channel->send(implode(PHP_EOL, $str), ['split' => true]);
+        return $data->message->reply(implode(PHP_EOL, $str), ['split' => true]);
     }
 
     public static function addPerm(GetOpt $getOpt, EventData $data): ?Promise
@@ -251,7 +251,7 @@ class PermissionFrontend implements PluginInterface
                 } else {
                     $msgBegin = "Your command would add the following:\n";
                 }
-                return $data->message->channel->send(sprintf($msgBegin . "**%s**: `%s`\n**Scope**: %s\n**Target**: %s\n",
+                return $data->message->reply(sprintf($msgBegin . "**%s**: `%s`\n**Scope**: %s\n**Target**: %s\n",
                     $allow ? "Allow" : "Deny", $permission,
                     $settingPretty, $targetPretty));
             } else {

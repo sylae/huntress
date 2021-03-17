@@ -71,7 +71,7 @@ class WormRPFlairs implements PluginInterface
 
     public static function flairHandler(EventData $data): ?Promise
     {
-        return $data->message->channel->send("🔮")->then(function (Message $response) use ($data) {
+        return $data->message->reply("🔮")->then(function (Message $response) use ($data) {
             try {
 
                 $getOpt = new GetOpt();
@@ -215,8 +215,7 @@ class WormRPFlairs implements PluginInterface
                 $args = substr(strstr($message->content, " "), 1);
                 $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
-                return self::send($message->channel,
-                    $getOpt->getHelpText() . "Note: if you're getting this but everything looks correct, try `!rep -- <character> <rep>` instead.");
+                return $data->message->reply($getOpt->getHelpText() . "Note: if you're getting this but everything looks correct, try `!rep -- <character> <rep>` instead.");
             }
 
             return self::editRep($getOpt->getOperand("character"), $getOpt->getOperand("rep"),
@@ -237,7 +236,7 @@ class WormRPFlairs implements PluginInterface
 
     private static function editRep(string $char, string $rep, Huntress $bot, EventData $data): ?Promise
     {
-        $chain = $data->message->channel->send(":crystal_ball: Checking params...")->then(function ($message) use (
+        $chain = $data->message->reply(":crystal_ball: Checking params...")->then(function ($message) use (
             $rep,
             $data
         ) {

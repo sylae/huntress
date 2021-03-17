@@ -40,6 +40,6 @@ class Choose implements PluginInterface
             return $data->message->channel->send("you must give me at least two choices separated by commas! `!choose for example, like, this`");
         }
         $opt = $choices[array_rand($choices)];
-        return $data->message->channel->send(sprintf("I choose `%s`!", $opt));
+        return $data->message->reply(sprintf("I choose `%s`!", $opt));
     }
 }

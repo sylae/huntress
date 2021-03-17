@@ -281,8 +281,7 @@ class WormRP implements PluginInterface
                 $query->bindValue(2, $args[1]);
                 $query->execute();
 
-                return self::send($data->message->channel,
-                    "Added/updated {$user->user->tag} ({$user->id}) to tracker with reddit username /u/{$args[1]}.");
+                return $data->message->reply("Added/updated {$user->user->tag} ({$user->id}) to tracker with reddit username /u/{$args[1]}.");
             } catch (Throwable $e) {
                 return self::exceptionHandler($data->message, $e, true);
             }
@@ -305,16 +304,16 @@ class WormRP implements PluginInterface
                 $wiki = self::lookupWiki($results['wiki'], $char);
                 if (count($wiki) > 0) {
                     return all(array_map(function ($embed) use ($data) {
-                        return $data->message->channel->send("", ['embed' => $embed]);
+                        return $data->message->reply("", ['embed' => $embed]);
                     }, $wiki));
                 }
 
                 $reddit = self::lookupReddit($results['reddit'], $char);
                 if (!is_null($reddit)) {
-                    return $data->message->channel->send($reddit);
+                    return $data->message->reply($reddit);
                 }
 
-                return $data->message->channel->send("I didn't find anything on the wiki or reddit :sob:");
+                return $data->message->reply("I didn't find anything on the wiki or reddit :sob:");
             });
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
@@ -417,7 +416,7 @@ class WormRP implements PluginInterface
                     $data->huntress->log->debug("queueHandler child failure!");
                 }
             });
-            return $data->message->channel->send("🔮")->then(function ($response) use ($prom, $timeStart) {
+            return $data->message->reply("🔮")->then(function ($response) use ($prom, $timeStart) {
                 return $prom->promise()->then(function (string $childData) use ($response, $timeStart) {
                     return self::queueHandlerProcess($childData, $response, $timeStart);
                 });

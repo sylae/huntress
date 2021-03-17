@@ -138,7 +138,7 @@ class BeholdersBasement implements PluginInterface
                 $data->message->member,
                 $num,
                 $m, implode(" ", $rolls));
-            return $data->message->channel->send($message);
+            return $data->message->reply($message);
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, false);
         }
@@ -246,7 +246,7 @@ class BeholdersBasement implements PluginInterface
 
                         $channel->setPermissionOverwrites($perms,
                             "Created on behalf of {$message->author->tag} from {$message->getJumpURL()}");
-                        return $message->channel->send("<@&{$role->id}> and matching category have been added. Please rename them at your leisure.")->then(function (
+                        return $message->reply("<@&{$role->id}> and matching category have been added. Please rename them at your leisure.")->then(function (
                             $m2
                         ) use ($role, $gm) {
                             return $gm->addRole($role);
@@ -266,7 +266,7 @@ class BeholdersBasement implements PluginInterface
 
     public static function summon(GetOpt $getOpt, Message $message): PromiseInterface
     {
-        return $message->channel->send("WIP. Please @ a mod to add a player to your game. Sorry for the inconvenience!");
+        return $message->reply("WIP. Please @ a mod to add a player to your game. Sorry for the inconvenience!");
     }
 
     public static function prideDice(EventData $data)

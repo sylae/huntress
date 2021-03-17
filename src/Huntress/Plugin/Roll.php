@@ -62,9 +62,9 @@ class Roll implements PluginInterface
             $res = DiceHandler::fromString($string);
             $res->member = $data->message->member;
 
-            return $data->message->channel->send("", ['embed' => $res->giveEmbed()]);
+            return $data->message->reply("", ['embed' => $res->giveEmbed()]);
         } catch (\InvalidArgumentException | \OutOfBoundsException $e) {
-            return $data->message->channel->send("I couldn't understand that.\nUsage: `!roll xdy [+/- modifier] [adv|dis] [comments]`");
+            return $data->message->reply("I couldn't understand that.\nUsage: `!roll xdy [+/- modifier] [adv|dis] [comments]`");
         } catch
         (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);

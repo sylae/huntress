@@ -49,7 +49,7 @@ class Misfit implements PluginInterface
             case 'ls':
                 return self::ls($data->message, self::state());
             case 'export':
-                return $data->message->channel->send(json_encode(self::state()));
+                return $data->message->reply(json_encode(self::state()));
             case 'import':
                 return self::fetchMessage($data->message->client,
                     $tp[2])->then(function (Message $importMsg) use ($data) {
@@ -58,7 +58,7 @@ class Misfit implements PluginInterface
                         $state = self::state($oldState);
                         return self::ls($data->message, $state);
                     } else {
-                        return $data->message->channel->send("Could not read data: " . json_last_error_msg());
+                        return $data->message->reply("Could not read data: " . json_last_error_msg());
                     }
                 }, function ($error) use ($data) {
                     return self::error($data->message, "Unable to fetch message", $error);
@@ -114,7 +114,7 @@ class Misfit implements PluginInterface
             $x[] = sprintf("*%s*: level %s %s", $part, $d[0], $d[1]);
         }
         $x[] = json_encode($state);
-        return self::send($message->channel, implode(PHP_EOL, $x));
+        return $message->reply(implode(PHP_EOL, $x));
     }
 
     private static function roll(): array

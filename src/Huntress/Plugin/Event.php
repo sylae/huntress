@@ -64,7 +64,7 @@ class Event implements PluginInterface
             $user_tz = "UTC";
         }
 
-        return $data->message->channel->send("", ['embed' => self::createCalendarEmbed($data->guild, $user_tz)]);
+        return $data->message->reply("", ['embed' => self::createCalendarEmbed($data->guild, $user_tz)]);
     }
 
     private static function createCalendarEmbed(Guild $guild, string $tz = "UTC"): MessageEmbed
@@ -110,7 +110,7 @@ class Event implements PluginInterface
 
             $ctxt = self::arg_substr($data->message->content, 1, 1) ?? null;
             if (mb_strlen($ctxt) == 0) {
-                return $data->message->channel->send("Usage: `!setCalendar (channel mention or message URL)`");
+                return $data->message->reply("Usage: `!setCalendar (channel mention or message URL)`");
             }
 
 
@@ -118,7 +118,7 @@ class Event implements PluginInterface
                 return self::fetchMessage($data->huntress, $ctxt)->then(function (Message $importMsg) use ($data) {
                     try {
                         self::setCalendarMessage($importMsg);
-                        return $data->message->channel->send("Calendar set to {$importMsg->getJumpURL()}");
+                        return $data->message->reply("Calendar set to {$importMsg->getJumpURL()}");
                     } catch (Throwable $e) {
                         return self::exceptionHandler($data->message, $e, true);
                     }
@@ -129,7 +129,7 @@ class Event implements PluginInterface
                 ) use ($data) {
                     try {
                         self::setCalendarMessage($importMsg);
-                        return $data->message->channel->send("Calendar set to {$importMsg->getJumpURL()}");
+                        return $data->message->reply("Calendar set to {$importMsg->getJumpURL()}");
                     } catch (Throwable $e) {
                         return self::exceptionHandler($data->message, $e, true);
                     }
@@ -218,13 +218,13 @@ class Event implements PluginInterface
             $text = self::arg_substr($data->message->content, 2);
 
             if (!$time || !$text) {
-                return $data->message->channel->send(self::getHelp());
+                return $data->message->reply(self::getHelp());
             }
 
             if ($time == "remove") {
                 $snow = \Huntress\Snowflake::parse($text);
                 self::removeEvent($snow, $data->message->member);
-                return $data->message->channel->send("If that was your event, it was removed :)");
+                return $data->message->reply("If that was your event, it was removed :)");
             }
 
             // get the user's locale first
@@ -239,7 +239,7 @@ class Event implements PluginInterface
                 $time = self::readTime($time, $user_tz);
                 $time->setTimezone($user_tz);
             } catch (Throwable $e) {
-                return $data->message->channel->send("I couldn't figure out what time `$time` is :(");
+                return $data->message->reply("I couldn't figure out what time `$time` is :(");
             }
 
             $id = \Huntress\Snowflake::generate();
@@ -259,7 +259,7 @@ class Event implements PluginInterface
 
             self::addEvent($data->message, $time, $text, $id);
 
-            return $data->message->channel->send("", ['embed' => $embed]);
+            return $data->message->reply("", ['embed' => $embed]);
 
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, false);

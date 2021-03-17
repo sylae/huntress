@@ -223,7 +223,7 @@ class Management implements PluginInterface
         try {
             $message_tx = Carbon::createFromTimestampMs((int)(round(microtime(true) * 1000)));
             $dstamp_tx = Carbon::createFromTimestampMs((int)(Snowflake::deconstruct($message->id)->timestamp * 1000));
-            return self::send($message->channel, "Pong!")->then(function (
+            return $message->reply("Pong!")->then(function (
                 Message $message
             ) use ($message_tx, $dstamp_tx) {
                 $message_rx = Carbon::createFromTimestampMs((int)(round(microtime(true) * 1000)));

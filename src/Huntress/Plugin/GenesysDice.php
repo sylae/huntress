@@ -180,7 +180,7 @@ class GenesysDice implements PluginInterface
             }
 
             if (array_sum($pool) == 0) {
-                return $data->message->channel->send(self::usage());
+                return $data->message->reply(self::usage());
             }
 
             $rolls = array_fill_keys(array_keys(self::dicePipMap), []);
@@ -223,7 +223,7 @@ class GenesysDice implements PluginInterface
                 $embed->addField(mb_convert_case($type, MB_CASE_TITLE), $x, true);
             }
 
-            return $data->message->channel->send(implode("", $prettyResult), ['embed' => $embed]);
+            return $data->message->reply(implode("", $prettyResult), ['embed' => $embed]);
 
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, false);

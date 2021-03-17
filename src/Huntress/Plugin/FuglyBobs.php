@@ -166,7 +166,7 @@ class FuglyBobs implements PluginInterface
         }
         $x[] = "```";
 
-        return $data->message->channel->send(implode(PHP_EOL, $x),
+        return $data->message->reply(implode(PHP_EOL, $x),
             ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
     }
 

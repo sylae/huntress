@@ -36,6 +36,6 @@ class Snowflake implements PluginInterface
     {
         $snow = \Huntress\Snowflake::generate();
         $fmt = \Huntress\Snowflake::format($snow);
-        return $data->message->channel->send(sprintf("`%s` (`%s`)", $fmt, $snow));
+        return $data->message->reply(sprintf("`%s` (`%s`)", $fmt, $snow));
     }
 }

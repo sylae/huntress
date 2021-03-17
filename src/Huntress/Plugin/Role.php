@@ -120,7 +120,7 @@ class Role implements PluginInterface
 
             $char = trim(self::arg_substr($data->message->content, 1));
             if (in_array(mb_strtolower($char), ["landlord", "landlords"])) {
-                return $data->message->channel->send("", ['files' => ['data/landlords.jpg']]);
+                return $data->message->reply("", ['files' => ['data/landlords.jpg']]);
             } else {
                 return self::toggleRole($data, $char);
             }
@@ -141,7 +141,7 @@ class Role implements PluginInterface
             $roles = self::getValidOptions($data->message->member);
             $inherits = self::getInheritances($data->message->member);
             if ($roles->count() == 0 && $inherits->count() == 0) {
-                return $data->message->channel->send("No roles found! Tell the server owner to bug my owner!");
+                return $data->message->reply("No roles found! Tell the server owner to bug my owner!");
             }
 
             $embed = new MessageEmbed();
@@ -180,7 +180,7 @@ class Role implements PluginInterface
                 }
             }
 
-            return $data->message->channel->send("", ['embed' => $embed]);
+            return $data->message->reply("", ['embed' => $embed]);
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
         }
@@ -222,15 +222,15 @@ class Role implements PluginInterface
             if ($res instanceof \CharlotteDunois\Yasmin\Models\Role) {
                 if ($data->message->member->roles->has($res->id)) {
                     return $data->message->member->removeRole($res)->then(function ($member) use ($data, $res) {
-                        return $data->message->channel->send("Role removed: {$res->name}");
+                        return $data->message->reply("Role removed: {$res->name}");
                     }, function ($error) use ($data, $res) {
-                        return $data->message->channel->send("Unable to remove role  {$res->name}. Error: $error");
+                        return $data->message->reply("Unable to remove role  {$res->name}. Error: $error");
                     });
                 } else {
                     return $data->message->member->addRole($res)->then(function ($member) use ($data, $res) {
-                        return $data->message->channel->send("Role added: {$res->name}");
+                        return $data->message->reply("Role added: {$res->name}");
                     }, function ($error) use ($data, $res) {
-                        return $data->message->channel->send("Unable to add role  {$res->name}. Error: $error");
+                        return $data->message->reply("Unable to add role  {$res->name}. Error: $error");
                     });
 
                 }
@@ -239,10 +239,10 @@ class Role implements PluginInterface
                     return self::similarity($char, $b->name) <=> self::similarity($char, $a->name);
                 });
                 if ($maybe->count() > 0) {
-                    return $data->message->channel->send(sprintf("`%s` not found! Did you mean `!role %s`?", $char,
+                    return $data->message->reply(sprintf("`%s` not found! Did you mean `!role %s`?", $char,
                         $maybe->first()->name));
                 } else {
-                    return $data->message->channel->send("No roles found! Tell the server owner to bug my owner!");
+                    return $data->message->reply("No roles found! Tell the server owner to bug my owner!");
                 }
             }
         } catch (Throwable $e) {
@@ -282,7 +282,7 @@ class Role implements PluginInterface
             }
 
             self::addInheritance($source, $dest);
-            return $data->message->channel->send("Role added to server role inheritance: Having `@{$source->name}` will add `@{$dest->name}`.");
+            return $data->message->reply("Role added to server role inheritance: Having `@{$source->name}` will add `@{$dest->name}`.");
 
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
@@ -322,7 +322,7 @@ class Role implements PluginInterface
             }
 
             self::addRole($role);
-            return $data->message->channel->send("Role added to server bindings: {$role->name}");
+            return $data->message->reply("Role added to server bindings: {$role->name}");
 
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);

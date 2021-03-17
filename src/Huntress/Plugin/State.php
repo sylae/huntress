@@ -46,7 +46,7 @@ class State implements PluginInterface
 
         $ctxt = self::arg_substr($data->message->content, 1, 1) ?? null;
         if (mb_strlen($ctxt) == 0) {
-            return $data->message->channel->send("Usage: `!state [channel] then the rest of your message`");
+            return $data->message->reply("Usage: `!state [channel] then the rest of your message`");
         }
 
         if (is_null($x = self::channelMention($ctxt, $data->message->guild))) {
@@ -61,7 +61,7 @@ class State implements PluginInterface
         $id = \Huntress\Snowflake::format(\Huntress\Snowflake::generate());
 
         if (mb_strlen($state) == 0) {
-            return $data->message->channel->send("Usage: `!state [channel] then the rest of your message`");
+            return $data->message->reply("Usage: `!state [channel] then the rest of your message`");
         }
 
         $embed = new MessageEmbed();
@@ -81,7 +81,7 @@ class State implements PluginInterface
         $promise = $channel->send($notice, ['embed' => $embed]);
         if ($channel->id != $data->message->channel->id) {
             $promise->then(function (Message $x) use ($data) {
-                return $data->message->channel->send("Anonymous statement made in {$x->channel}!");
+                return $data->message->reply("Anonymous statement made in {$x->channel}!");
             });
         }
         return $promise;

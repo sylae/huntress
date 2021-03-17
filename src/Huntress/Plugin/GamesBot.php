@@ -127,7 +127,7 @@ class GamesBot implements PluginInterface
                 "I couldn't figure out who that is. Try using their tag or @ing them?");
         }
         self::addGame($member, $game);
-        return $data->message->channel->send("`{$member->displayName}` has been added to `$game`");
+        return $data->message->reply("`{$member->displayName}` has been added to `$game`");
     }
 
     private static function addGame(GuildMember $member, string $game)
@@ -148,7 +148,7 @@ class GamesBot implements PluginInterface
                 "I couldn't figure out who that is. Try using their tag or @ing them?");
         }
         self::removeGame($member, $game);
-        return $data->message->channel->send("`{$member->displayName}` has been yote from `$game`");
+        return $data->message->reply("`{$member->displayName}` has been yote from `$game`");
     }
 
     private static function removeGame(GuildMember $member, string $game)
@@ -167,7 +167,7 @@ class GamesBot implements PluginInterface
         $games = self::getGames($data->guild);
 
         if (!array_key_exists($game, $games)) {
-            return $data->message->channel->send("No members with `$game` are present on this server");
+            return $data->message->reply("No members with `$game` are present on this server");
         }
 
         $members = array_map(fn($v) => $data->guild->members->get($v), $games[$game]);
@@ -233,10 +233,10 @@ class GamesBot implements PluginInterface
 
 
         if ($getOpt->getOption("no-dm")) {
-            return $data->message->channel->send("", ['embed' => $embed]);
+            return $data->message->reply("", ['embed' => $embed]);
         } else {
             $r = [];
-            $r[] = $data->message->channel->send("📨");
+            $r[] = $data->message->reply("📨");
             $r[] = $data->message->author->createDM()->then(function (DMChannel $dm) use ($embed) {
                 return $dm->send("", ['embed' => $embed]);
             });
