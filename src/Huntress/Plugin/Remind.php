@@ -88,19 +88,7 @@ class Remind implements PluginInterface
             $query->bindValue(1, $rem['idMessage']);
             $query->execute();
 
-            return $channel->fetchMessage($rem['idMessage'])->always(function ($x) use (
-                $channel,
-                $member,
-                $url,
-                $embed
-            ) {
-                if ($x instanceof Message) {
-                    return $x->reply($member . ": " . $url, ['embed' => $embed]);
-                } else {
-                    return $channel->send($member . ": " . $url, ['embed' => $embed]);
-                }
-            });
-
+            return $channel->send($member . ": " . $url, ['embed' => $embed]);
         } catch (Throwable $e) {
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
