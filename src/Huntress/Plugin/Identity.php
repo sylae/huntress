@@ -57,7 +57,7 @@ class Identity implements PluginInterface
         ];
         return $bot->user->setPresence([
             'status' => 'online',
-            'activities' => [['type' => 4, 'name' => $opts[array_rand($opts)]]],
+            'activities' => [['type' => 0, 'name' => $opts[array_rand($opts)]]],
         ]);
     }
 }
