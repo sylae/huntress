@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e30ac74691bc3d1f34c7f1acf1f9099a",
+    "content-hash": "65191c859a2f22ce9af50f48a4362b4c",
     "packages": [
         {
             "name": "aran/yahoo-finance-api",
@@ -3437,12 +3437,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/Yasmin.git",
-                "reference": "76cd88ed9f537acc8aee0cb281533c91110684ae"
+                "reference": "58c7f70cba4cfdc469fdc4b3692318bea5722135"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/76cd88ed9f537acc8aee0cb281533c91110684ae",
-                "reference": "76cd88ed9f537acc8aee0cb281533c91110684ae",
+                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/58c7f70cba4cfdc469fdc4b3692318bea5722135",
+                "reference": "58c7f70cba4cfdc469fdc4b3692318bea5722135",
                 "shasum": ""
             },
             "require": {
@@ -3480,7 +3480,6 @@
                     "CharlotteDunois\\Yasmin\\": "src"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache-2.0"
             ],
@@ -3497,10 +3496,10 @@
             ],
             "description": "Yasmin is a Discord API library for PHP.",
             "support": {
-                "issues": "https://github.com/sylae/Yasmin/issues",
-                "source": "https://github.com/sylae/Yasmin/tree/v0.7.1"
+                "source": "https://github.com/sylae/Yasmin/tree/master",
+                "issues": "https://github.com/sylae/Yasmin/issues"
             },
-            "time": "2021-03-18T12:13:48+00:00"
+            "time": "2021-03-18T13:20:24+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
