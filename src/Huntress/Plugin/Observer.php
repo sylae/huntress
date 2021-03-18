@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Invite;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageAttachment;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
@@ -51,6 +52,7 @@ class Observer implements PluginInterface
         $bot->on("messageReactionAdd", [self::class, "reportHandler"]);
         $bot->on("guildMemberAdd", [self::class, "joinHandler"]);
         $bot->on("guildMemberRemove", [self::class, "leaveHandler"]);
+        $bot->on("inviteCreate", [self::class, "inviteHandler"]);
 
         $eh = EventListener::new()
             ->addCommand("observer")
@@ -318,6 +320,38 @@ class Observer implements PluginInterface
             return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
         } catch (Throwable $e) {
             $member->client->log->warning($e->getMessage(), ['exception' => $e]);
+        }
+    }
+
+    public static function inviteHandler(Invite $invite): ?Promise
+    {
+        try {
+            $info = self::getInfo($invite->guild);
+
+            if (is_null($info) || !$invite->guild->channels->has($info['idChannel'] ?? null)) {
+                return null;
+            }
+
+            $member = $invite->guild->members->get($invite->inviter->id);
+
+            $embed = new MessageEmbed();
+            $embed->setAuthor($invite->inviter->tag)->setTimestamp(time())
+                ->setColor(0x55aace)->setThumbnail($invite->inviter->getDisplayAvatarURL())
+                ->addField("Code", "[{$invite->code}]({$invite->url})", true);
+            if ($member instanceof GuildMember) {
+                $embed->addField("Creator", "{$member->displayName} ({$member->user->tag})", true);
+            } else {
+                $embed->addField("Creator", "{$invite->inviter->tag} ({$invite->inviter})", true);
+            }
+            $exp = Carbon::now()->addSeconds($invite->maxAge);
+            $embed->addField("Channel", $invite->channel, true)
+                ->addField("Expires in", $exp->longRelativeToNowDiffForHumans(2), true)
+                ->addField("Uses", $invite->maxUses, true);
+
+            $msg = "📨 Invite created";
+            return $member->guild->channels->get($info['idChannel'])->send($msg, ['embed' => $embed]);
+        } catch (Throwable $e) {
+            $invite->client->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 }
