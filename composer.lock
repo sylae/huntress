@@ -3290,12 +3290,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/huntress.git",
-                "reference": "317e05967793f975c5194f416ed8892122cdc246"
+                "reference": "5c4103a3ca66bdbec680aa94458e2e554d90cbf2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/huntress/zipball/317e05967793f975c5194f416ed8892122cdc246",
-                "reference": "317e05967793f975c5194f416ed8892122cdc246",
+                "url": "https://api.github.com/repos/sylae/huntress/zipball/5c4103a3ca66bdbec680aa94458e2e554d90cbf2",
+                "reference": "5c4103a3ca66bdbec680aa94458e2e554d90cbf2",
                 "shasum": ""
             },
             "require": {
@@ -3330,7 +3330,7 @@
                 "source": "https://github.com/sylae/huntress/tree/master",
                 "issues": "https://github.com/sylae/huntress/issues"
             },
-            "time": "2021-02-07T15:31:16+00:00"
+            "time": "2021-03-18T08:18:05+00:00"
         },
         {
             "name": "sylae/validator",
@@ -3389,21 +3389,21 @@
         },
         {
             "name": "sylae/word-count",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/word-count.git",
-                "reference": "647875b60a206267c0d70bfc49a5f0667133b468"
+                "reference": "692ade67ea821500ec284fd63dac129525596802"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/word-count/zipball/647875b60a206267c0d70bfc49a5f0667133b468",
-                "reference": "647875b60a206267c0d70bfc49a5f0667133b468",
+                "url": "https://api.github.com/repos/sylae/word-count/zipball/692ade67ea821500ec284fd63dac129525596802",
+                "reference": "692ade67ea821500ec284fd63dac129525596802",
                 "shasum": ""
             },
             "require": {
                 "ext-intl": "*",
-                "php": "~7.1"
+                "php": ">=7.2"
             },
             "require-dev": {
                 "phpunit/phpunit": "^8.2"
@@ -3427,9 +3427,9 @@
             "description": "PHP port of the Javascript iarna/word-count",
             "support": {
                 "issues": "https://github.com/sylae/word-count/issues",
-                "source": "https://github.com/sylae/word-count/tree/master"
+                "source": "https://github.com/sylae/word-count/tree/v1.0.2"
             },
-            "time": "2019-06-19T12:26:04+00:00"
+            "time": "2021-03-18T07:44:24+00:00"
         },
         {
             "name": "sylae/yasmin",
@@ -3437,12 +3437,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/Yasmin.git",
-                "reference": "f8b7d1049e9ba86cc4b4fa0efc570f49ace9d5d5"
+                "reference": "898b17250d7c234ed9301537c4d5ee1e8eeb719d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/f8b7d1049e9ba86cc4b4fa0efc570f49ace9d5d5",
-                "reference": "f8b7d1049e9ba86cc4b4fa0efc570f49ace9d5d5",
+                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/898b17250d7c234ed9301537c4d5ee1e8eeb719d",
+                "reference": "898b17250d7c234ed9301537c4d5ee1e8eeb719d",
                 "shasum": ""
             },
             "require": {
@@ -3500,7 +3500,7 @@
                 "issues": "https://github.com/sylae/Yasmin/issues",
                 "source": "https://github.com/sylae/Yasmin/tree/master"
             },
-            "time": "2021-03-17T13:31:03+00:00"
+            "time": "2021-03-18T07:41:23+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
