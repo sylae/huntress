@@ -3437,12 +3437,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/Yasmin.git",
-                "reference": "58c7f70cba4cfdc469fdc4b3692318bea5722135"
+                "reference": "993f64039380561d42b86016bbc86a737174682c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/58c7f70cba4cfdc469fdc4b3692318bea5722135",
-                "reference": "58c7f70cba4cfdc469fdc4b3692318bea5722135",
+                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/993f64039380561d42b86016bbc86a737174682c",
+                "reference": "993f64039380561d42b86016bbc86a737174682c",
                 "shasum": ""
             },
             "require": {
@@ -3499,7 +3499,7 @@
                 "source": "https://github.com/sylae/Yasmin/tree/master",
                 "issues": "https://github.com/sylae/Yasmin/issues"
             },
-            "time": "2021-03-18T13:20:24+00:00"
+            "time": "2021-03-18T13:39:05+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
