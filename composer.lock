@@ -3437,12 +3437,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/Yasmin.git",
-                "reference": "898b17250d7c234ed9301537c4d5ee1e8eeb719d"
+                "reference": "76cd88ed9f537acc8aee0cb281533c91110684ae"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/898b17250d7c234ed9301537c4d5ee1e8eeb719d",
-                "reference": "898b17250d7c234ed9301537c4d5ee1e8eeb719d",
+                "url": "https://api.github.com/repos/sylae/Yasmin/zipball/76cd88ed9f537acc8aee0cb281533c91110684ae",
+                "reference": "76cd88ed9f537acc8aee0cb281533c91110684ae",
                 "shasum": ""
             },
             "require": {
@@ -3498,9 +3498,9 @@
             "description": "Yasmin is a Discord API library for PHP.",
             "support": {
                 "issues": "https://github.com/sylae/Yasmin/issues",
-                "source": "https://github.com/sylae/Yasmin/tree/master"
+                "source": "https://github.com/sylae/Yasmin/tree/v0.7.1"
             },
-            "time": "2021-03-18T07:41:23+00:00"
+            "time": "2021-03-18T12:13:48+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
