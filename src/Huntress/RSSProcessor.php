@@ -10,7 +10,10 @@ namespace Huntress;
 
 use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\AnnouncementChannel;
+use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use CharlotteDunois\Yasmin\Models\TextChannel;
 use Doctrine\DBAL\Schema\Schema;
 use League\HTMLToMarkdown\HtmlConverter;
 use Throwable;
@@ -63,6 +66,11 @@ class RSSProcessor
      * @var bool
      */
     public $showBody = true;
+
+    /**
+     * @var bool
+     */
+    public $crosspost = true;
 
     public function __construct(Huntress $bot, string $id, string $url, int $interval, array $channels)
     {
@@ -153,7 +161,8 @@ class RSSProcessor
      * Override to change the "default" item deets.
      * @return RSSItem
      */
-    protected function getObject(): RSSItem {
+    protected function getObject(): RSSItem
+    {
         $x = new RSSItem();
         $x->channels = $this->channels;
         if (is_int($this->itemColor)) {
@@ -163,44 +172,37 @@ class RSSProcessor
         return $x;
     }
 
+    /**
+     * Override this method to customize which channel data goes to.
+     *
+     * @param RSSItem $item
+     * @param array   $channels
+     *
+     * @return array the new array of channels to send to
+     */
+    protected function channelCheckCallback(RSSItem $item, array $channels): array
+    {
+        return $channels;
+    }
+
     protected function dataPublishingCallback(RSSItem $item): bool
     {
         try {
             $embed = $this->formatItemCallback($item);
 
             foreach ($item->channels as $channel) {
-                $this->huntress->channels->get($channel)->send("", ['embed' => $embed]);
+                /** @var TextChannel $ch */
+                $ch = $this->huntress->channels->get($channel);
+                $prom = $ch->send("", ['embed' => $embed]);
+                if ($ch instanceof AnnouncementChannel && $this->crosspost) {
+                    $prom->then(fn(Message $m) => $m->crosspost());
+                }
             }
         } catch (Throwable $e) {
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }
         return true;
-    }
-
-    protected function setLastRSS(Carbon $time)
-    {
-        if ($this->getLastRSS() >= $time) {
-            return;
-        }
-        $query = $this->huntress->db->prepare('INSERT INTO rss (`id`, `lastUpdate`) VALUES(?, ?) '
-            . 'ON DUPLICATE KEY UPDATE `lastUpdate` = VALUES(`lastUpdate`);
-        ', ['string', 'datetime']);
-        $query->bindValue(1, $this->id);
-        $query->bindValue(2, $time);
-        $query->execute();
-    }
-
-    /**
-     * Override this method to customize which channel data goes to.
-     *
-     * @param RSSItem $item
-     * @param array  $channels
-     *
-     * @return array the new array of channels to send to
-     */
-    protected function channelCheckCallback(RSSItem $item, array $channels): array {
-        return $channels;
     }
 
     /**
@@ -210,7 +212,8 @@ class RSSProcessor
      *
      * @return MessageEmbed
      */
-    protected function formatItemCallback(RSSItem $item): MessageEmbed {
+    protected function formatItemCallback(RSSItem $item): MessageEmbed
+    {
 
         if (mb_strlen($item->body) > 500) {
             $item->body = substr($item->body, 0, 500) . "...";
@@ -229,19 +232,32 @@ class RSSProcessor
             $embed->setColor($item->color);
         }
 
-        if(mb_strlen($item->author) > 0) {
+        if (mb_strlen($item->author) > 0) {
             $embed->setAuthor($item->author);
         }
 
-        if(mb_strlen($item->category) > 0) {
+        if (mb_strlen($item->category) > 0) {
             $embed->setFooter($item->category);
         }
 
-        if(mb_strlen($item->image) > 0) {
+        if (mb_strlen($item->image) > 0) {
             $embed->setImage($item->image);
         }
 
         return $embed;
+    }
+
+    protected function setLastRSS(Carbon $time)
+    {
+        if ($this->getLastRSS() >= $time) {
+            return;
+        }
+        $query = $this->huntress->db->prepare('INSERT INTO rss (`id`, `lastUpdate`) VALUES(?, ?) '
+            . 'ON DUPLICATE KEY UPDATE `lastUpdate` = VALUES(`lastUpdate`);
+        ', ['string', 'datetime']);
+        $query->bindValue(1, $this->id);
+        $query->bindValue(2, $time);
+        $query->execute();
     }
 
     public function sortObjects($a, $b): int
