@@ -109,7 +109,7 @@ class Links implements PluginInterface
 
         $k = self::normalizeKey($tp[2] ?? "");
         if (array_key_exists($k, $links)) {
-            $data->message->reply(sprintf("`%s` already exists! To change it, please delete and re-add", $k));
+            return $data->message->reply(sprintf("`%s` already exists! To change it, please delete and re-add", $k));
         } else {
             try {
                 $val = trim(self::arg_substr($data->message->content, 3) ?? "");
