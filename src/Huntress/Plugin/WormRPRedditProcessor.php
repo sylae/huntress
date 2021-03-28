@@ -8,8 +8,6 @@
 namespace Huntress\Plugin;
 
 
-use Carbon\Carbon;
-use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use Huntress\Huntress;
@@ -37,7 +35,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
     protected function channelCheckCallback(RSSItem $item, array $channels): array
     {
         $channels[] = match ($item->category) {
-            "Character", "Equipment", "Lore", "Group" => 386943351062265888,
+            "Character", "Equipment", "Lore", "Group", "Claim" => 386943351062265888,
             "Meta" => 118981144464195584,
             default => 409043591881687041,
         };
