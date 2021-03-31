@@ -45,7 +45,7 @@ class Links implements PluginInterface
         $t = $schema->createTable("links");
         $t->addColumn("idGuild", "bigint", ["unsigned" => true]);
         $t->addColumn("name", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
-        $t->addColumn("content", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("content", "text", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->setPrimaryKey(["idGuild", "name"]);
     }
 
