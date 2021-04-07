@@ -42,25 +42,25 @@ class CauldronCup implements PluginInterface
 {
     use PluginHelperTrait;
 
-    const NAME = "Cauldron Cup Season Five";
+    const NAME = "Cauldron Blitz Cup Season One";
 
     const NOTE = <<<NOTE
-**Welcome to Cauldron Cup Season Five!**
+**Welcome to Cauldron Blitz Cup Season One!**
 As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **72 hours** to complete your snips and submit them for processing.
 
-Your submission should be around **1k words**, no biggie if more or less but shoot for that. The link to submit snips is pinned in <#565085613955612702>. Good luck!
+Your submission should be no more than **500 words**. The link to submit snips is pinned in <#565085613955612702>. Good luck!
 
 Competitors have permission to pin anything they might find useful. Please pin your characters once you've chosen them! :)
 
 __What you need to do:__
-1. Pick a character! Your opponent will do the same.
-2. Write a snippet featuring the two characters within the genre and including (as loosly or tightly as you want) the theme.
-3. Submit your snippet within 72 hours of this post to the form.
+1. Veto a prompt! Your opponent will do the same.
+2. Write a snippet about the remaining prompt.
+3. Submit your snippet within 48 hours of this post to the form.
 
 Please write your posts in Markdown format, with a blank line between paragraphs. Here's a cheatsheet: https://commonmark.org/help/
 
-This round's **genre** is: *%s*
-Your **theme** is: *%s*
+Your prompts are numbers **%s**.
+Look them up here: https://syl.ae/cauldroncup/4q2fws
 NOTE;
 
     public static function register(Huntress $bot)
@@ -335,13 +335,13 @@ NOTE;
             $info = MatchVoting::getMatchInfo($matchID, $message->guild);
 
             $embed = new MessageEmbed();
-            $embed->setTitle(self::NAME . " - {$match[0]['round']}, {$match[0]['theme']}");
+            $embed->setTitle(self::NAME . " - Prompt {$match[0]['round']}");
             $embed->setTimestamp($info->duedate->timestamp);
             $embed->setDescription(sprintf("Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]",
                 $info->duedate->toCookieString(), $info->duedate->timestamp));
             $counter = 1;
 
-            $embed->addField("Characters", "{$match[0]['charA']} / {$match[0]['charB']}");
+            // $embed->addField("Characters", "{$match[0]['charA']} / {$match[0]['charB']}");
 
             if (!is_null($getOpt->getOption("note"))) {
                 $embed->addField("Note", $getOpt->getOption("note"));
@@ -376,7 +376,7 @@ NOTE;
         $query = $bot->db->prepare('UPDATE match_matches set created = ?, duedate = ? where idMatch = ?',
             ['datetime', 'datetime', 'integer']);
         $query->bindValue(1, Carbon::now());
-        $query->bindValue(2, Carbon::now()->addDays(2));
+        $query->bindValue(2, Carbon::now()->addDays(1));
         $query->bindValue(3, $matchID);
         $query->execute();
     }
