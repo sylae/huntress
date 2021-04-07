@@ -46,7 +46,14 @@ class Ironreach implements PluginInterface
 
         $bot->eventManager->addEventListener(EventListener::new()
             ->addCommand("jury")
+            ->addGuild(673383165943087115)
             ->setCallback([self::class, "jury"])
+        );
+
+        $bot->eventManager->addEventListener(EventListener::new()
+            ->addCommand("talkingstick")
+            ->addGuild(673383165943087115)
+            ->setCallback([self::class, "talkingstick"])
         );
 
         $bot->eventManager->addEventListener(EventListener::new()
@@ -78,7 +85,7 @@ class Ironreach implements PluginInterface
         );
     }
 
-    public static function voiceChat(EventData $data)
+    public static function voiceChat(EventData $data): ?PromiseInterface
     {
         try {
             $p = new Permission("p.ironreach.changevc", $data->huntress, false);
@@ -118,11 +125,25 @@ class Ironreach implements PluginInterface
             /** @var TextChannel $vtc */
             $vtc = $bot->guilds->get(673383165943087115)->channels->get(747227035495170218);
             $w = ['voice', 'text', 'chat'];
-            $vtc->setName($w[array_rand($w)] ."-".$w[array_rand($w)]."-".$w[array_rand($w)]);
+            $vtc->setName($w[array_rand($w)] . "-" . $w[array_rand($w)] . "-" . $w[array_rand($w)]);
 
             return all($x);
         } catch (Throwable $e) {
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
+        }
+    }
+
+    public static function talkingstick(EventData $data): ?PromiseInterface
+    {
+        try {
+            $x = [];
+            $x[] = $data->guild->channels->get(747153810392350740)->send(sprintf("<@&741883050278912050>: %s has asked for the talking stick!",
+                $data->message->member));
+            $x[] = $data->message->channel->send("Your request to get the Talking Stick has been relayed to staff.");
+            $x[] = $data->message->delete();
+            return all($x);
+        } catch (Throwable $e) {
+            return self::exceptionHandler($data->message, $e);
         }
     }
 
