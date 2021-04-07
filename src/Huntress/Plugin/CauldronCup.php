@@ -46,7 +46,7 @@ class CauldronCup implements PluginInterface
 
     const NOTE = <<<NOTE
 **Welcome to Cauldron Blitz Cup Season One!**
-As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **72 hours** to complete your snips and submit them for processing.
+As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **48 hours** to complete your snips and submit them for processing.
 
 Your submission should be no more than **500 words**. The link to submit snips is pinned in <#565085613955612702>. Good luck!
 
