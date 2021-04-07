@@ -335,13 +335,14 @@ NOTE;
             $info = MatchVoting::getMatchInfo($matchID, $message->guild);
 
             $embed = new MessageEmbed();
-            $embed->setTitle(self::NAME . " - Prompt {$match[0]['round']}");
+            $embed->setTitle(self::NAME . " - Prompt № {$match[0]['round']}");
             $embed->setTimestamp($info->duedate->timestamp);
             $embed->setDescription(sprintf("Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]",
                 $info->duedate->toCookieString(), $info->duedate->timestamp));
             $counter = 1;
 
             // $embed->addField("Characters", "{$match[0]['charA']} / {$match[0]['charB']}");
+            $embed->addField("Prompt", "{$match[0]['charA']}");
 
             if (!is_null($getOpt->getOption("note"))) {
                 $embed->addField("Note", $getOpt->getOption("note"));
