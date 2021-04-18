@@ -67,9 +67,9 @@ class DiceResult
     {
         $embed = new MessageEmbed();
         if (is_string($this->overrideName)) {
-            $embed->setAuthor($this->overrideName, $this->overridePic ?? $this->member->user->getAvatarURL(64) ?? null);
+            $embed->setAuthor($this->overrideName, $this->overridePic ?? $this->member->user->getDisplayAvatarURL(64) ?? null);
         } elseif ($this->member instanceof GuildMember) {
-            $embed->setAuthor($this->member->displayName, $this->member->user->getAvatarURL(64) ?? null);
+            $embed->setAuthor($this->member->displayName, $this->member->user->getDisplayAvatarURL(64) ?? null);
         }
 
         if (!is_null($this->overrideColor)) {
