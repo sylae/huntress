@@ -150,7 +150,7 @@ class EventManager
                 $data->user = $message->author;
                 $data->message = $message;
                 $match = [];
-                if (preg_match("/^!(\w+)(\s|$)/", $message->content, $match)) {
+                if (preg_match("/^!(.+?)(\s|$)/", $message->content, $match)) {
                     $data->command = $match[1];
                 }
                 break;
