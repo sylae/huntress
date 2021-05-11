@@ -52,6 +52,12 @@ class IFunny implements PluginInterface
             if ($att->width < 100 || $att->height < 100 || $att->size > 1024 * 1024 * 10) {
                 continue;
             }
+
+            // only fire on some images
+            if (random_int(1, 10) != 1) {
+                continue;
+            }
+
             $x[] = URLHelpers::resolveURLToData($att->url)->then(
                 function (string $bin) use ($data, $att) {
                     try {
