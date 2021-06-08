@@ -31,21 +31,24 @@ class FuglyBobs implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addCommand("fb")
-            ->addGuild(786722067922944020)
-            ->setCallback([self::class, "fb"])
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("fb")
+                ->addGuild(786722067922944020)
+                ->setCallback([self::class, "fb"])
         );
 
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addEvent("dbSchema")
-            ->setCallback([self::class, "db"])
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addEvent("dbSchema")
+                ->setCallback([self::class, "db"])
         );
 
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addChannel(self::CHANNEL)
-            ->addEvent('message')
-            ->setCallback([self::class, "messageListener"])
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addChannel(self::CHANNEL)
+                ->addEvent('message')
+                ->setCallback([self::class, "messageListener"])
         );
     }
 
@@ -62,7 +65,9 @@ class FuglyBobs implements PluginInterface
 
     public static function messageListener(EventData $data): ?PromiseInterface
     {
-        $query = $data->huntress->db->prepare('replace into fuglybobs_posts (idMessage, idMember, time, wordcount) values (?, ?, ?, ?)');
+        $query = $data->huntress->db->prepare(
+            'replace into fuglybobs_posts (idMessage, idMember, time, wordcount) values (?, ?, ?, ?)'
+        );
         $wc = Wordcount::count($data->message->content);
 
         $query->bindValue(1, $data->message->id, 'integer');
@@ -72,13 +77,11 @@ class FuglyBobs implements PluginInterface
         if (!$query->execute()) {
             $data->huntress->log->warning("FuglyBob scanner failed to insert message id {$data->message->id}");
         }
-
     }
 
     public static function fb(EventData $data): ?PromiseInterface
     {
         try {
-
             $arg = self::_split($data->message->content)[1] ?? "list";
 
             switch ($arg) {
@@ -99,12 +102,8 @@ class FuglyBobs implements PluginInterface
                     $ch = $data->guild->channels->get(self::CHANNEL);
                     $data->message->channel->send("Beginning $ch (`#{$ch->name}`) rescan...");
                     return self::_archive($ch, $data);
-
-
             }
             return $data->message->channel->send($arg);
-
-
         } catch (\Throwable $e) {
             return self::exceptionHandler($data->message, $e);
         }
@@ -114,15 +113,18 @@ class FuglyBobs implements PluginInterface
     {
         $stats = self::getUserStats($data->huntress);
 
-        uasort($stats, function ($b, $a) {
-            $x = $a['posts'] <=> $b['posts'];
-            $y = $a['wc'] <=> $b['wc'];
+        uasort(
+            $stats,
+            function ($b, $a) {
+                $x = $a['posts'] <=> $b['posts'];
+                $y = $a['wc'] <=> $b['wc'];
 
-            if ($x == 0) {
-                return $y;
+                if ($x == 0) {
+                    return $y;
+                }
+                return $x;
             }
-            return $x;
-        });
+        );
 
         $mwidth = [];
 
@@ -131,43 +133,51 @@ class FuglyBobs implements PluginInterface
             $mwidth[$k] = mb_strwidth($v);
         }
 
-        $fmt = array_map(function ($v, $k) use ($data, &$mwidth) {
-            $x = [];
+        $fmt = array_map(
+            function ($v, $k) use ($data, &$mwidth) {
+                $x = [];
 
-            $mem = $data->huntress->users->get($k);
-            if (!$mem) {
-                $x[0] = $k;
-            } else {
-                $x[0] = $mem->tag;
-            }
+                $mem = $data->huntress->users->get($k);
+                if (!$mem) {
+                    $x[0] = $k;
+                } else {
+                    $x[0] = $mem->tag;
+                }
 
-            $x[1] = number_format($v['posts'], 0);
-            $x[2] = number_format($v['wc'], 0);
+                $x[1] = number_format($v['posts'], 0);
+                $x[2] = number_format($v['wc'], 0);
 
-            foreach ($x as $kk => $vv) {
-                $mwidth[$kk] = max($mwidth[$kk], mb_strwidth($vv));
-            }
-            return $x;
-        }, $stats, array_keys($stats));
+                foreach ($x as $kk => $vv) {
+                    $mwidth[$kk] = max($mwidth[$kk], mb_strwidth($vv));
+                }
+                return $x;
+            },
+            $stats,
+            array_keys($stats)
+        );
 
         $x = [];
         $x[] = "```";
-        $x[] = sprintf("%s  %s  %s",
-            str_pad($cols[0], $mwidth[0], " ", STR_PAD_RIGHT),
-            str_pad($cols[1], $mwidth[1], " ", STR_PAD_LEFT),
-            str_pad($cols[2], $mwidth[2], " ", STR_PAD_LEFT)
+        $x[] = sprintf(
+            "%s  %s  %s",
+            self::mb_str_pad($cols[0], $mwidth[0], " ", STR_PAD_RIGHT),
+            self::mb_str_pad($cols[1], $mwidth[1], " ", STR_PAD_LEFT),
+            self::mb_str_pad($cols[2], $mwidth[2], " ", STR_PAD_LEFT)
         );
         foreach ($fmt as $v) {
-            $x[] = sprintf("%s  %s  %s",
-                str_pad($v[0], $mwidth[0], " ", STR_PAD_RIGHT),
-                str_pad($v[1], $mwidth[1], " ", STR_PAD_LEFT),
-                str_pad($v[2], $mwidth[2], " ", STR_PAD_LEFT)
+            $x[] = sprintf(
+                "%s  %s  %s",
+                self::mb_str_pad($v[0], $mwidth[0], " ", STR_PAD_RIGHT),
+                self::mb_str_pad($v[1], $mwidth[1], " ", STR_PAD_LEFT),
+                self::mb_str_pad($v[2], $mwidth[2], " ", STR_PAD_LEFT)
             );
         }
         $x[] = "```";
 
-        return $data->message->reply(implode(PHP_EOL, $x),
-            ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
+        return $data->message->reply(
+            implode(PHP_EOL, $x),
+            ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]
+        );
     }
 
     private static function getUserStats(Huntress $bot): array
@@ -197,6 +207,57 @@ class FuglyBobs implements PluginInterface
         return $members;
     }
 
+    /**
+     * Multibyte String Pad
+     *
+     * Functionally, the equivalent of the standard str_pad function, but is capable of successfully padding multibyte
+     * strings.
+     *
+     * @link    https://gist.github.com/rquadling/c9ff12755fc412a6f0d38f6ac0d24fb1
+     * @license unknown
+     *
+     * @param string $input    The string to be padded.
+     * @param int    $length   The length of the resultant padded string.
+     * @param string $padding  The string to use as padding. Defaults to space.
+     * @param int    $padType  The type of padding. Defaults to STR_PAD_RIGHT.
+     * @param string $encoding The encoding to use, defaults to UTF-8.
+     *
+     * @return string A padded multibyte string.
+     */
+    public static function mb_str_pad(
+        string $input,
+        int $length,
+        string $padding = ' ',
+        int $padType = STR_PAD_RIGHT,
+        string $encoding = 'UTF-8'
+    ) {
+        $result = $input;
+        if (($paddingRequired = $length - mb_strlen($input, $encoding)) > 0) {
+            switch ($padType) {
+                case STR_PAD_LEFT:
+                    $result =
+                        mb_substr(str_repeat($padding, $paddingRequired), 0, $paddingRequired, $encoding) .
+                        $input;
+                    break;
+                case STR_PAD_RIGHT:
+                    $result =
+                        $input .
+                        mb_substr(str_repeat($padding, $paddingRequired), 0, $paddingRequired, $encoding);
+                    break;
+                case STR_PAD_BOTH:
+                    $leftPaddingLength = floor($paddingRequired / 2);
+                    $rightPaddingLength = $paddingRequired - $leftPaddingLength;
+                    $result =
+                        mb_substr(str_repeat($padding, $leftPaddingLength), 0, $leftPaddingLength, $encoding) .
+                        $input .
+                        mb_substr(str_repeat($padding, $rightPaddingLength), 0, $rightPaddingLength, $encoding);
+                    break;
+            }
+        }
+
+        return $result;
+    }
+
     public static function _archive(TextChannel $ch, EventData $data, Collection $carry = null)
     {
         try {
@@ -206,44 +267,55 @@ class FuglyBobs implements PluginInterface
                 $args = ['before' => $carry->min('id'), 'limit' => 100];
             }
 
-            return $ch->fetchMessages($args)->then(function ($msgs) use ($ch, $data, $carry) {
-                try {
-                    if ($msgs->count() == 0) {
+            return $ch->fetchMessages($args)->then(
+                function ($msgs) use ($ch, $data, $carry) {
+                    try {
+                        if ($msgs->count() == 0) {
+                            $query = $data->huntress->db->prepare(
+                                'replace into fuglybobs_posts (idMessage, idMember, time, wordcount) values (?, ?, ?, ?)'
+                            );
+                            /** @var Message $msg */
+                            foreach ($carry as $msg) {
+                                $wc = Wordcount::count($msg->content);
 
-                        $query = $data->huntress->db->prepare('replace into fuglybobs_posts (idMessage, idMember, time, wordcount) values (?, ?, ?, ?)');
-                        /** @var Message $msg */
-                        foreach ($carry as $msg) {
-                            $wc = Wordcount::count($msg->content);
-
-                            $query->bindValue(1, $msg->id, 'integer');
-                            $query->bindValue(2, $msg->author->id, 'integer');
-                            $query->bindValue(3, $msg->createdAt, 'datetime');
-                            $query->bindValue(4, $wc, 'integer');
-                            if (!$query->execute()) {
-                                $data->huntress->log->warning("FuglyBob scanner failed to insert message id $msg->id");
+                                $query->bindValue(1, $msg->id, 'integer');
+                                $query->bindValue(2, $msg->author->id, 'integer');
+                                $query->bindValue(3, $msg->createdAt, 'datetime');
+                                $query->bindValue(4, $wc, 'integer');
+                                if (!$query->execute()) {
+                                    $data->huntress->log->warning(
+                                        "FuglyBob scanner failed to insert message id $msg->id"
+                                    );
+                                }
                             }
-                        }
 
-                        return $data->message->channel->send("Done! {$carry->count()} messages on record.");
-                    } else {
-                        if (is_null($carry)) {
-                            $carry = $msgs;
+                            return $data->message->channel->send("Done! {$carry->count()} messages on record.");
                         } else {
-                            $carry = $carry->merge($msgs);
-                            if ($carry->count() % 1000 == 0) {
-                                $rate = $carry->count() / (time() - $data->message->createdTimestamp);
-                                $data->message->channel->send(sprintf("Progress: %s messages (%s/sec)", $carry->count(),
-                                    number_format($rate)));
+                            if (is_null($carry)) {
+                                $carry = $msgs;
+                            } else {
+                                $carry = $carry->merge($msgs);
+                                if ($carry->count() % 1000 == 0) {
+                                    $rate = $carry->count() / (time() - $data->message->createdTimestamp);
+                                    $data->message->channel->send(
+                                        sprintf(
+                                            "Progress: %s messages (%s/sec)",
+                                            $carry->count(),
+                                            number_format($rate)
+                                        )
+                                    );
+                                }
                             }
+                            return call_user_func([self::class, "_archive"], $ch, $data, $carry);
                         }
-                        return call_user_func([self::class, "_archive"], $ch, $data, $carry);
+                    } catch (\Throwable $e) {
+                        return self::exceptionHandler($data->message, $e);
                     }
-                } catch (\Throwable $e) {
-                    return self::exceptionHandler($data->message, $e);
                 }
-            });
+            );
         } catch (\Throwable $e) {
             return self::exceptionHandler($data->message, $e);
         }
     }
+
 }
