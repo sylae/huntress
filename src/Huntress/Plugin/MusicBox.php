@@ -40,7 +40,7 @@ class MusicBox implements PluginInterface
 
     public static function playHandler(EventData $data): PromiseInterface
     {
-        $p = new Permission("p.musicbox.play", $data->huntress, false);
+        $p = new Permission("p.musicbox.play", $data->huntress, true);
         $p->addMessageContext($data->message);
         if (!$p->resolve()) {
             return $p->sendUnauthorizedMessage($data->message->channel);
