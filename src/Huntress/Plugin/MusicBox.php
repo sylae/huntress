@@ -112,7 +112,7 @@ class MusicBox implements PluginInterface
                                         if (!file_exists($filename)) {
                                             // failed to dl. why?
                                             return $data->message->reply(
-                                                "Failed! Please send the below files to keira. code {$resp['code']}",
+                                                "Failed! Please send the below files to <@297969955356540929> (`keira#7829`). code {$resp['code']}",
                                                 [
                                                     'files' => [
                                                         ['name' => 'stdout.txt', 'data' => $resp['stdout']],
