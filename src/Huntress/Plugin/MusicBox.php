@@ -79,70 +79,74 @@ class MusicBox implements PluginInterface
             escapeshellarg($songURL)
         );
 
-        return $data->message->reply("💽")->then(function (Message $reply) use ($data, $dlCMD, $filename, $vc) {
-            return self::cmd($dlCMD . " -j", $data->huntress)->then(
-                function ($resp) use ($data, $dlCMD, $reply, $filename, $vc) {
-                    try {
-                        $songInfo = json_decode($resp['stdout'], true);
-                        $embed = new MessageEmbed();
-                        $embed->setAuthor(
-                            $songInfo['artist'] ?? $songInfo['creator'] ?? $songInfo['channel'] ?? $songInfo['uploader'],
-                            $data->huntress->user->getAvatarURL(),
-                            $songInfo['channel_url'] ?? $songInfo['uploader_url']
-                        );
-                        $embed->addField("Duration", $songInfo['duration'], true);
-                        $embed->addField("Filesize", $songInfo['filesize'], true);
-                        $embed->setTitle($songInfo['track'] ?? $songInfo['title'] ?? null);
-                        $embed->setURL($songInfo['webpage_url'] ?? null);
-                        $embed->setThumbnail($songInfo['thumbnail'] ?? null);
-                        $embed->setFooter(
-                            "Requested by {$data->message->member->displayName}.",
-                            $data->message->author->getAvatarURL()
-                        );
-                        $embed->setDescription(
-                            "Attempting download and playback of `{$songInfo['extractor']}`//`{$songInfo['id']}`"
-                        );
-                        if (file_exists($filename)) {
-                            unlink($filename);
-                        }
-                        return $reply->edit($reply->content, ['embed' => $embed])->then(
-                            function (Message $reply) use ($data, $dlCMD, $songInfo, $filename, $vc) {
-                                return self::cmd($dlCMD, $data->huntress)->then(
-                                    function ($resp) use ($data, $dlCMD, $reply, $songInfo, $filename, $vc) {
-                                        if (!file_exists($filename)) {
-                                            // failed to dl. why?
-                                            return $data->message->reply(
-                                                "Failed! Please send the below files to <@297969955356540929> (`keira#7829`). code {$resp['code']}",
-                                                [
-                                                    'files' => [
-                                                        ['name' => 'stdout.txt', 'data' => $resp['stdout']],
-                                                        ['name' => 'stderr.txt', 'data' => $resp['stderr']],
-                                                        [
-                                                            'name' => 'songinfo.json',
-                                                            'data' => json_encode($songInfo, JSON_PRETTY_PRINT),
-                                                        ],
-                                                    ],
-                                                ]
-                                            );
-                                        }
-
-                                        // we got the song!
-                                        return self::cmd(
-                                            sprintf("node musicbox/playFile.js %s %s", $vc->id, $filename),
-                                            $data->huntress
-                                        )->then(function () use ($filename) {
-                                            unlink($filename);
-                                        });
-                                    }
-                                );
+        return $data->message->reply("💽")->then(
+            function (Message $reply) use ($data, $dlCMD, $filename, $vc, $songURL) {
+                return self::cmd($dlCMD . " -j", $data->huntress)->then(
+                    function ($resp) use ($data, $dlCMD, $reply, $filename, $vc, $songURL) {
+                        try {
+                            $songInfo = json_decode($resp['stdout'], true);
+                            $embed = new MessageEmbed();
+                            $embed->setAuthor(
+                                $songInfo['artist'] ?? $songInfo['creator'] ?? $songInfo['channel'] ?? $songInfo['uploader'] ?? "Author",
+                                $data->huntress->user->getAvatarURL(),
+                                $songInfo['channel_url'] ?? $songInfo['uploader_url'] ?? $songURL
+                            );
+                            $embed->addField("Duration", $songInfo['duration'] ?? "Unknown", true);
+                            $embed->addField("Filesize", $songInfo['filesize'] ?? "Unknown", true);
+                            $embed->setTitle($songInfo['track'] ?? $songInfo['title'] ?? "Unknown song");
+                            $embed->setURL($songInfo['webpage_url'] ?? $songURL);
+                            if (!is_null($songInfo['thumbnail'] ?? null)) {
+                                $embed->setThumbnail($songInfo['thumbnail']);
                             }
-                        );
-                    } catch (\Throwable $e) {
-                        return self::exceptionHandler($data->message, $e);
+                            $embed->setFooter(
+                                "Requested by {$data->message->member->displayName}.",
+                                $data->message->author->getAvatarURL()
+                            );
+                            $embed->setDescription(
+                                "Attempting download and playback of `{$songInfo['extractor']}`//`{$songInfo['id']}`"
+                            );
+                            if (file_exists($filename)) {
+                                unlink($filename);
+                            }
+                            return $reply->edit($reply->content, ['embed' => $embed])->then(
+                                function (Message $reply) use ($data, $dlCMD, $songInfo, $filename, $vc) {
+                                    return self::cmd($dlCMD, $data->huntress)->then(
+                                        function ($resp) use ($data, $dlCMD, $reply, $songInfo, $filename, $vc) {
+                                            if (!file_exists($filename)) {
+                                                // failed to dl. why?
+                                                return $data->message->reply(
+                                                    "Failed! Please send the below files to <@297969955356540929> (`keira#7829`). code {$resp['code']}",
+                                                    [
+                                                        'files' => [
+                                                            ['name' => 'stdout.txt', 'data' => $resp['stdout']],
+                                                            ['name' => 'stderr.txt', 'data' => $resp['stderr']],
+                                                            [
+                                                                'name' => 'songinfo.json',
+                                                                'data' => json_encode($songInfo, JSON_PRETTY_PRINT),
+                                                            ],
+                                                        ],
+                                                    ]
+                                                );
+                                            }
+
+                                            // we got the song!
+                                            return self::cmd(
+                                                sprintf("node musicbox/playFile.js %s %s", $vc->id, $filename),
+                                                $data->huntress
+                                            )->then(function () use ($filename) {
+                                                unlink($filename);
+                                            });
+                                        }
+                                    );
+                                }
+                            );
+                        } catch (\Throwable $e) {
+                            return self::exceptionHandler($data->message, $e);
+                        }
                     }
-                }
-            );
-        });
+                );
+            }
+        );
     }
 
     protected static function cmd(string $command, Huntress $bot): PromiseInterface
