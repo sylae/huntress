@@ -31,25 +31,33 @@ class ServerActivity implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addEvent("message")
-            ->setCallback([self::class, "messageRX"])
-        );
+        if (self::isTestingClient()) {
+            $bot->log->debug("Not adding serveractivity on testing.");
+        } else {
+            $bot->eventManager->addEventListener(
+                EventListener::new()
+                    ->addEvent("message")
+                    ->setCallback([self::class, "messageRX"])
+            );
 
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addEvent("guildCreate")
-            ->setCallback([self::class, "guildCreate"])
-        );
+            $bot->eventManager->addEventListener(
+                EventListener::new()
+                    ->addEvent("guildCreate")
+                    ->setCallback([self::class, "guildCreate"])
+            );
 
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->setPeriodic(6)
-            ->setCallback([self::class, "updateRRD"])
-        );
+            $bot->eventManager->addEventListener(
+                EventListener::new()
+                    ->setPeriodic(6)
+                    ->setCallback([self::class, "updateRRD"])
+            );
 
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addCommand("messagestats")
-            ->setCallback([self::class, "statsHandler"])
-        );
+            $bot->eventManager->addEventListener(
+                EventListener::new()
+                    ->addCommand("messagestats")
+                    ->setCallback([self::class, "statsHandler"])
+            );
+        }
     }
 
     public static function updateRRD(Huntress $bot): ?PromiseInterface
@@ -129,9 +137,10 @@ class ServerActivity implements PluginInterface
                 $files[] = ['name' => "{$data->guild->id}_messageactivity_$k.png", 'data' => $d];
             }
 
-            return $data->message->reply("", ['files' => $files])->then(null,
-                fn($e) => self::exceptionHandler($data->message, $e, true));
-
+            return $data->message->reply("", ['files' => $files])->then(
+                null,
+                fn($e) => self::exceptionHandler($data->message, $e, true)
+            );
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
         }

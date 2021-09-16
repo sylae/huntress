@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@discordjs/opus": "^0.5.3",
+    "@discordjs/voice": "^0.6.0",
+    "bufferutil": "^4.0.3",
+    "eris": "^0.15.1",
+    "erlpack": "github:abalabahaha/erlpack",
+    "pako": "^1.0.11",
+    "sodium-native": "3.2",
+    "zlib-sync": "^0.1.7"
+  }
+}

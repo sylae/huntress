@@ -2,3 +2,7 @@
 
 git pull --recurse-submodules
 composer install --no-progress --ignore-platform-reqs
+
+cd musicbox
+npm install
+cd ..
