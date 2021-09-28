@@ -29,18 +29,23 @@ class User implements PluginInterface
     public static function register(Huntress $bot)
     {
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "user", [self::class, "process"]);
+        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "av", [self::class, "av"]);
     }
 
     public static function process(Huntress $bot, Message $message): ?Promise
     {
         try {
-            $user = self::parseGuildUser($message->guild,
-                    str_replace(self::_split($message->content)[0], "", $message->content)) ?? $message->member;
+            $user = self::parseGuildUser(
+                    $message->guild,
+                    str_replace(self::_split($message->content)[0], "", $message->content)
+                ) ?? $message->member;
 
             $ur = [];
-            foreach ($user->roles->sortCustom(function ($a, $b) {
-                return $b->position <=> $a->position;
-            }) as $id => $role) {
+            foreach (
+                $user->roles->sortCustom(function ($a, $b) {
+                    return $b->position <=> $a->position;
+                }) as $id => $role
+            ) {
                 if ($role->name == "@everyone") {
                     continue;
                 }
@@ -61,8 +66,10 @@ class User implements PluginInterface
                 ->addField("Nick", $user->nickname ?? "<unset>", true)
                 ->addField("Color", $user->displayHexColor ?? "<unset>", true);
 
-            $roles = MessageHelpers::splitMessage(implode("\n", $ur),
-                ['maxLength' => 1024]);
+            $roles = MessageHelpers::splitMessage(
+                implode("\n", $ur),
+                ['maxLength' => 1024]
+            );
             $firstRole = true;
             foreach ($roles as $role) {
                 $embed->addField($firstRole ? "Roles" : "Roles (cont.)", $role);
@@ -87,5 +94,19 @@ class User implements PluginInterface
             }
         }
         return $perm;
+    }
+
+    public static function av(Huntress $bot, Message $message): ?Promise
+    {
+        try {
+            $user = self::parseGuildUser(
+                    $message->guild,
+                    str_replace(self::_split($message->content)[0], "", $message->content)
+                ) ?? $message->member;
+
+            return self::send($message->channel, $user->user->tag . "'s av: " . $user->user->getDisplayAvatarURL());
+        } catch (Throwable $e) {
+            return self::exceptionHandler($message, $e);
+        }
     }
 }
