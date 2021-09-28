@@ -89,7 +89,7 @@ class MusicBox implements PluginInterface
                             $embed->setAuthor(
                                 $songInfo['artist'] ?? $songInfo['creator'] ?? $songInfo['channel'] ?? $songInfo['uploader'] ?? "Author",
                                 $data->huntress->user->getAvatarURL(),
-                                $songInfo['channel_url'] ?? $songInfo['uploader_url'] ?? $songURL
+                                $songInfo['channel_url'] ?? $songInfo['uploader_url'] ?? $songURL ?? "https://example.com"
                             );
                             $embed->addField("Duration", $songInfo['duration'] ?? "Unknown", true);
                             $embed->addField("Filesize", $songInfo['filesize'] ?? "Unknown", true);
