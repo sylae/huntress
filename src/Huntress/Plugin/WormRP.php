@@ -398,7 +398,7 @@ class WormRP implements PluginInterface
                            'wiki' => URLHelpers::resolveURLToData(
                                "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . urlencode(
                                    $char
-                               ) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image"
+                               ) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image|limit=5"
                            ),
                            'reddit' => URLHelpers::resolveURLToData(
                                "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode(
