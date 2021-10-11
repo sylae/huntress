@@ -1,7 +1,7 @@
 #!/bin/sh -x
 
 git pull --recurse-submodules
-composer install --no-progress --ignore-platform-reqs
+composer install --no-progress
 
 cd musicbox
 npm install
