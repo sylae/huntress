@@ -43,7 +43,7 @@ class IFunny implements PluginInterface
     {
         $p = new Permission("p.ifunny", $data->huntress, false);
         $p->addMessageContext($data->message);
-        if (!$p->resolve() || $data->message->attachments->count() == 0) {
+        if (!$p->resolve() || $data->message->author->bot || $data->message->attachments->count() == 0) {
             return null;
         }
 
