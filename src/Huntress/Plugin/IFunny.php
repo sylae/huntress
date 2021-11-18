@@ -53,8 +53,10 @@ class IFunny implements PluginInterface
                 continue;
             }
 
-            // only fire on some images
-            if (random_int(1, 10) != 1) {
+            // only fire on some images unless override flag
+            $p = new Permission("p.ifunny.always", $data->huntress, false);
+            $p->addMessageContext($data->message);
+            if (!$p->resolve() && random_int(1, 10) != 1) {
                 continue;
             }
 
