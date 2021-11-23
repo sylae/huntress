@@ -5,7 +5,6 @@ Huntress is a PHP discord bot framework. Note that while it's currently very usa
 
 * php 7.4+
 * composer
-* sentry (rn sentry error reporting is fucking all over, you could probably get away with a bogus transport or something? idk)
 
 ## Installation
 
