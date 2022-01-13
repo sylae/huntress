@@ -39,8 +39,28 @@ class WormRPFlairs implements PluginInterface
 {
     use PluginHelperTrait;
 
-    const REP_REGEX = "/(A?[A-F])(!?[?+!-$]?)/i";
-    const TPL_REGEX = "/\\|\\s*?(%s)\\s*?=\\s*?(.*?)[\\n\\|]/im";
+    public const REP_REGEX = "/(A?[A-F])(!?[?+!-$]?)/i";
+    public const TPL_REGEX = "/\\|\\s*?(%s)\\s*?=\\s*?(.*?)[\\n\\|]/im";
+
+    public const FLAIR_CLASSES = [
+        'red',
+        'pink',
+        'orange',
+        'green',
+        'flatgreen',
+        'aqua',
+        'lightblue',
+        'blue',
+        'darkblue',
+        'lightpurple',
+        'purple',
+        'brown',
+        'black',
+        'gray',
+        'keira',
+        'Lasercat77',
+        'lightBlueText'
+    ];
 
     public static function register(Huntress $bot)
     {
@@ -139,7 +159,9 @@ class WormRPFlairs implements PluginInterface
                 $chain = $chain->then(function (string $flair) use ($redditUser, $data, $getOpt) {
                     $user = escapeshellarg($redditUser);
                     $flair = escapeshellarg($flair);
-                    if (is_string($getOpt->getOperand("color"))) {
+                    if (is_string($getOpt->getOperand("color")) &&
+                        in_array($getOpt->getOperand("color"), self::FLAIR_CLASSES)
+                    ) {
                         $css = escapeshellarg($getOpt->getOperand("color"));
                     } else {
                         $css = "";
