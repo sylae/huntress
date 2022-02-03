@@ -8,6 +8,10 @@
 
 namespace Huntress\Plugin;
 
+use Carbon\Carbon;
+use CharlotteDunois\Collect\Collection;
+use CharlotteDunois\Yasmin\Models\Message;
+use CharlotteDunois\Yasmin\Models\TextChannel;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
@@ -16,6 +20,7 @@ use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\RedditProcessor;
 use React\Promise\PromiseInterface;
+
 use function React\Promise\all;
 
 /**
@@ -29,10 +34,19 @@ class Masturbatorium implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addCommand("verify")
-            ->addGuild(349058708304822273)
-            ->setCallback([self::class, "process"]));
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("verify")
+                ->addGuild(349058708304822273)
+                ->setCallback([self::class, "process"])
+        );
+
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("edge")
+                ->addUser(297969955356540929)
+                ->setCallback([self::class, "edge"])
+        );
 
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding RSS event on testing.");
@@ -55,11 +69,90 @@ class Masturbatorium implements PluginInterface
             $code = "2bnb00";
             if (mb_strtolower(self::arg_substr($data->message->content, 1)) == $code) {
                 $promises[] = $data->message->member->addRole(674525922895855636);
-                $promises[] = $data->message->channel->send("{$data->user}, thank you for reading the rules! You may now access keira's masturbatorium.");
+                $promises[] = $data->message->channel->send(
+                    "{$data->user}, thank you for reading the rules! You may now access keira's masturbatorium."
+                );
             } else {
-                $promises[] = $data->message->channel->send("{$data->user}, please try again. Have you read the rules?");
+                $promises[] = $data->message->channel->send(
+                    "{$data->user}, please try again. Have you read the rules?"
+                );
             }
         }
         return all($promises);
+    }
+
+    public static function edge(EventData $data): ?PromiseInterface
+    {
+        try {
+            $lastMonth = Carbon::now()->addMonths(-1);
+            $data->message->delete();
+            return self::_archive($data->huntress->channels->get(926829651370864650), $data, $lastMonth);
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($data->message, $e);
+        }
+    }
+
+    public static function _archive(
+        TextChannel $ch,
+        EventData $data,
+        Carbon $lastMonth,
+        Collection $carry = null
+    ): PromiseInterface {
+        try {
+            if (is_null($carry)) {
+                $args = ['limit' => 100];
+            } else {
+                $args = ['before' => $carry->min('id'), 'limit' => 100];
+            }
+
+            $ppl = [];
+            $lastMonthB = $lastMonth->clone()->startOfMonth();
+            $lastMonthE = $lastMonth->clone()->endOfMonth();
+
+            return $ch->fetchMessages($args)->then(
+                function ($msgs) use ($ch, $data, $carry, $ppl, $lastMonth, $lastMonthB, $lastMonthE) {
+                    try {
+                        if ($msgs->count() == 0) {
+                            /** @var Message $msg */
+                            foreach ($carry as $msg) {
+                                if ($msg->createdTimestamp >= $lastMonthB->timestamp
+                                    && $msg->createdTimestamp <= $lastMonthE->timestamp
+                                    && is_numeric($msg->content)
+                                ) {
+                                    if (!array_key_exists($msg->author->id, $ppl)) {
+                                        $ppl[$msg->author->id] = 0;
+                                    }
+                                    $ppl[$msg->author->id] += $msg->content;
+                                }
+                            }
+
+                            arsort($ppl, SORT_NUMERIC);
+
+                            $x = [];
+                            $x[] = sprintf("**%s**", mb_strtoupper($lastMonth->format("F Y")));
+                            foreach ($ppl as $k => $v) {
+                                $x[] = sprintf("<@%s>: %s", $k, number_format($v, 0));
+                            }
+
+                            return $data->message->channel->send(implode(PHP_EOL, $x));
+                        } else {
+                            if (is_null($carry)) {
+                                $carry = $msgs;
+                            } else {
+                                $carry = $carry->merge($msgs);
+                                if ($carry->count() % 1000 == 0) {
+                                    $rate = $carry->count() / (time() - $data->message->createdTimestamp);
+                                }
+                            }
+                            return call_user_func([self::class, "_archive"], $ch, $data, $lastMonth, $carry);
+                        }
+                    } catch (\Throwable $e) {
+                        return self::exceptionHandler($data->message, $e);
+                    }
+                }
+            );
+        } catch (\Throwable $e) {
+            return self::exceptionHandler($data->message, $e);
+        }
     }
 }
