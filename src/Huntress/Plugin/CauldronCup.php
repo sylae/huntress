@@ -31,6 +31,7 @@ use Huntress\PluginInterface;
 use Huntress\Snowflake;
 use React\Promise\PromiseInterface;
 use Throwable;
+
 use function React\Promise\all;
 
 /**
@@ -42,10 +43,10 @@ class CauldronCup implements PluginInterface
 {
     use PluginHelperTrait;
 
-    const NAME = "Cauldron Cup Season Five";
+    protected const NAME = "Cauldron Cup Season Six";
 
-    const NOTE = <<<NOTE
-**Welcome to Cauldron Cup Season Five!**
+    protected const NOTE = <<<NOTE
+**Welcome to Cauldron Cup Season Six!**
 As a reminder, please do not publicly share who you are competing with or what you are writing until the coordinators give you the okay. You can use this channel to ask your opponent or the coordinators any questions. You will have no less than **72 hours** to complete your snips and submit them for processing.
 
 Your submission should be around **1k words**, no biggie if more or less but shoot for that. The link to submit snips is pinned in <#565085613955612702>. Good luck!
@@ -85,10 +86,16 @@ NOTE;
         $t->addColumn("theme", "string", ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->addColumn("idCompA", "bigint", ["unsigned" => true, 'notnull' => false]);
         $t->addColumn("idCompB", "bigint", ["unsigned" => true, 'notnull' => false]);
-        $t->addColumn("charA", "string",
-            ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]);
-        $t->addColumn("charB", "string",
-            ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]);
+        $t->addColumn(
+            "charA",
+            "string",
+            ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]
+        );
+        $t->addColumn(
+            "charB",
+            "string",
+            ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]
+        );
         $t->setPrimaryKey(["idMatch"]);
     }
 
@@ -104,25 +111,37 @@ NOTE;
             $getOpt->set(GetOpt::SETTING_SCRIPT_NAME, '!ccup');
             $getOpt->set(GetOpt::SETTING_STRICT_OPERANDS, true);
             $commands = [];
-            $commands[] = Command::create('create',
-                [self::class, 'create'])->setDescription('Create a match channel')->addOperands([
+            $commands[] = Command::create(
+                'create',
+                [self::class, 'create']
+            )->setDescription('Create a match channel')->addOperands([
                 (new Operand('genre', Operand::REQUIRED))->setValidation('is_string'),
                 (new Operand('theme', Operand::REQUIRED))->setValidation('is_string'),
             ]);
-            $commands[] = Command::create('set',
-                [self::class, 'set'])->setDescription('Set match information')->addOperands([
+            $commands[] = Command::create(
+                'set',
+                [self::class, 'set']
+            )->setDescription('Set match information')->addOperands([
                 (new Operand('key', Operand::REQUIRED))->setValidation('is_string'),
                 (new Operand('value', Operand::REQUIRED))->setValidation('is_string'),
             ]);
-            $commands[] = Command::create('post',
-                [self::class, 'post'])->setDescription('Announce the match!')->addOptions([
-                (new Option('s', 'spoiler',
-                    GetOpt::OPTIONAL_ARGUMENT))->setDescription("Add a spoiler warning for the match."),
-                (new Option('n', 'note',
-                    GetOpt::OPTIONAL_ARGUMENT))->setDescription("Add an additional note to be displayed."),
+            $commands[] = Command::create(
+                'post',
+                [self::class, 'post']
+            )->setDescription('Announce the match!')->addOptions([
+                (new Option(
+                    's', 'spoiler',
+                    GetOpt::OPTIONAL_ARGUMENT
+                ))->setDescription("Add a spoiler warning for the match."),
+                (new Option(
+                    'n', 'note',
+                    GetOpt::OPTIONAL_ARGUMENT
+                ))->setDescription("Add an additional note to be displayed."),
             ]);
-            $commands[] = Command::create('info',
-                [self::class, 'info'])->setDescription('Print match state');
+            $commands[] = Command::create(
+                'info',
+                [self::class, 'info']
+            )->setDescription('Print match state');
             $getOpt->addCommands($commands);
             try {
                 $args = substr(strstr($data->message->content, " "), 1);
@@ -192,11 +211,9 @@ NOTE;
                 } catch (Throwable $e) {
                     self::exceptionHandler($message, $e);
                 }
-
             }, function ($error) use ($message) {
                 self::error($message, "Error", json_encode($error));
             });
-
         } catch (Throwable $e) {
             return self::exceptionHandler($message, $e);
         }
@@ -206,8 +223,12 @@ NOTE;
     {
         try {
             $matchID = self::getMatchFromChannel($message->channel);
-            $match = $message->client->db->createQueryBuilder()->select("*")->from("ccup")->where('idMatch = ?')->setParameter(0,
-                $matchID)->execute()->fetchAll();
+            $match = $message->client->db->createQueryBuilder()->select("*")->from("ccup")->where(
+                'idMatch = ?'
+            )->setParameter(
+                0,
+                $matchID
+            )->execute()->fetchAll();
 
             $k = mb_strtolower($getOpt->getOperand("key"));
             $v = $getOpt->getOperand("value");
@@ -244,8 +265,12 @@ NOTE;
 
     private static function getMatchFromChannel(TextChannel $channel): int
     {
-        $match = $channel->client->db->createQueryBuilder()->select("*")->from("ccup")->where('idChannel = ?')->setParameter(0,
-            $channel->id)->execute()->fetchAll();
+        $match = $channel->client->db->createQueryBuilder()->select("*")->from("ccup")->where(
+            'idChannel = ?'
+        )->setParameter(
+            0,
+            $channel->id
+        )->execute()->fetchAll();
 
         if (count($match) != 1) {
             throw new Exception("No match bound to this channel.");
@@ -256,8 +281,10 @@ NOTE;
 
     private static function setValue(Huntress $bot, int $match, string $key, $value)
     {
-        $query = $bot->db->prepare('UPDATE ccup set `' . $key . '` = ? where idMatch = ?
-        ', [(is_int($value) ? 'integer' : 'string'), 'integer']); // i know
+        $query = $bot->db->prepare(
+            'UPDATE ccup set `' . $key . '` = ? where idMatch = ?',
+            [(is_int($value) ? 'integer' : 'string'), 'integer']
+        ); // i know
         $query->bindValue(1, $value);
         $query->bindValue(2, $match);
         $query->execute();
@@ -265,17 +292,23 @@ NOTE;
 
     public static function summonUser(GuildMember $member, TextChannel $channel): PromiseInterface
     {
-        return $channel->overwritePermissions($member,
+        return $channel->overwritePermissions(
+            $member,
             Permissions::PERMISSIONS['VIEW_CHANNEL'] | Permissions::PERMISSIONS['MANAGE_MESSAGES'],
-            0)->then(function ($overwrites) use ($channel, $member) {
+            0
+        )->then(function ($overwrites) use ($channel, $member) {
             return $channel->send("$member come here.");
         });
     }
 
     private static function printInfo(TextChannel $channel, int $matchID): PromiseInterface
     {
-        $matchCup = $channel->client->db->createQueryBuilder()->select("*")->from("ccup")->where('idMatch = ?')->setParameter(0,
-            $matchID)->execute()->fetchAll();
+        $matchCup = $channel->client->db->createQueryBuilder()->select("*")->from("ccup")->where(
+            'idMatch = ?'
+        )->setParameter(
+            0,
+            $matchID
+        )->execute()->fetchAll();
 
         $matchObj = MatchVoting::getMatchInfo($matchID, $channel->guild);
 
@@ -325,20 +358,28 @@ NOTE;
 
     public static function post(GetOpt $getOpt, Message $message): PromiseInterface
     {
-
         try {
             $matchID = self::getMatchFromChannel($message->channel);
             self::setDeadline($matchID, $message->client);
 
-            $match = $message->client->db->createQueryBuilder()->select("*")->from("ccup")->where('idMatch = ?')->setParameter(0,
-                $matchID)->execute()->fetchAll();
+            $match = $message->client->db->createQueryBuilder()->select("*")->from("ccup")->where(
+                'idMatch = ?'
+            )->setParameter(
+                0,
+                $matchID
+            )->execute()->fetchAll();
             $info = MatchVoting::getMatchInfo($matchID, $message->guild);
 
             $embed = new MessageEmbed();
             $embed->setTitle(self::NAME . " - {$match[0]['round']}, {$match[0]['theme']}");
             $embed->setTimestamp($info->duedate->timestamp);
-            $embed->setDescription(sprintf("Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]",
-                $info->duedate->toCookieString(), $info->duedate->timestamp));
+            $embed->setDescription(
+                sprintf(
+                    "Voting is open until *%s* [[other timezones](https://syl.ae/time/#%s)]",
+                    $info->duedate->toCookieString(),
+                    $info->duedate->timestamp
+                )
+            );
             $counter = 1;
 
             $embed->addField("Characters", "{$match[0]['charA']} / {$match[0]['charB']}");
@@ -351,14 +392,20 @@ NOTE;
             }
             $info->entries->each(function ($v, $k) use ($info, $embed, &$counter) {
                 $voteCMD = sprintf("!match vote %s %s", Snowflake::format($info->idMatch), Snowflake::format($v->id));
-                $data = sprintf("%s\nVote with `%s` ([mobile](https://syl.ae/copy.php?v=%s))", $v->data, $voteCMD,
-                    urlencode($voteCMD));
+                $data = sprintf(
+                    "%s\nVote with `%s` ([mobile](https://syl.ae/copy.php?v=%s))",
+                    $v->data,
+                    $voteCMD,
+                    urlencode($voteCMD)
+                );
                 $embed->addField(sprintf("Option %s", $counter), $data);
                 $counter++;
             });
-            $prom = self::send($message->client->channels->get(319816145353834509),
+            $prom = self::send(
+                $message->client->channels->get(319816145353834509),
                 "<@&385685972664320003>, a match is available for voting!",
-                ['embed' => $embed]);
+                ['embed' => $embed]
+            );
 
             return $prom->then(function ($announcement) use ($message) {
                 $message->channel->send("Announcement sent!");
@@ -373,8 +420,10 @@ NOTE;
 
     private static function setDeadline(int $matchID, Huntress $bot)
     {
-        $query = $bot->db->prepare('UPDATE match_matches set created = ?, duedate = ? where idMatch = ?',
-            ['datetime', 'datetime', 'integer']);
+        $query = $bot->db->prepare(
+            'UPDATE match_matches set created = ?, duedate = ? where idMatch = ?',
+            ['datetime', 'datetime', 'integer']
+        );
         $query->bindValue(1, Carbon::now());
         $query->bindValue(2, Carbon::now()->addDays(2));
         $query->bindValue(3, $matchID);
