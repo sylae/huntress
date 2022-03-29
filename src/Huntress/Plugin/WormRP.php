@@ -46,9 +46,9 @@ class WormRP implements PluginInterface
     {
         $bot->eventManager->addEventListener(
             EventListener::new()->addEvent("dbSchema")->setCallback([
-                                                                        self::class,
-                                                                        'db',
-                                                                    ])
+                self::class,
+                'db',
+            ])
         );
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding comments/active checking on testing.");
@@ -60,9 +60,9 @@ class WormRP implements PluginInterface
             );
             $bot->eventManager->addEventListener(
                 EventListener::new()->setCallback([
-                                                      self::class,
-                                                      "pollActiveCheck",
-                                                  ])->setPeriodic(10)
+                    self::class,
+                    "pollActiveCheck",
+                ])->setPeriodic(10)
             );
 
             $bot->eventManager->addURLEvent(
@@ -73,7 +73,7 @@ class WormRP implements PluginInterface
 
             $wiki = new RSSProcessor(
                 $bot, 'WikiRecentChanges',
-                'https://wormrp.syl.ae/w/api.php?urlversion=2&action=feedrecentchanges&feedformat=rss&hideminor=true',
+                'https://wiki.wormrp.com/w/api.php?urlversion=2&action=feedrecentchanges&feedformat=rss&hideminor=true',
                 60,
                 [504159510965911563]
             );
@@ -395,17 +395,17 @@ class WormRP implements PluginInterface
             $char = trim(str_replace($args[0], "", $data->message->content)); // todo: do this better
 
             return all([
-                           'wiki' => URLHelpers::resolveURLToData(
-                               "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . urlencode(
-                                   $char
-                               ) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image|limit=5"
-                           ),
-                           'reddit' => URLHelpers::resolveURLToData(
-                               "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode(
-                                   $char
-                               ) . "&sort=relevance&restrict_sr=on&t=all&include_over_18=on"
-                           ),
-                       ])->then(function ($results) use ($char, $data) {
+                'wiki' => URLHelpers::resolveURLToData(
+                    "https://wiki.wormrp.com/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::like:*" . urlencode(
+                        $char
+                    ) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image|limit=5"
+                ),
+                'reddit' => URLHelpers::resolveURLToData(
+                    "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode(
+                        $char
+                    ) . "&sort=relevance&restrict_sr=on&t=all&include_over_18=on"
+                ),
+            ])->then(function ($results) use ($char, $data) {
                 $wiki = self::lookupWiki($results['wiki'], $char);
                 if (count($wiki) > 0) {
                     return all(
@@ -493,9 +493,9 @@ class WormRP implements PluginInterface
             $timeStart = microtime(true);
             $b64 = base64_encode(
                 json_encode([
-                                'sheetID' => self::APPROVAL_SHEET,
-                                'sheetRange' => 'Queue!A11:L',
-                            ])
+                    'sheetID' => self::APPROVAL_SHEET,
+                    'sheetRange' => 'Queue!A11:L',
+                ])
             );
             $cmd = 'php scripts/pushGoogleSheet.php ' . $b64;
             $data->huntress->log->debug("Running $cmd");

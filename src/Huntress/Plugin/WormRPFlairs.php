@@ -305,7 +305,7 @@ class WormRPFlairs implements PluginInterface
         })->then(function (array $cd) use ($bot) {
             // grab a csrf token for the edit
             return URLHelpers::getHTTPClient()->get(
-                "https://wormrp.syl.ae/w/api.php?action=query&meta=tokens&format=json",
+                "https://wiki.wormrp.com/w/api.php?action=query&meta=tokens&format=json",
                 ['Cookie' => self::cookieString()]
             )->then(function (
                 ResponseInterface $response
@@ -320,7 +320,7 @@ class WormRPFlairs implements PluginInterface
             return self::editPage($cd, $char);
         })->then(function (array $cd) use ($char) {
             return URLHelpers::getHTTPClient()->get(
-                "https://wormrp.syl.ae/w/api.php?action=parse&format=json&text=%7B%7Bflair%7C%2Fu%2F" . urlencode(
+                "https://wiki.wormrp.com/w/api.php?action=parse&format=json&text=%7B%7Bflair%7C%2Fu%2F" . urlencode(
                     $cd['reddituser']
                 ) . "%7D%7D&contentmodel=wikitext",
                 ['Cookie' => self::cookieString()]
@@ -344,7 +344,7 @@ class WormRPFlairs implements PluginInterface
     private static function getCanonicalPostTitle(array $cd, string $char)
     {
         return URLHelpers::resolveURLToData(
-            "https://wormrp.syl.ae/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::" . urlencode(
+            "https://wiki.wormrp.com/w/api.php?action=ask&format=json&api_version=3&query=[[Identity::" . urlencode(
                 $char
             ) . "]]|?Author",
             ['Cookie' => self::cookieString()]
@@ -357,7 +357,7 @@ class WormRPFlairs implements PluginInterface
             }
             if (count($data) == 0) {
                 return reject(
-                    "I didn't find anyone with that name. Full list of valid names here: <https://wormrp.syl.ae/wiki/Property:Identity>"
+                    "I didn't find anyone with that name. Full list of valid names here: <https://wiki.wormrp.com/wiki/Property:Identity>"
                 );
             }
 
@@ -396,7 +396,7 @@ class WormRPFlairs implements PluginInterface
 
         // first see if we're already logged in, makes shit mucho easier :)
         return $browser->get(
-            "https://wormrp.syl.ae/w/api.php?action=query&meta=userinfo&format=json",
+            "https://wiki.wormrp.com/w/api.php?action=query&meta=userinfo&format=json",
             ['Cookie' => self::cookieString()]
         )->then(function (
             ResponseInterface $response
@@ -405,7 +405,7 @@ class WormRPFlairs implements PluginInterface
             if (array_key_exists('anon', (array)$cd['userinfo'])) {
                 // actually log in!
                 return $browser->get(
-                    "https://wormrp.syl.ae/w/api.php?action=query&meta=tokens&type=login&format=json",
+                    "https://wiki.wormrp.com/w/api.php?action=query&meta=tokens&type=login&format=json",
                     ['Cookie' => self::cookieString()]
                 )->then(function (
                     ResponseInterface $response
@@ -417,7 +417,7 @@ class WormRPFlairs implements PluginInterface
                 })->then(function (array $cd) use ($bot, $browser) {
                     // then we actually log in!
                     return $browser->submit(
-                        "https://wormrp.syl.ae/w/api.php",
+                        "https://wiki.wormrp.com/w/api.php",
                         [
                             'action' => 'login',
                             'format' => 'json',
@@ -463,7 +463,7 @@ class WormRPFlairs implements PluginInterface
     private static function editPage(array $cd, string $char)
     {
         return URLHelpers::resolveURLToData(
-            "https://wormrp.syl.ae/w/api.php?action=query&format=json&prop=revisions&titles=" . urlencode(
+            "https://wiki.wormrp.com/w/api.php?action=query&format=json&prop=revisions&titles=" . urlencode(
                 $cd['wikipage']
             ) . "&rvprop=content&rvslots=main",
             ['Cookie' => self::cookieString()]
@@ -500,7 +500,7 @@ class WormRPFlairs implements PluginInterface
         })->then(function (array $cd) {
             // then we actually, fucking finally, edit the page!
             return URLHelpers::getHTTPClient()->submit(
-                "https://wormrp.syl.ae/w/api.php",
+                "https://wiki.wormrp.com/w/api.php",
                 [
                     'action' => 'edit',
                     'format' => 'json',
