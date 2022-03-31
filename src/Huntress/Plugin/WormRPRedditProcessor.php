@@ -53,11 +53,6 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
         $t->addColumn("idApprover1", "bigint", ["unsigned" => true, 'notnull' => false]);
         $t->addColumn("idApprover2", "bigint", ["unsigned" => true, 'notnull' => false]);
         $t->setPrimaryKey(["idPost"]);
-
-        $t2 = $schema->createTable("wormrp_staff");
-        $t2->addColumn("idUser", "bigint", ["unsigned" => true]);
-        $t2->addColumn("staffRole", "bigint", ["unsigned" => true, 'notnull' => false]);
-        $t2->setPrimaryKey(["idUser"]);
     }
 
     protected function channelCheckCallback(RSSItem $item, array $channels): array
@@ -107,7 +102,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             if (in_array(386943351062265888, $item->channels)) {
                 $this->pushToQueue($item);
             }
-            
+
             // send to approval queue sheet
             if (in_array(386943351062265888, $item->channels)) {
                 $allowed = ["Equipment", "Lore", "Character"];
