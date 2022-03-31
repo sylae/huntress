@@ -10,6 +10,10 @@ namespace Huntress\Plugin;
 
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
+use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Schema\Schema;
+use Huntress\DatabaseFactory;
+use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
@@ -30,6 +34,30 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
         } else {
             new self($bot, "wormrpPosts", "wormrp", 30, []);
         }
+
+        $bot->eventManager->addEventListener(
+            EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db',])
+        );
+    }
+
+    public static function db(Schema $schema): void
+    {
+        $t = $schema->createTable("wormrp_queue");
+        $t->addColumn("idPost", "bigint", ["unsigned" => true]);
+        $t->addColumn("flair", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("author", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("url", "text", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("postTime", "datetime");
+        $t->addColumn("claimTime", "datetime", ['notnull' => false]);
+        $t->addColumn("approvalTime", "datetime", ['notnull' => false]);
+        $t->addColumn("idApprover1", "bigint", ["unsigned" => true, 'notnull' => false]);
+        $t->addColumn("idApprover2", "bigint", ["unsigned" => true, 'notnull' => false]);
+        $t->setPrimaryKey(["idPost"]);
+
+        $t2 = $schema->createTable("wormrp_staff");
+        $t2->addColumn("idUser", "bigint", ["unsigned" => true]);
+        $t2->addColumn("staffRole", "bigint", ["unsigned" => true, 'notnull' => false]);
+        $t2->setPrimaryKey(["idUser"]);
     }
 
     protected function channelCheckCallback(RSSItem $item, array $channels): array
@@ -48,8 +76,11 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
 
         $redditUser = WormRP::fetchAccount($this->huntress->guilds->get(118981144464195584), $item->author);
         if ($redditUser instanceof GuildMember) {
-            $embed->setAuthor($redditUser->displayName, $redditUser->user->getDisplayAvatarURL(),
-                "https://reddit.com/user/" . $item->author);
+            $embed->setAuthor(
+                $redditUser->displayName,
+                $redditUser->user->getDisplayAvatarURL(),
+                "https://reddit.com/user/" . $item->author
+            );
         } else {
             $embed->setAuthor($item->author, '', "https://reddit.com/user/" . $item->author);
         }
@@ -63,13 +94,20 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             parent::dataPublishingCallback($item);
 
             // update flair check thing
-            $query = $this->huntress->db->prepare('INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
+            $query = $this->huntress->db->prepare(
+                'INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`) VALUES(?, ?) '
                 . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=GREATEST(`lastSubActivity`, VALUES(`lastSubActivity`));',
-                ['string', 'datetime', 'string']);
+                ['string', 'datetime', 'string']
+            );
             $query->bindValue(1, $item->author);
             $query->bindValue(2, $item->date);
             $query->execute();
 
+            // send to queue table
+            if (in_array(386943351062265888, $item->channels)) {
+                $this->pushToQueue($item);
+            }
+            
             // send to approval queue sheet
             if (in_array(386943351062265888, $item->channels)) {
                 $allowed = ["Equipment", "Lore", "Character"];
@@ -115,5 +153,23 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
             return false;
         }
         return true;
+    }
+
+    protected function pushToQueue(RSSItem $item): bool
+    {
+        try {
+            $query = $this->huntress->db->prepare(
+                'insert into wormrp_queue (`idPost`, `flair`, `author`, `url`, `postTime`) values (?, ?, ?, ?, ?)'
+            );
+            $query->bindValue(1, \Huntress\Snowflake::generate(), ParameterType::INTEGER);
+            $query->bindValue(2, $item->category, ParameterType::STRING);
+            $query->bindValue(3, $item->author, ParameterType::STRING);
+            $query->bindValue(4, $item->link, ParameterType::STRING);
+            $query->bindValue(5, $item->date, ParameterType::STRING);
+            return (bool)$query->executeQuery()->rowCount();
+        } catch (Throwable $e) {
+            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
+            return false;
+        }
     }
 }
