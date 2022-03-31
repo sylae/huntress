@@ -47,6 +47,7 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
         $t->addColumn("flair", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->addColumn("author", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->addColumn("url", "text", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
+        $t->addColumn("title", "text", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->addColumn("postTime", "datetime");
         $t->addColumn("claimTime", "datetime", ['notnull' => false]);
         $t->addColumn("approvalTime", "datetime", ['notnull' => false]);
@@ -154,13 +155,14 @@ class WormRPRedditProcessor extends RedditProcessor implements PluginInterface
     {
         try {
             $query = $this->huntress->db->prepare(
-                'insert into wormrp_queue (`idPost`, `flair`, `author`, `url`, `postTime`) values (?, ?, ?, ?, ?)'
+                'insert into wormrp_queue (`idPost`, `flair`, `author`, `url`, `postTime`, `title`) values (?, ?, ?, ?, ?, ?)'
             );
             $query->bindValue(1, \Huntress\Snowflake::generate(), ParameterType::INTEGER);
             $query->bindValue(2, $item->category, ParameterType::STRING);
             $query->bindValue(3, $item->author, ParameterType::STRING);
             $query->bindValue(4, $item->link, ParameterType::STRING);
             $query->bindValue(5, $item->date, ParameterType::STRING);
+            $query->bindValue(6, $item->title, ParameterType::STRING);
             return (bool)$query->executeQuery()->rowCount();
         } catch (Throwable $e) {
             $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
