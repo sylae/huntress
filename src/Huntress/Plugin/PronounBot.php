@@ -99,8 +99,8 @@ class PronounBot implements PluginInterface
     public static function getReactMapping(mixed $reactID): array
     {
         return match ($reactID) {
-            "958203821451001906" => [944203243964207144, self::COLONIAL], // qrf
-            "944211618051555358" => [944211152668327937, self::COLONIAL], // oper8or
+            "944208162112802826" => [944203243964207144, self::COLONIAL], // qrf
+            "958203821451001906" => [944211152668327937, self::COLONIAL], // oper8or
             "958768926941134878" => [959556988075917383, self::COLONIAL], // logi
             "🥪" => [944107391677521940, self::TENURED], // sudo
 
