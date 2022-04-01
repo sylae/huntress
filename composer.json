@@ -11,6 +11,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
+    "google/apiclient": "^2.4",
     "intervention/image": "^2.5",
     "react/child-process": "^0.6.1",
     "aran/yahoo-finance-api": "4.x-dev",
