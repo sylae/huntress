@@ -26,8 +26,7 @@ class DrownedVale implements PluginInterface
     public const ROLE_TENURED = 943653875368480808;
     public const ROLE_COMPOSITE_DVI = 958134803306274846;
 
-    // public const CH_LOG = 943655113854185583;
-    public const CH_LOG = 943655621595656234;
+    public const CH_LOG = 943655113854185583;
     public const GUILD = 943653352305209406;
 
     public static function register(Huntress $bot)
