@@ -24,7 +24,7 @@ class PronounBot implements PluginInterface
     use PluginHelperTrait;
 
     protected const COLONIAL = 943654648252858368;
-    protected const MEMBER = 943996715160182844;
+    protected const MEMBER = 958134803306274846;
     protected const TENURED = 943653875368480808;
 
     public static function register(Huntress $bot)
