@@ -23,6 +23,7 @@ use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\QueueItem;
 use Huntress\RSSProcessor;
 use React\ChildProcess\Process;
 use React\Promise\Deferred;
@@ -519,49 +520,43 @@ class WormRP implements PluginInterface
     public static function queueHandler(EventData $data): ?PromiseInterface
     {
         try {
-            $timeStart = microtime(true);
-            $b64 = base64_encode(
-                json_encode([
-                    'sheetID' => self::APPROVAL_SHEET,
-                    'sheetRange' => 'Queue!A11:L',
-                ])
-            );
-            $cmd = 'php scripts/pushGoogleSheet.php ' . $b64;
-            $data->huntress->log->debug("Running $cmd");
-            if (php_uname('s') == "Windows NT") {
-                $null = 'nul';
-            } else {
-                $null = '/dev/null';
-            }
-            $process = new Process($cmd, null, null, [
-                ['file', $null, 'r'],
-                $stdout = tmpfile(),
-                ['file', $null, 'w'],
-            ]);
-            $process->start($data->huntress->getLoop());
-            $prom = new Deferred();
+            $queue = QueueItem::getQueue($data->huntress->db);
 
-            $process->on('exit', function (int $exitcode) use ($stdout, $prom, $data) {
-                $data->huntress->log->debug("queueHandler child exited with code $exitcode.");
+            $embed = new MessageEmbed();
+            $embed->setTitle("WormRP Approval Queue");
+            $embed->setURL("https://wormrp.com/reports/queue");
+            $embed->setTimestamp(time());
 
-                // todo: use FileHelper filesystem nonsense for this.
-                rewind($stdout);
-                $childData = stream_get_contents($stdout);
-                fclose($stdout);
+            $queue->filter(function (QueueItem $v) {
+                return $v->getState() != QueueItem::STATE_APPROVED;
+            })->each(function (QueueItem $v) use ($embed) {
+                $title = sprintf(
+                    "%s (%s day%s, %s)",
+                    $v->title,
+                    $v->postTime->diffInDays(),
+                    $v->postTime->diffInDays() == 1 ? "" : "s",
+                    $v->getStateClass()
+                );
+                $lines = [];
 
-                if ($exitcode == 0) {
-                    $data->huntress->log->debug("queueHandler child success!");
-                    $prom->resolve($childData);
-                } else {
-                    $prom->reject($childData);
-                    $data->huntress->log->debug("queueHandler child failure!");
+                $approvers = [];
+                if (!is_null($v->idApprover1)) {
+                    $approvers[] = sprintf("<@%s>", $v->idApprover1);
                 }
+                if (!is_null($v->idApprover2)) {
+                    $approvers[] = sprintf("<@%s>", $v->idApprover2);
+                }
+                $astr = match (count($approvers)) {
+                    0 => "Awaiting approver",
+                    1 => "Approver: " . implode(", ", $approvers),
+                    default => "Approvers: " . implode(", ", $approvers),
+                };
+                $lines[] = sprintf("[[Link](%s)] %s by %s (%s)", $v->url, $v->flair, $v->author, $astr);
+
+                $embed->addField($title, implode(PHP_EOL, $lines));
             });
-            return $data->message->reply("🔮")->then(function ($response) use ($prom, $timeStart) {
-                return $prom->promise()->then(function (string $childData) use ($response, $timeStart) {
-                    return self::queueHandlerProcess($childData, $response, $timeStart);
-                });
-            });
+
+            return $data->message->reply("", ['embed' => $embed]);
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
         }
