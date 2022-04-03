@@ -10,6 +10,7 @@ namespace Huntress\Plugin;
 use CharlotteDunois\Yasmin\Models\MessageReaction;
 use CharlotteDunois\Yasmin\Models\User;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\ExtendedPromiseInterface as Promise;
@@ -67,17 +68,9 @@ class PronounBot implements PluginInterface
                 return $reaction->remove($reactor);
             }
 
-            $isTenured = $reactMember->roles->has(self::TENURED);
-            $isMember = $reactMember->roles->has(self::MEMBER) || $isTenured;
-            $isColonial = $reactMember->roles->has(self::COLONIAL) || $isMember;
-
-            if (!$isColonial && $restriction == self::COLONIAL) {
-                return $reaction->remove($reactor);
-            }
-            if (!$isMember && $restriction == self::MEMBER) {
-                return $reaction->remove($reactor);
-            }
-            if (!$isTenured && $restriction == self::TENURED) {
+            $p = new Permission($restriction, $bot, false);
+            $p->addMemberContext($reactMember);
+            if (!$p->resolve()) {
                 return $reaction->remove($reactor);
             }
 
@@ -99,10 +92,10 @@ class PronounBot implements PluginInterface
     public static function getReactMapping(mixed $reactID): array
     {
         return match ($reactID) {
-            "944208162112802826" => [944203243964207144, self::COLONIAL], // qrf
-            "958203821451001906" => [944211152668327937, self::COLONIAL], // oper8or
-            "958768926941134878" => [959556988075917383, self::COLONIAL], // logi
-            "🥪" => [944107391677521940, self::TENURED], // sudo
+            "944208162112802826" => [944203243964207144, 'p.dvi.roles.qrf'], // qrf
+            "958203821451001906" => [944211152668327937, 'p.dvi.roles.oper8or'], // oper8or
+            "958768926941134878" => [959556988075917383, 'p.dvi.roles.logi'], // logi
+            "🥪" => [944107391677521940, 'p.dvi.roles.sudo'], // sudo
 
             default => [null, true],
         };
