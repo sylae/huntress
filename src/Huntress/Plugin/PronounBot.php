@@ -83,9 +83,8 @@ class PronounBot implements PluginInterface
     public static function getReactMessages(): array
     {
         return [
-            944208809746923520,
-            944268056924930158,
-            944268288228229211,
+            961458053587292190,
+            961458668048646194,
         ];
     }
 
