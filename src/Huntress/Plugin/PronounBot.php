@@ -94,6 +94,7 @@ class PronounBot implements PluginInterface
             "944208162112802826" => [944203243964207144, 'p.dvi.roles.qrf'], // qrf
             "958203821451001906" => [944211152668327937, 'p.dvi.roles.oper8or'], // oper8or
             "958768926941134878" => [959556988075917383, 'p.dvi.roles.logi'], // logi
+            "961353321552175164" => [961457534017876018, 'p.dvi.roles.logi'], // stream
             "🥪" => [944107391677521940, 'p.dvi.roles.sudo'], // sudo
 
             default => [null, true],
