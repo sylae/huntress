@@ -122,7 +122,7 @@ class DrownedVale implements PluginInterface
             self::ROLE_TENURED,
             self::ROLE_MEMBER,
             self::ROLE_RECRUIT
-        ]
+        ];
 
         $x = [];
         $x[] = $added->map(function (\CharlotteDunois\Yasmin\Models\Role $v) use ($new, $rolesWeGiveAShitAbout) {
