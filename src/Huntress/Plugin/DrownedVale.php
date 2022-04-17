@@ -118,13 +118,25 @@ class DrownedVale implements PluginInterface
         $added = $new->roles->diffKeys($old->roles);
         $removed = $old->roles->diffKeys($new->roles);
 
+        $rolesWeGiveAShitAbout = [
+            self::ROLE_TENURED,
+            self::ROLE_MEMBER,
+            self::ROLE_RECRUIT
+        ]
+
         $x = [];
-        $x[] = $added->map(function (\CharlotteDunois\Yasmin\Models\Role $v) use ($new) {
+        $x[] = $added->map(function (\CharlotteDunois\Yasmin\Models\Role $v) use ($new, $rolesWeGiveAShitAbout) {
+            if (!in_array($v->id, $rolesWeGiveAShitAbout)) {
+                return null;
+            }
             return $v->client->channels->get(self::CH_LOG)->send(
                 sprintf("[DrownedVale] <@%s> had role `%s` added.", $new->id, $v->name)
             );
         });
-        $x[] = $removed->map(function (\CharlotteDunois\Yasmin\Models\Role $v) use ($new) {
+        $x[] = $removed->map(function (\CharlotteDunois\Yasmin\Models\Role $v) use ($new, $rolesWeGiveAShitAbout) {
+            if (!in_array($v->id, $rolesWeGiveAShitAbout)) {
+                return null;
+            }
             return $v->client->channels->get(self::CH_LOG)->send(
                 sprintf("[DrownedVale] <@%s> had role `%s` removed.", $new->id, $v->name)
             );
