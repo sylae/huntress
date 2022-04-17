@@ -141,7 +141,7 @@ class DrownedVale implements PluginInterface
             return $data->message->reply("You must be in a voice channel to use this command");
         }
 
-        $p = new Permission("p.dvi.vc.rename", $data->huntress, true);
+        $p = new Permission("p.dvi.vc.rename", $data->huntress, false);
         $p->addMessageContext($data->message);
         if (!$p->resolve()) {
             return $p->sendUnauthorizedMessage($data->message->channel);
