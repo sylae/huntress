@@ -26,7 +26,7 @@ class DrownedVale implements PluginInterface
     public const ROLE_RECRUIT = 944096516593831947;
     public const ROLE_MEMBER = 943996715160182844;
     public const ROLE_TENURED = 943653875368480808;
-    public const ROLE_COMPOSITE_DVI = 958134803306274846;
+    public const ROLE_DEPOT = 944096576249417749;
 
     public const ROLE_VC_LOW = 965150197598523402;
     public const ROLE_VC_HIGH = 965151757657325608;
@@ -142,7 +142,8 @@ class DrownedVale implements PluginInterface
         $rolesWeGiveAShitAbout = [
             self::ROLE_TENURED,
             self::ROLE_MEMBER,
-            self::ROLE_RECRUIT
+            self::ROLE_RECRUIT,
+            self::ROLE_DEPOT
         ];
 
         $x = [];
