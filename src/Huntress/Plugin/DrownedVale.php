@@ -51,6 +51,14 @@ class DrownedVale implements PluginInterface
                 ->setCallback([self::class, "dviVCRename"])
         );
 
+
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addEvent("message")
+                ->addGuild(self::GUILD)
+                ->setCallback([self::class, "clown"])
+        );
+
         $bot->eventManager->addEventListener(
             EventListener::new()
                 ->addCommand("nuke")
@@ -63,6 +71,13 @@ class DrownedVale implements PluginInterface
         $bot->on("guildMemberUpdate", [self::class, "dviRoleLog"]);
     }
 
+
+    public static function clown(EventData $data): ?PromiseInterface
+    {
+        if ($data->message->member->roles->has(944111822615748650)) {
+            return $data->message->react("🤡");
+        }
+    }
 
     public static function dviNuke(EventData $data): ?PromiseInterface
     {
