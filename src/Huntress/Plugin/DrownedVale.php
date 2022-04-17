@@ -74,6 +74,12 @@ class DrownedVale implements PluginInterface
 
     public static function clown(EventData $data): ?PromiseInterface
     {
+        $p = new Permission("p.dvi.clown", $data->huntress, true);
+        $p->addMessageContext($data->message);
+        if (!$p->resolve()) {
+            return null;
+        }
+
         if ($data->message->member->roles->has(944111822615748650)) {
             return $data->message->react("🤡");
         }
