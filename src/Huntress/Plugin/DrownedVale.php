@@ -16,7 +16,6 @@ use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\PromiseInterface;
-use Throwable;
 
 use function React\Promise\all;
 
@@ -40,9 +39,6 @@ class DrownedVale implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(
-            EventListener::new()->setCallback([self::class, "pollActiveCheck"])->setPeriodic(10)
-        );
         $bot->eventManager->addEventListener(
             EventListener::new()->setCallback([self::class, "dviVCAccess"])
                 ->addEvent("voiceStateUpdate")->addGuild(self::GUILD)
@@ -85,42 +81,6 @@ class DrownedVale implements PluginInterface
         });
 
         return all($x);
-    }
-
-    public static function pollActiveCheck(Huntress $bot): ?PromiseInterface
-    {
-        try {
-            $currDVI = $bot->guilds->get(self::GUILD)->members->filter(function ($v, $k) {
-                return $v->roles->has(self::ROLE_COMPOSITE_DVI);
-            });
-            $targetRoles = [
-                self::ROLE_MEMBER,
-                self::ROLE_RECRUIT,
-                self::ROLE_TENURED
-            ];
-
-            $x = [];
-            /** @var GuildMember $member */
-            foreach ($currDVI as $member) {
-                $shouldHave = false;
-                foreach ($targetRoles as $trID) {
-                    if ($member->roles->has($trID)) {
-                        $shouldHave = true;
-                    }
-                }
-
-                if (!$shouldHave) {
-                    $x[] = $member->removeRole(self::ROLE_COMPOSITE_DVI);
-                    $x[] = $bot->channels->get(self::CH_LOG)->send(
-                        sprintf("[DrownedVale] Removed <@%s> from DVI composite role.", $member->id)
-                    );
-                }
-            }
-            return all($x);
-        } catch (Throwable $e) {
-            $bot->log->warning($e->getMessage(), ['exception' => $e]);
-            return null;
-        }
     }
 
     public static function dviVCRename(EventData $data): ?PromiseInterface
