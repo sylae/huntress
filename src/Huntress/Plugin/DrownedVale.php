@@ -51,8 +51,58 @@ class DrownedVale implements PluginInterface
                 ->setCallback([self::class, "dviVCRename"])
         );
 
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("nuke")
+                ->addCommand("nukerole")
+                ->addGuild(self::GUILD)
+                ->setCallback([self::class, "dviNuke"])
+        );
+
         // todo: update core HEM to include raw event data for cases like this
         $bot->on("guildMemberUpdate", [self::class, "dviRoleLog"]);
+    }
+
+
+    public static function dviNuke(EventData $data): ?PromiseInterface
+    {
+        $p = new Permission("p.dvi.nukerole", $data->huntress, false);
+        $p->addMessageContext($data->message);
+        if (!$p->resolve()) {
+            return $p->sendUnauthorizedMessage($data->message->channel);
+        }
+
+        $roleStr = self::arg_substr($data->message->content, 1) ?? false;
+        if (!$roleStr) {
+            return $data->message->reply("Usage: `!nukerole ROLE`");
+        }
+
+        $role = self::parseRole($data->guild, $roleStr);
+        if (is_null($role)) {
+            return $data->message->reply("Unknown role. Type it out, @ it, or paste in the role ID.");
+        }
+
+        $cull = $data->guild->members->filter(function (GuildMember $v) use ($role) {
+            return $v->roles->has($role->id);
+        });
+
+        $pr = $data->message->reply(
+            sprintf(
+                "Nuking %s members from `@%s`.\nNote that large roster culls may take awhile due to Discord rate limits.",
+                $cull->count(),
+                $role->name
+            )
+        );
+
+        return $pr->then(function () use ($cull, $role, $data) {
+            $cull->map(function (GuildMember $v) use ($role, $data) {
+                return $v->removeRole($role, $data->message->getJumpURL());
+            });
+
+            return all($cull->all())->then(function () use ($data) {
+                return $data->message->reply("Nuking complete! :)");
+            });
+        });
     }
 
     public static function dviRoleLog(GuildMember $new, ?GuildMember $old): ?PromiseInterface
