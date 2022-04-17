@@ -83,6 +83,8 @@ class DrownedVale implements PluginInterface
         if ($data->message->member->roles->has(944111822615748650)) {
             return $data->message->react("🤡");
         }
+
+        return null;
     }
 
     public static function dviNuke(EventData $data): ?PromiseInterface
