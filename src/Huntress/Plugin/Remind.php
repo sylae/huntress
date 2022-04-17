@@ -23,6 +23,7 @@ use Huntress\PluginInterface;
 use Huntress\Snowflake;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
+
 use function React\Promise\all;
 
 class Remind implements PluginInterface
@@ -31,20 +32,26 @@ class Remind implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addCommand("rem")
-            ->addCommand("remind")
-            ->addCommand("remindme")
-            ->setCallback([self::class, "remindMe"]));
-
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addEvent("dbSchema")
-            ->setCallback([self::class, "db"])
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("rem")
+                ->addCommand("remind")
+                ->addCommand("remindme")
+                ->addCommand("reminder")
+                ->setCallback([self::class, "remindMe"])
         );
-        $bot->eventManager->addEventListener(EventListener::new()->setCallback([
-            self::class,
-            "reminderPoll",
-        ])->setPeriodic(10));
+
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addEvent("dbSchema")
+                ->setCallback([self::class, "db"])
+        );
+        $bot->eventManager->addEventListener(
+            EventListener::new()->setCallback([
+                self::class,
+                "reminderPoll",
+            ])->setPeriodic(10)
+        );
     }
 
     public static function reminderPoll(Huntress $bot): ?Promise
@@ -74,8 +81,12 @@ class Remind implements PluginInterface
 
             $time = \CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($rem['idMessage'])->timestamp;
             $text = $rem['message'];
-            $url = sprintf("https://canary.discordapp.com/channels/%s/%s/%s", $channel->guild->id, $channel->id,
-                $rem['idMessage']);
+            $url = sprintf(
+                "https://canary.discordapp.com/channels/%s/%s/%s",
+                $channel->guild->id,
+                $channel->id,
+                $rem['idMessage']
+            );
 
             $embed = new MessageEmbed();
             $embed->setAuthor($member->displayName, $member->user->getAvatarURL(64) ?? null);
@@ -140,22 +151,25 @@ class Remind implements PluginInterface
             $id = Snowflake::generate();
 
             $embed = new MessageEmbed();
-            $embed->setAuthor($data->message->member->displayName,
-                $data->message->member->user->getAvatarURL(64) ?? null);
+            $embed->setAuthor(
+                $data->message->member->displayName,
+                $data->message->member->user->getAvatarURL(64) ?? null
+            );
             $embed->setColor($data->message->member->id % 0xFFFFFF);
             $embed->setTimestamp($time->getTimestamp());
             $embed->setTitle("Reminder added");
             $embed->setDescription($text);
 
             $tzinfo = sprintf("%s (%s)", $time->getTimezone()->toRegionName(), $time->getTimezone()->toOffsetName());
-            $embed->addField("Detected Time",
-                $time->toDayDateTimeString() . PHP_EOL . $tzinfo . PHP_EOL . $time->longRelativeToNowDiffForHumans(2));
+            $embed->addField(
+                "Detected Time",
+                $time->toDayDateTimeString() . PHP_EOL . $tzinfo . PHP_EOL . $time->longRelativeToNowDiffForHumans(2)
+            );
             $embed->setFooter(sprintf("Reminder %s", Snowflake::format($id)));
 
             self::addReminder($data->message, $time, $text, $id);
 
             return $data->message->reply("", ['embed' => $embed]);
-
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, false);
         }
@@ -177,7 +191,6 @@ Notes:
 - I will use your timezone if you've told it to me via the `!timezone` command, or UTC otherwise.
 - If you have spaces in your `(when)` then you need to wrap it in double quotes, or escape the spaces. Sorry!
 HELP;
-
     }
 
     public static function deleteReminder(EventData $data, string $code): ?Promise
@@ -207,8 +220,10 @@ HELP;
     private static function addReminder(Message $message, Carbon $time, string $text, int $id)
     {
         $time->setTimezone("UTC");
-        $query = $message->client->db->prepare('REPLACE INTO remind (`idReminder`, `idMessage`, `idMember`, `idChannel`, `timeRemind`, `message`) VALUES(?, ?, ?, ?, ?, ?)',
-            ['integer', 'integer', 'integer', 'datetime', 'string', 'integer']);
+        $query = $message->client->db->prepare(
+            'REPLACE INTO remind (`idReminder`, `idMessage`, `idMember`, `idChannel`, `timeRemind`, `message`) VALUES(?, ?, ?, ?, ?, ?)',
+            ['integer', 'integer', 'integer', 'datetime', 'string', 'integer']
+        );
         $query->bindValue(1, $id);
         $query->bindValue(2, $message->id);
         $query->bindValue(3, $message->member->id);
@@ -216,7 +231,6 @@ HELP;
         $query->bindValue(5, $time);
         $query->bindValue(6, $text);
         $query->execute();
-
     }
 }
 
