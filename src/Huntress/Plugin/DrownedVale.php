@@ -27,6 +27,8 @@ class DrownedVale implements PluginInterface
     public const ROLE_MEMBER = 943996715160182844;
     public const ROLE_TENURED = 943653875368480808;
     public const ROLE_DEPOT = 944096576249417749;
+    public const ROLE_OP = 964636163312877578;
+    public const ROLE_WARDEN = 944111822615748650;
 
     public const ROLE_VC_LOW = 965150197598523402;
     public const ROLE_VC_HIGH = 965151757657325608;
@@ -80,7 +82,7 @@ class DrownedVale implements PluginInterface
             return null;
         }
 
-        if ($data->message->member->roles->has(944111822615748650)) {
+        if ($data->message->member->roles->has(self::ROLE_WARDEN)) {
             return $data->message->react("🤡");
         }
 
@@ -100,7 +102,15 @@ class DrownedVale implements PluginInterface
             return $data->message->reply("Usage: `!nukerole ROLE`");
         }
 
+        $rolesWeCanNuke = [
+            self::ROLE_DEPOT,
+            self::ROLE_OP
+        ];
+
         $role = self::parseRole($data->guild, $roleStr);
+        if (!in_array($role, $rolesWeCanNuke)) {
+            return $data->message->reply("!nukerole cannot be used on this role.");
+        }
         if (is_null($role)) {
             return $data->message->reply("Unknown role. Type it out, @ it, or paste in the role ID.");
         }
