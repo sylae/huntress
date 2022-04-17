@@ -54,6 +54,37 @@ class DrownedVale implements PluginInterface
                 ->addGuild(self::GUILD)
                 ->setCallback([self::class, "dviVCRename"])
         );
+
+        // todo: update core HEM to include raw event data for cases like this
+        $bot->on("guildMemberUpdate", [self::class, "dviRoleLog"]);
+    }
+
+    public static function dviRoleLog(GuildMember $new, ?GuildMember $old): ?PromiseInterface
+    {
+        if (is_null($old)) {
+            return null;
+        }
+
+        if ($new->roles->count() == $old->roles->count()) {
+            return null;
+        }
+
+        $added = $new->roles->diffKeys($old->roles);
+        $removed = $old->roles->diffKeys($new->roles);
+
+        $x = [];
+        $x[] = $added->map(function (\CharlotteDunois\Yasmin\Models\Role $v) use ($new) {
+            return $v->client->channels->get(self::CH_LOG)->send(
+                sprintf("[DrownedVale] <@%s> had role `%s` added.", $new->id, $v->name)
+            );
+        });
+        $x[] = $removed->map(function (\CharlotteDunois\Yasmin\Models\Role $v) use ($new) {
+            return $v->client->channels->get(self::CH_LOG)->send(
+                sprintf("[DrownedVale] <@%s> had role `%s` removed.", $new->id, $v->name)
+            );
+        });
+
+        return all($x);
     }
 
     public static function pollActiveCheck(Huntress $bot): ?PromiseInterface
