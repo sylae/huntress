@@ -108,11 +108,11 @@ class DrownedVale implements PluginInterface
         ];
 
         $role = self::parseRole($data->guild, $roleStr);
-        if (!in_array($role, $rolesWeCanNuke)) {
-            return $data->message->reply("!nukerole cannot be used on this role.");
-        }
         if (is_null($role)) {
             return $data->message->reply("Unknown role. Type it out, @ it, or paste in the role ID.");
+        }
+        if (!in_array($role, $rolesWeCanNuke)) {
+            return $data->message->reply("!nukerole cannot be used on this role.");
         }
 
         $cull = $data->guild->members->filter(function (GuildMember $v) use ($role) {
