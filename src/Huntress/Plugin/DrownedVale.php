@@ -12,6 +12,7 @@ use CharlotteDunois\Yasmin\Models\GuildMember;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
+use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use React\Promise\PromiseInterface;
@@ -45,6 +46,13 @@ class DrownedVale implements PluginInterface
         $bot->eventManager->addEventListener(
             EventListener::new()->setCallback([self::class, "dviVCAccess"])
                 ->addEvent("voiceStateUpdate")->addGuild(self::GUILD)
+        );
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("vc")
+                ->addCommand("vcr")
+                ->addGuild(self::GUILD)
+                ->setCallback([self::class, "dviVCRename"])
         );
     }
 
@@ -84,6 +92,37 @@ class DrownedVale implements PluginInterface
         }
     }
 
+    public static function dviVCRename(EventData $data): ?PromiseInterface
+    {
+        if (is_null($data->message->member->voiceChannel) ||
+            !$data->guild->channels->has($data->message->member->voiceChannel->id)
+        ) {
+            return $data->message->reply("You must be in a voice channel to use this command");
+        }
+
+        $p = new Permission("p.dvi.vc.rename", $data->huntress, true);
+        $p->addMessageContext($data->message);
+        if (!$p->resolve()) {
+            return $p->sendUnauthorizedMessage($data->message->channel);
+        }
+
+        if ($name = self::arg_substr($data->message->content, 1) ?? false) {
+            if (mb_strlen($name) > 100) { // discord limit
+                return $data->message->reply("Voice channel name must be less than 100 chars.");
+            }
+            // todo: further filtering to ensure the channel name will pass muster; for now we'll just shit ourselves if discord throws an error.
+            return $data->message->member->voiceChannel->setName($name, $data->message->getJumpURL())->then(
+                function () use ($data) {
+                    return $data->message->react("😤");
+                },
+                function () use ($data) {
+                    return $data->message->reply("Discord rejected this name!");
+                }
+            );
+        } else {
+            return $data->message->reply("Usage: `!vc New Voice Channel Name`");
+        }
+    }
 
     public static function dviVCAccess(EventData $data): void
     {
