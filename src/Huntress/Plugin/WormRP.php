@@ -366,12 +366,20 @@ class WormRP implements PluginInterface
         try {
             $query = $bot->db->prepare("replace into wormrp_staff (`idUser`, `staffRole`) values (?, ?);");
             $bot->guilds->get(118981144464195584)->members->filter(function (GuildMember $v) {
-                return $v->roles->has(456321111945248779); // || $v->roles->has(CCA_ROLE_ID);
+                return $v->roles->has(456321111945248779) || $v->roles->has(965849665411121192);
             })->each(function (GuildMember $v) use ($query) {
                 $query->bindValue(1, $v->id, ParameterType::INTEGER);
-                $query->bindValue(2, 456321111945248779, ParameterType::INTEGER); // todo: add cca role
+                if ($v->roles->has(456321111945248779)) {
+                    $query->bindValue(2, 456321111945248779, ParameterType::INTEGER);
+                } elseif ($v->roles->has(965849665411121192)) {
+                    $query->bindValue(2, 965849665411121192, ParameterType::INTEGER);
+                } else {
+                    // should not do anything but lets be safe
+                    return null;
+                }
                 $query->executeQuery();
             });
+            // todo: yeet old staff
         } catch (Throwable $e) {
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
