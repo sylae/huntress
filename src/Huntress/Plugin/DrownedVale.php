@@ -10,13 +10,16 @@ namespace Huntress\Plugin;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\MessageReaction;
 use CharlotteDunois\Yasmin\Models\User;
+use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Intervention\Image\ImageManager;
 use React\Promise\ExtendedPromiseInterface as PromiseInterface;
+use thiagoalessio\TesseractOCR\TesseractOCR;
 use Throwable;
 
 use function React\Promise\all;
@@ -41,7 +44,7 @@ class DrownedVale implements PluginInterface
 
     public const CH_LOG = 943655113854185583;
     public const GUILD = 943653352305209406;
-    
+
     public const BUFFET_MSGS = [962987536932823040];
 
     public static function register(Huntress $bot)
@@ -58,6 +61,12 @@ class DrownedVale implements PluginInterface
                 ->setCallback([self::class, "dviVCRename"])
         );
 
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("stockpile")
+                ->addGuild(self::GUILD)
+                ->setCallback([self::class, "stockpile"])
+        );
 
         $bot->eventManager->addEventListener(
             EventListener::new()
@@ -94,6 +103,47 @@ class DrownedVale implements PluginInterface
         }
 
         return null;
+    }
+
+
+    // very WIP
+    public static function stockpile(EventData $data): ?\React\Promise\PromiseInterface
+    {
+        $p = new Permission("p.dvi.stockpile", $data->huntress, false);
+        $p->addMessageContext($data->message);
+        if (!$p->resolve() || $data->message->author->bot || $data->message->attachments->count() == 0) {
+            return null;
+        }
+
+        return URLHelpers::resolveURLToData($data->message->attachments->first()->url)->then(
+            function (string $img) use ($data) {
+                $im = new ImageManager();
+                $items = $im->make($img);
+                $items->resize(
+                    1920,
+                    1080,
+                    function ($constraint) {
+                        $constraint->aspectRatio();
+                    }
+                );
+
+                $code = clone $items;
+                $code->crop(192, 22, 862, 522);
+
+                $items->crop(568, 285, 858, 218);
+                $itemBlob = $items->encode("jpg");
+
+                $ocr = new TesseractOCR();
+                $blob = $code->encode('bmp');
+                $ocr->imageData($blob, strlen($blob));
+                $stockpileName = $ocr->run();
+
+                return $data->message->channel->send(
+                    $stockpileName,
+                    ['files' => [['name' => "test.jpg", 'data' => $itemBlob]]]
+                );
+            }
+        );
     }
 
     public static function dviNuke(EventData $data): ?PromiseInterface
@@ -233,19 +283,6 @@ class DrownedVale implements PluginInterface
         }
     }
 
-    public static function getReactMapping(mixed $reactID): array
-    {
-        return match ($reactID) {
-            "944208162112802826" => [944203243964207144, 'p.dvi.roles.qrf'], // qrf
-            "958203821451001906" => [944211152668327937, 'p.dvi.roles.oper8or'], // oper8or
-            "958768926941134878" => [959556988075917383, 'p.dvi.roles.logi'], // logi
-            "961457534017876018" => [961353321552175164, 'p.dvi.roles.streamist'], // stream
-            "🥪" => [944107391677521940, 'p.dvi.roles.sudo'], // sudo
-
-            default => [null, true],
-        };
-    }
-    
     public static function dviBuffetAdd(MessageReaction $reaction, User $reactor): ?PromiseInterface
     {
         /** @var Huntress $bot */
@@ -290,6 +327,19 @@ class DrownedVale implements PluginInterface
         }
     }
 
+    public static function getReactMapping(mixed $reactID): array
+    {
+        return match ($reactID) {
+            "944208162112802826" => [944203243964207144, 'p.dvi.roles.qrf'], // qrf
+            "958203821451001906" => [944211152668327937, 'p.dvi.roles.oper8or'], // oper8or
+            "958768926941134878" => [959556988075917383, 'p.dvi.roles.logi'], // logi
+            "961457534017876018" => [961353321552175164, 'p.dvi.roles.streamist'], // stream
+            "🥪" => [944107391677521940, 'p.dvi.roles.sudo'], // sudo
+
+            default => [null, true],
+        };
+    }
+
     public static function dviBuffetRemove(MessageReaction $reaction, User $reactor): ?PromiseInterface
     {
         /** @var Huntress $bot */
@@ -327,5 +377,5 @@ class DrownedVale implements PluginInterface
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
-    
+
 }
