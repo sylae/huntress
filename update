@@ -1,6 +1,6 @@
 #!/bin/sh -x
 
-git pull -c color.ui=always --recurse-submodules
+git -c color.ui=always pull --recurse-submodules
 composer install --no-progress --ansi
 
 cd musicbox
