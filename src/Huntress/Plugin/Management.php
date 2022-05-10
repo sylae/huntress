@@ -50,8 +50,10 @@ class Management implements PluginInterface
     public static function invite(Huntress $bot, Message $message): ?Promise
     {
         return $bot->generateOAuthInvite()->then(function ($i) use ($message) {
-            self::send($message->channel,
-                sprintf("Use the following URL to add this Huntress instance to your server!\n<%s>", $i));
+            self::send(
+                $message->channel,
+                sprintf("Use the following URL to add this Huntress instance to your server!\n<%s>", $i)
+            );
         });
     }
 
@@ -61,8 +63,11 @@ class Management implements PluginInterface
             return self::unauthorized($message);
         } else {
             try {
-                return self::send($message->channel, "```" . PHP_EOL . self::gitPull() . "```",
-                    ['split' => ['before' => '```' . PHP_EOL, 'after' => '```']]);
+                return self::send(
+                    $message->channel,
+                    "```ansi" . PHP_EOL . self::gitPull() . "```",
+                    ['split' => ['before' => '```ansi' . PHP_EOL, 'after' => '```']]
+                );
             } catch (Throwable $e) {
                 return self::exceptionHandler($message, $e, true);
             }
@@ -111,15 +116,22 @@ class Management implements PluginInterface
             $embed->addField("Guilds / Channels / (loaded) Users", implode(" / ", $count));
             $embed->addField("Huntress", self::gitVersion());
             $embed->addField("System", php_uname());
-            $embed->addField("Uptime",
-                sprintf("%s - *(connected %s)*", self::$startupTime->diffForHumans(null, true, null, 2),
-                    self::$startupTime->toAtomString()));
+            $embed->addField(
+                "Uptime",
+                sprintf(
+                    "%s - *(connected %s)*",
+                    self::$startupTime->diffForHumans(null, true, null, 2),
+                    self::$startupTime->toAtomString()
+                )
+            );
 
 
             $plugins = implode("\n", self::getPlugins());
             if (mb_strlen($plugins) > 0) {
-                $inheritance = MessageHelpers::splitMessage($plugins,
-                    ['maxLength' => 1024]);
+                $inheritance = MessageHelpers::splitMessage(
+                    $plugins,
+                    ['maxLength' => 1024]
+                );
                 $first = true;
                 foreach ($inheritance as $i) {
                     $embed->addField($first ? "Loaded Plugins" : "Loaded Plugins (cont.)", $i);
@@ -132,8 +144,10 @@ class Management implements PluginInterface
                 $deps .= "[$p](https://packagist.org/packages/$p) ($v)\n";
             }
             if (mb_strlen($deps) > 0) {
-                $inheritance = MessageHelpers::splitMessage($deps,
-                    ['maxLength' => 1024]);
+                $inheritance = MessageHelpers::splitMessage(
+                    $deps,
+                    ['maxLength' => 1024]
+                );
                 $first = true;
                 foreach ($inheritance as $i) {
                     $embed->addField($first ? "Composer dependencies" : "Composer dependencies (cont.)", $i);
@@ -227,7 +241,9 @@ class Management implements PluginInterface
                 Message $message
             ) use ($message_tx, $dstamp_tx) {
                 $message_rx = Carbon::createFromTimestampMs((int)(round(microtime(true) * 1000)));
-                $dstamp_rx = Carbon::createFromTimestampMs((int)(Snowflake::deconstruct($message->id)->timestamp * 1000));
+                $dstamp_rx = Carbon::createFromTimestampMs(
+                    (int)(Snowflake::deconstruct($message->id)->timestamp * 1000)
+                );
 
                 $v = [
                     number_format(($message_rx->format("U.u") - $message_tx->format("U.u")) * 1000),
