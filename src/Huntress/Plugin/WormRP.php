@@ -68,7 +68,7 @@ class WormRP implements PluginInterface
             );
 
             $bot->eventManager->addURLEvent(
-                "https://syl.ae/wormrp/roles.php",
+                "https://wormrp.com/api/roles",
                 60,
                 [self::class, "wikiRoleHandler"]
             );
@@ -519,7 +519,7 @@ class WormRP implements PluginInterface
         $items = json_decode($string)->data->children;
         foreach ($items as $item) {
             return "I didn't find anything on the WormRP wiki, but reddit gave me this: https://www.reddit.com" . $item->data->permalink .
-                "\n*If this is your character, please port them over to the wiki when you have time with this link: <https://syl.ae/wormrpwiki.php?name=" .
+                "\n*If this is your character, please port them over to the wiki when you have time with this link: <https://wormrp.com/reports/wikiwizard?name=" .
                 rawurlencode($char) . ">*";
         }
         return null;
