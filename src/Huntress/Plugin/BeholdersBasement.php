@@ -134,10 +134,13 @@ class BeholdersBasement implements PluginInterface
                 $m .= "\nGlitch!";
             }
 
-            $message = sprintf("%s rolled **%s** dice\n%s\n%s",
+            $message = sprintf(
+                "%s rolled **%s** dice\n%s\n%s",
                 $data->message->member,
                 $num,
-                $m, implode(" ", $rolls));
+                $m,
+                implode(" ", $rolls)
+            );
             return $data->message->reply($message);
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, false);
@@ -151,18 +154,28 @@ class BeholdersBasement implements PluginInterface
             $getOpt->set(GetOpt::SETTING_SCRIPT_NAME, '!bb');
             $getOpt->set(GetOpt::SETTING_STRICT_OPERANDS, true);
             $commands = [];
-            $commands[] = Command::create('create',
-                [self::class, 'create'])->setDescription('Create a new game')->addOperands([
-                (new Operand('gm',
-                    Operand::REQUIRED))->setValidation('is_string')->setDescription("The GM for the match, in Huntress-readable format."),
+            $commands[] = Command::create(
+                'create',
+                [self::class, 'create']
+            )->setDescription('Create a new game')->addOperands([
+                (new Operand(
+                    'gm',
+                    Operand::REQUIRED
+                ))->setValidation('is_string')->setDescription("The GM for the match, in Huntress-readable format."),
             ])->addOptions([
-                (new Option("p", "private",
-                    GetOpt::NO_ARGUMENT))->setDescription("Only allow access to players and staff."),
+                (new Option(
+                    "p", "private",
+                    GetOpt::NO_ARGUMENT
+                ))->setDescription("Only allow access to players and staff."),
             ]);
-            $commands[] = Command::create('add',
-                [self::class, 'summon'])->setDescription('Add a player (or bot) to this game\'s role.')->addOperands([
-                (new Operand('user',
-                    Operand::REQUIRED))->setValidation('is_string')->setDescription("The user to add, in Huntress-readable format."),
+            $commands[] = Command::create(
+                'add',
+                [self::class, 'summon']
+            )->setDescription('Add a player (or bot) to this game\'s role.')->addOperands([
+                (new Operand(
+                    'user',
+                    Operand::REQUIRED
+                ))->setValidation('is_string')->setDescription("The user to add, in Huntress-readable format."),
             ]);
             $getOpt->addCommands($commands);
             try {
@@ -190,8 +203,11 @@ class BeholdersBasement implements PluginInterface
         }
         $gm = self::parseGuildUser($message->guild, $getOpt->getOperand("gm"));
         if (!$gm instanceof GuildMember) {
-            return self::error($message, "Invalid user",
-                "I couldn't figure out who that is. Try using their tag or @ing them?");
+            return self::error(
+                $message,
+                "Invalid user",
+                "I couldn't figure out who that is. Try using their tag or @ing them?"
+            );
         }
         return self::createGameAndRoom($gm, $message, (bool)$getOpt->getOption("private"));
     }
@@ -205,11 +221,13 @@ class BeholdersBasement implements PluginInterface
             $id = Snowflake::generate();
 
             // create role
-            return $message->guild->createRole([
-                'name' => 'game-' . Snowflake::format($id),
-                'mentionable' => true,
-                'color' => random_int(0x0, 0xffffff),
-            ], "Created on behalf of {$message->author->tag} from {$message->getJumpURL()}"
+            return $message->guild->createRole(
+                [
+                    'name' => 'game-' . Snowflake::format($id),
+                    'mentionable' => true,
+                    'color' => random_int(0x0, 0xffffff),
+                ],
+                "Created on behalf of {$message->author->tag} from {$message->getJumpURL()}"
             )->then(function (\CharlotteDunois\Yasmin\Models\Role $role) use ($message, $gm, $private, $id) {
                 // create channel
                 return $message->guild->createChannel([
@@ -235,18 +253,17 @@ class BeholdersBasement implements PluginInterface
                         ];
                         $perms[] = [
                             'type' => 'role',
-                            'id' => self::MODS,
-                            'allow' => Permissions::PERMISSIONS['VIEW_CHANNEL'],
-                        ];
-                        $perms[] = [
-                            'type' => 'role',
                             'id' => $role->id,
                             'allow' => Permissions::PERMISSIONS['VIEW_CHANNEL'],
                         ];
 
-                        $channel->setPermissionOverwrites($perms,
-                            "Created on behalf of {$message->author->tag} from {$message->getJumpURL()}");
-                        return $message->reply("<@&{$role->id}> and matching category have been added. Please rename them at your leisure.")->then(function (
+                        $channel->setPermissionOverwrites(
+                            $perms,
+                            "Created on behalf of {$message->author->tag} from {$message->getJumpURL()}"
+                        );
+                        return $message->reply(
+                            "<@&{$role->id}> and matching category have been added. Please rename them at your leisure."
+                        )->then(function (
                             $m2
                         ) use ($role, $gm) {
                             return $gm->addRole($role);
@@ -254,7 +271,6 @@ class BeholdersBasement implements PluginInterface
                     } catch (Throwable $e) {
                         self::exceptionHandler($message, $e);
                     }
-
                 }, function ($error) use ($message) {
                     self::error($message, "Error", json_encode($error));
                 });
