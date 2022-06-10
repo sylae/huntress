@@ -41,14 +41,15 @@ class PCT implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(EventListener::new()->addEvent("dbSchema")->setCallback([
-            self::class,
-            'db',
-        ]));
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addEvent("dbSchema")
+                ->setCallback([self::class, 'db',])
+        );
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding RSS event on testing.");
         } else {
-            new RedditProcessor($bot, "theVolcano", "wormfanfic", 30, [542263101559668736]);
+            new RedditProcessor($bot, "theVolcano", "wormfanfic", 30, [542263101559668736, 825140100933091388]);
         }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
@@ -76,8 +77,10 @@ class PCT implements PluginInterface
                 return $member->setNickname("Recruit {$member->displayName}", "new user setup");
             })
             ->then(function (GuildMember $member) {
-                return self::send($member->guild->channels->get(397462075896627221),
-                    sprintf("Welcome to PCT, %s!", (string)$member));
+                return self::send(
+                    $member->guild->channels->get(397462075896627221),
+                    sprintf("Welcome to PCT, %s!", (string)$member)
+                );
             });
     }
 
@@ -87,8 +90,10 @@ class PCT implements PluginInterface
             return self::unauthorized($message);
         }
         try {
-            $user = self::parseGuildUser($message->guild,
-                str_replace(self::_split($message->content)[0], "", $message->content));
+            $user = self::parseGuildUser(
+                $message->guild,
+                str_replace(self::_split($message->content)[0], "", $message->content)
+            );
             if (!$user instanceof GuildMember) {
                 return self::error($message, "Error", "I don't know who that is.");
             }
@@ -113,8 +118,10 @@ class PCT implements PluginInterface
 
                     return $user->addRole($new_rank[0], "Promotion on behalf of {$message->author->tag}")
                         ->then(function (GuildMember $member) use ($message, $new_rank) {
-                            return $member->setNickname("{$new_rank[1]} {$member->user->username}",
-                                "Promotion on behalf of {$message->author->tag}");
+                            return $member->setNickname(
+                                "{$new_rank[1]} {$member->user->username}",
+                                "Promotion on behalf of {$message->author->tag}"
+                            );
                         })
                         ->then(function (GuildMember $member) use ($message) {
                             return self::send($message->channel, "$member has been promoted!");
@@ -131,8 +138,10 @@ class PCT implements PluginInterface
             return self::unauthorized($message);
         }
         try {
-            $user = self::parseGuildUser($message->guild,
-                str_replace(self::_split($message->content)[0], "", $message->content));
+            $user = self::parseGuildUser(
+                $message->guild,
+                str_replace(self::_split($message->content)[0], "", $message->content)
+            );
             if (!$user instanceof GuildMember) {
                 return self::error($message, "Error", "I don't know who that is.");
             }
@@ -160,8 +169,10 @@ class PCT implements PluginInterface
                             $message,
                             $user_rank
                         ) {
-                            return $member->setNickname(self::RANKS[$user_rank - 1][1] . " {$member->user->username}",
-                                "Demotion on behalf of {$message->author->tag}");
+                            return $member->setNickname(
+                                self::RANKS[$user_rank - 1][1] . " {$member->user->username}",
+                                "Demotion on behalf of {$message->author->tag}"
+                            );
                         })
                         ->then(function (GuildMember $member) use ($message) {
                             return self::send($message->channel, "$member has been demoted. :pensive:");
