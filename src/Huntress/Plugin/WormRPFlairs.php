@@ -486,7 +486,7 @@ class WormRPFlairs implements PluginInterface
         })->then(function (array $cd) {
             $m2 = preg_match(sprintf(self::TPL_REGEX, "rep_notoriety"), $cd['content'],);
             $m3 = preg_match(sprintf(self::TPL_REGEX, "rep_criminal"), $cd['content'],);
-            if (!($m1 && $m2 && $m3)) {
+            if (!($m2 && $m3)) {
                 return reject("Could not find template parameters in source wikipage. Please @ keira");
             }
             $c = $cd['content'];
