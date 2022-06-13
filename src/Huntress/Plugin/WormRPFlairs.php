@@ -416,16 +416,19 @@ class WormRPFlairs implements PluginInterface
                     return $cd;
                 })->then(function (array $cd) use ($bot, $browser) {
                     // then we actually log in!
-                    return $browser->submit(
+                    return $browser->post(
                         "https://wiki.wormrp.com/w/api.php",
                         [
+                            'Content-Type' => 'application/x-www-form-urlencoded',
+                            'Cookie' => self::cookieString()
+                        ],
+                        http_build_query([
                             'action' => 'login',
                             'format' => 'json',
                             'lgname' => $bot->config['wiki']['username'],
                             'lgpassword' => $bot->config['wiki']['password'],
                             'lgtoken' => $cd['logintoken'],
-                        ],
-                        ['Cookie' => self::cookieString()]
+                        ])
                     )->then(function (
                         ResponseInterface $response
                     ) use ($cd) {
