@@ -481,7 +481,6 @@ class WormRPFlairs implements PluginInterface
         }, function ($e) {
             return "I couldn't access the wiki :pensive:";
         })->then(function (array $cd) {
-            $m1 = preg_match(sprintf(self::TPL_REGEX, "rep_morality"), $cd['content'],);
             $m2 = preg_match(sprintf(self::TPL_REGEX, "rep_notoriety"), $cd['content'],);
             $m3 = preg_match(sprintf(self::TPL_REGEX, "rep_criminal"), $cd['content'],);
             if (!($m1 && $m2 && $m3)) {
@@ -499,9 +498,13 @@ class WormRPFlairs implements PluginInterface
             return $cd;
         })->then(function (array $cd) {
             // then we actually, fucking finally, edit the page!
-            return URLHelpers::getHTTPClient()->submit(
+            return URLHelpers::getHTTPClient()->post(
                 "https://wiki.wormrp.com/w/api.php",
                 [
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Cookie' => self::cookieString()
+                ],
+                http_build_query([
                     'action' => 'edit',
                     'format' => 'json',
                     'title' => $cd['wikipage'],
@@ -513,8 +516,8 @@ class WormRPFlairs implements PluginInterface
                     'contentformat' => 'text/x-wiki',
                     'contentmodel' => 'wikitext',
                     'token' => $cd['csrf'],
-                ],
-                ['Cookie' => self::cookieString()]
+                ]),
+
             )->then(function (
                 ResponseInterface $response
             ) use ($cd) {
