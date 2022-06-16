@@ -49,7 +49,7 @@ class PCT implements PluginInterface
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding RSS event on testing.");
         } else {
-            new RedditProcessor($bot, "theVolcano", "wormfanfic", 30, [542263101559668736, 825140100933091388]);
+            new RedditProcessor($bot, "theVolcano", "wormfanfic", 30, [542263101559668736, 986849289491841024]);
         }
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "promote", [self::class, "promote"]);
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "demote", [self::class, "demote"]);
