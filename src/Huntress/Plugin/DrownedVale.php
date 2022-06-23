@@ -31,6 +31,7 @@ class DrownedVale implements PluginInterface
     use PluginHelperTrait;
 
     public const ROLE_COLONIAL = 943654648252858368;
+    public const ROLE_ALLIES = 944112455028719637;
     public const ROLE_RECRUIT = 944096516593831947;
     public const ROLE_MEMBER = 943996715160182844;
     public const ROLE_TENURED = 943653875368480808;
@@ -184,6 +185,15 @@ class DrownedVale implements PluginInterface
         }
 
         $cull = $data->guild->members->filter(function (GuildMember $v) use ($role) {
+            if ($role->id == self::ROLE_COLONIAL) {
+                // special case: don't remove collie role from DVI, Recruits, or Allies.
+                $isMember = $v->roles->has(self::ROLE_MEMBER);
+                $isRecruit = $v->roles->has(self::ROLE_RECRUIT);
+                $isAlly = $v->roles->has(self::ROLE_ALLIES);
+                if ($isMember || $isRecruit || $isAlly) {
+                    return false;
+                }
+            }
             return $v->roles->has($role->id);
         });
 
