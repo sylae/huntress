@@ -161,7 +161,9 @@ class DrownedVale implements PluginInterface
 
         $rolesWeCanNuke = [
             self::ROLE_DEPOT,
-            self::ROLE_OP
+            self::ROLE_OP,
+            self::ROLE_COLONIAL,
+            self::ROLE_WARDEN
         ];
 
         $role = self::parseRole($data->guild, $roleStr);
