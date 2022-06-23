@@ -7,7 +7,9 @@
 
 namespace Huntress\Plugin;
 
+use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\GuildMember;
+use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageReaction;
 use CharlotteDunois\Yasmin\Models\User;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
@@ -18,7 +20,7 @@ use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Intervention\Image\ImageManager;
-use React\Promise\ExtendedPromiseInterface as PromiseInterface;
+use React\Promise\PromiseInterface;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 use Throwable;
 
@@ -81,6 +83,13 @@ class DrownedVale implements PluginInterface
                 ->addCommand("nukerole")
                 ->addGuild(self::GUILD)
                 ->setCallback([self::class, "dviNuke"])
+        );
+
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("newWarRoles")
+                ->addGuild(self::GUILD)
+                ->setCallback([self::class, "newWarRoles"])
         );
 
         // todo: update core HEM to include raw event data for cases like this
@@ -380,4 +389,65 @@ class DrownedVale implements PluginInterface
         }
     }
 
+    public static function newWarRoles(EventData $data): ?PromiseInterface
+    {
+        $p = new Permission("p.dvi.nukerole", $data->huntress, false);
+        $p->addMessageContext($data->message);
+        if (!$p->resolve()) {
+            return $p->sendUnauthorizedMessage($data->message->channel);
+        }
+
+        $url = self::arg_substr($data->message->content, 1, 1) ?? false;
+        $rC = self::arg_substr($data->message->content, 2, 1) ?? false;
+        $rW = self::arg_substr($data->message->content, 3, 1) ?? false;
+
+        if (!$url || !$rC || !$rW) {
+            return $data->message->reply("usage: `!newWarRoles MESSAGE_URL COLLIE_REACT_ID WARDEN_REACT_ID`");
+        }
+
+        return self::fetchMessage($data->huntress, $url)->then(function (Message $quest) use ($data, $rW, $rC) {
+            return all(
+                $quest->reactions->map(fn(MessageReaction $mr) => $mr->fetchUsers())->all()
+            )->then(function (array $reactUsers) use ($data, $quest, $rW, $rC) {
+                /** @var Collection $collies */
+                $collies = $reactUsers[$rC];
+                $wardens = $reactUsers[$rW];
+                $both = $collies->intersect($wardens);
+
+                $x = [];
+                $collies->each(function (User $v) use ($data, &$x, $both) {
+                    if (!$both->has($v->id)) {
+                        $x[] = self::_newRoleAdder($v, self::ROLE_COLONIAL, $data);
+                    }
+                });
+                $wardens->each(function (User $v) use ($data, &$x, $both) {
+                    if (!$both->has($v->id)) {
+                        $x[] = self::_newRoleAdder($v, self::ROLE_WARDEN, $data);
+                    }
+                });
+                $both->each(function (User $v) use ($data, &$x) {
+                    $gm = $data->guild->members->get($v->id);
+                    if (!is_null($gm)) {
+                        $x[] = $data->message->channel->send(sprintf("⚠ %s has both reacts, skipping", $gm));
+                    }
+                });
+                return all($x)->then(fn() => $data->message->reply(sprintf("%s changes pushed", count($x))));
+            });
+        });
+    }
+
+    protected static function _newRoleAdder(User $user, int $targetRole, EventData $data): ?PromiseInterface
+    {
+        $gm = $data->guild->members->get($user->id);
+        $trN = $data->guild->roles->get($targetRole)->name;
+        if (is_null($gm)) {
+            return $data->message->channel->send(sprintf("⚠ Could not find %s in server", $user));
+        }
+        if ($gm->roles->has($targetRole)) {
+            return $data->message->channel->send(sprintf("%s already has %s role", $gm, $trN));
+        }
+        return $gm->addRole($targetRole)->then(
+            fn() => $data->message->channel->send(sprintf("%s given %s role", $gm, $trN))
+        );
+    }
 }
