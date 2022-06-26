@@ -48,7 +48,7 @@ class DrownedVale implements PluginInterface
     public const CH_LOG = 943655113854185583;
     public const GUILD = 943653352305209406;
 
-    public const BUFFET_MSGS = [962987536932823040];
+    public const BUFFET_MSGS = [962987536932823040, 990537233192849468];
 
     public static function register(Huntress $bot)
     {
@@ -356,6 +356,7 @@ class DrownedVale implements PluginInterface
             "958768926941134878" => [959556988075917383, 'p.dvi.roles.logi'], // logi
             "961457534017876018" => [961353321552175164, 'p.dvi.roles.streamist'], // stream
             "🥪" => [944107391677521940, 'p.dvi.roles.sudo'], // sudo
+            "🌭", => [990275897548484628, 'p.dvi.roles.chorizo'], // chorizo
 
             default => [null, true],
         };
