@@ -19,10 +19,10 @@ use Huntress\Huntress;
 use Huntress\Permission;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\ReactRoleSetup;
 use Intervention\Image\ImageManager;
 use React\Promise\PromiseInterface;
 use thiagoalessio\TesseractOCR\TesseractOCR;
-use Throwable;
 
 use function React\Promise\all;
 
@@ -95,8 +95,26 @@ class DrownedVale implements PluginInterface
 
         // todo: update core HEM to include raw event data for cases like this
         $bot->on("guildMemberUpdate", [self::class, "dviRoleLog"]);
-        $bot->on("messageReactionAdd", [self::class, "dviBuffetAdd"]);
-        $bot->on("messageReactionRemove", [self::class, "dviBuffetRemove"]);
+
+        $reactRoles = [
+            "944208162112802826" => [944203243964207144, 'p.dvi.roles.qrf'], // qrf
+            "958203821451001906" => [944211152668327937, 'p.dvi.roles.oper8or'], // oper8or
+            "958768926941134878" => [959556988075917383, 'p.dvi.roles.logi'], // logi
+            "961457534017876018" => [961353321552175164, 'p.dvi.roles.streamist'], // stream
+            "🥪" => [944107391677521940, 'p.dvi.roles.sudo'], // sudo
+            "🌭" => [990275897548484628, 'p.dvi.roles.chorizo'], // chorizo
+        ];
+        foreach (self::BUFFET_MSGS as $msgID) {
+            foreach ($reactRoles as $react => $data) {
+                $rrs = new ReactRoleSetup();
+                $rrs->permissionDefault = false;
+                $rrs->permission = $data[1];
+                $rrs->messageID = $msgID;
+                $rrs->react = $react;
+                $rrs->roleID = $data[0];
+                ReactRole::addReactableMessage($rrs);
+            }
+        }
     }
 
 
@@ -301,102 +319,6 @@ class DrownedVale implements PluginInterface
             $data->user->addRole(self::ROLE_VC_HIGH);
         } elseif ($data->user->roles->has(self::ROLE_VC_HIGH)) {
             $data->user->removeRole(self::ROLE_VC_HIGH);
-        }
-    }
-
-    public static function dviBuffetAdd(MessageReaction $reaction, User $reactor): ?PromiseInterface
-    {
-        /** @var Huntress $bot */
-        $bot = $reaction->client;
-        if ($reactor->id == $bot->user->id) {
-            return null;
-        }
-        try {
-            if (!in_array($reaction->message->id, self::BUFFET_MSGS)) {
-                return null;
-            }
-
-            $reactID = $reaction->emoji->id ?? $reaction->emoji->name;
-
-            [$roleID, $restriction] = self::getReactMapping($reactID);
-            if (is_null($roleID)) {
-                $bot->log->warning("Unknown react $reactID for PronounBot");
-                return $reaction->remove();
-            }
-
-            $role = $reaction->message->guild->roles->get($roleID);
-            if (is_null($role)) {
-                $bot->log->warning("Unknown role $roleID for PronounBot");
-                return $reaction->remove($reactor);
-            }
-
-            $reactMember = $reaction->message->guild->members->get($reactor->id);
-            if (is_null($reactMember)) {
-                // weird but ok, might happen if we havent fetched yet.
-                return $reaction->remove($reactor);
-            }
-
-            $p = new Permission($restriction, $bot, false);
-            $p->addMemberContext($reactMember);
-            if (!$p->resolve()) {
-                return $reaction->remove($reactor);
-            }
-
-            return $reactMember->addRole($role);
-        } catch (Throwable $e) {
-            $bot->log->warning($e->getMessage(), ['exception' => $e]);
-        }
-    }
-
-    public static function getReactMapping(mixed $reactID): array
-    {
-        return match ($reactID) {
-            "944208162112802826" => [944203243964207144, 'p.dvi.roles.qrf'], // qrf
-            "958203821451001906" => [944211152668327937, 'p.dvi.roles.oper8or'], // oper8or
-            "958768926941134878" => [959556988075917383, 'p.dvi.roles.logi'], // logi
-            "961457534017876018" => [961353321552175164, 'p.dvi.roles.streamist'], // stream
-            "🥪" => [944107391677521940, 'p.dvi.roles.sudo'], // sudo
-            "🌭", => [990275897548484628, 'p.dvi.roles.chorizo'], // chorizo
-
-            default => [null, true],
-        };
-    }
-
-    public static function dviBuffetRemove(MessageReaction $reaction, User $reactor): ?PromiseInterface
-    {
-        /** @var Huntress $bot */
-        $bot = $reaction->client;
-        if ($reactor->id == $bot->user->id) {
-            return null;
-        }
-        try {
-            if (!in_array($reaction->message->id, self::BUFFET_MSGS)) {
-                return null;
-            }
-
-            $reactID = $reaction->emoji->id ?? $reaction->emoji->name;
-
-            [$roleID, $corpOnly] = self::getReactMapping($reactID);
-            if (is_null($roleID)) {
-                $bot->log->warning("Unknown react $reactID for PronounBot");
-                return null;
-            }
-
-            $role = $reaction->message->guild->roles->get($roleID);
-            if (is_null($role)) {
-                $bot->log->warning("Unknown role $roleID for PronounBot");
-                return null;
-            }
-
-            $reactMember = $reaction->message->guild->members->get($reactor->id);
-            if (is_null($reactMember)) {
-                // weird but ok, might happen if we havent fetched yet.
-                return null;
-            }
-
-            return $reactMember->removeRole($role);
-        } catch (Throwable $e) {
-            $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
     }
 
