@@ -377,7 +377,7 @@ class DrownedVale implements PluginInterface
             return $data->message->channel->send(sprintf("⚠ Could not find %s in server", $user));
         }
         if ($gm->roles->has($targetRole)) {
-            return $data->message->channel->send(sprintf("%s already has %s role", $gm, $trN));
+            return null; //$data->message->channel->send(sprintf("%s already has %s role", $gm, $trN));
         }
         return $gm->addRole($targetRole)->then(
             fn() => $data->message->channel->send(sprintf("%s given %s role", $gm, $trN))
