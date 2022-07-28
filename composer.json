@@ -16,7 +16,7 @@
     "doctrine/dbal": "^2.13",
     "league/html-to-markdown": "^4.10",
     "monolog/monolog": "^2.3",
-    "nesbot/carbon": "^2.53",
+    "nesbot/carbon": "^2.60",
     "querypath/querypath": "^3.0"
   },
   "autoload": {
