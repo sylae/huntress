@@ -9,6 +9,8 @@ namespace Huntress\Plugin;
 
 
 use Carbon\Carbon;
+use CharlotteDunois\Yasmin\Models\DMChannel;
+use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Models\TextChannel;
@@ -74,37 +76,65 @@ class Remind implements PluginInterface
             /** @var TextChannel $channel */
             $channel = $bot->channels->get($rem['idChannel']);
             if (is_null($channel)) {
-                return null;
-            }
-            $member = $channel->guild->members->get($rem['idMember']);
-            if (is_null($member)) {
-                return null;
+                // channel doesnt exist anymore
+                $prom = $bot->fetchUser($rem['idMember'])->then(function (\CharlotteDunois\Yasmin\Models\User $user) {
+                    return $user->createDM()->then(function (DMChannel $channel) use ($user) {
+                        return [$channel, $user];
+                    });
+                });
+            } else {
+                $prom = $channel->guild->fetchMember($rem['idMember'])->then(
+                    function (GuildMember $member) use ($channel) {
+                        return [$channel, $member];
+                    }
+                );
             }
 
             $time = \CharlotteDunois\Yasmin\Utils\Snowflake::deconstruct($rem['idMessage'])->timestamp;
             $text = $rem['message'];
-            $url = sprintf(
-                "https://canary.discordapp.com/channels/%s/%s/%s",
-                $channel->guild->id,
-                $channel->id,
-                $rem['idMessage']
-            );
 
             $embed = new MessageEmbed();
-            $embed->setAuthor($member->displayName, $member->user->getAvatarURL(64) ?? null);
-            $embed->setColor($member->id % 0xFFFFFF);
             $embed->setTimestamp($time);
             $embed->setTitle("Reminder!");
             $embed->setDescription($text);
 
-            $query = $bot->db->prepare('DELETE FROM remind WHERE (`idMessage` = ?)', ['integer']);
-            $query->bindValue(1, $rem['idMessage']);
-            $query->execute();
+            return $prom->then(function (array $inD) use ($embed, $bot, $rem) {
+                /** @var TextChannel|DMChannel $channel */
+                $channel = $inD[0];
 
-            return $channel->send($member . ": " . $url, ['embed' => $embed]);
+                /** @var \CharlotteDunois\Yasmin\Models\User|GuildMember $user */
+                $user = $inD[1];
+
+                if ($user instanceof GuildMember) {
+                    $gID = $channel->guild->id;
+                    $embed->setAuthor($user->displayName, $user->getDisplayAvatarURL(64));
+                    $embed->setColor($user->getDisplayColor());
+                } else {
+                    $gID = "@me";
+                    $embed->setAuthor($user->tag, $user->getDisplayAvatarURL(64));
+                    $embed->setColor($user->id % 0xFFFFFF);
+                }
+
+                $url = sprintf(
+                    "https://canary.discordapp.com/channels/%s/%s/%s",
+                    $gID,
+                    $channel->id,
+                    $rem['idMessage']
+                );
+                return $channel->send($user . ": " . $url, ['embed' => $embed]);
+            })->then(function () use ($bot, $rem) {
+                return self::deleteReminderFromDB($bot, $rem['idMessage']);
+            });
         } catch (Throwable $e) {
             $bot->log->warning($e->getMessage(), ['exception' => $e]);
         }
+    }
+
+    protected static function deleteReminderFromDB(Huntress $bot, int $idReminder): bool
+    {
+        $query = $bot->db->prepare('DELETE FROM remind WHERE (`idMessage` = ?)', ['integer']);
+        $query->bindValue(1, $idReminder);
+        return $query->executeStatement();
     }
 
     public static function db(Schema $schema): void
