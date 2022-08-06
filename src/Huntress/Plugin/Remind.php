@@ -73,9 +73,11 @@ class Remind implements PluginInterface
         try {
             /** @var TextChannel $channel */
             $channel = $bot->channels->get($rem['idChannel']);
+            if (is_null($channel)) {
+                return null;
+            }
             $member = $channel->guild->members->get($rem['idMember']);
-
-            if (!$channel || !$member) {
+            if (is_null($member)) {
                 return null;
             }
 
