@@ -14,7 +14,7 @@
     "php": ">=8.0",
     "sylae/yasmin": "dev-master",
     "doctrine/dbal": "^2.13",
-    "league/html-to-markdown": "^4.10",
+    "league/html-to-markdown": "^5.1",
     "monolog/monolog": "^2.3",
     "nesbot/carbon": "^2.53",
     "querypath/querypath": "^3.0"
