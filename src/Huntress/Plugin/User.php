@@ -30,12 +30,17 @@ class User implements PluginInterface
     public static function register(Huntress $bot)
     {
         $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "user", [self::class, "process"]);
-        $bot->on(self::PLUGINEVENT_COMMAND_PREFIX . "av", [self::class, "av"]);
 
         $bot->eventManager->addEventListener(
             EventListener::new()
                 ->addCommand("roster")
                 ->setCallback([self::class, "roster"])
+        );
+
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("av")
+                ->setCallback([self::class, "av"])
         );
     }
 
@@ -209,17 +214,17 @@ class User implements PluginInterface
         return $perm;
     }
 
-    public static function av(Huntress $bot, Message $message): ?Promise
+    public static function av(EventData $data): ?Promise
     {
         try {
             $user = self::parseGuildUser(
-                    $message->guild,
-                    str_replace(self::_split($message->content)[0], "", $message->content)
-                ) ?? $message->member;
+                    $data->guild,
+                    self::arg_substr($data->message->content, 1) ?? ""
+                ) ?? $data->message->member;
 
-            return self::send($message->channel, $user->user->tag . "'s av: " . $user->user->getDisplayAvatarURL());
+            return $data->message->reply($user->displayName . "'s av: " . $user->getDisplayAvatarURL());
         } catch (Throwable $e) {
-            return self::exceptionHandler($message, $e);
+            return self::exceptionHandler($data->message, $e);
         }
     }
 }
