@@ -38,19 +38,22 @@ class Localization implements PluginInterface
 
     public static function register(Huntress $bot)
     {
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addEvent("dbSchema")
-            ->setCallback([self::class, 'db'])
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addEvent("dbSchema")
+                ->setCallback([self::class, 'db'])
         );
 
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addCommand("time")
-            ->setCallback([self::class, "timeHelper"])
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("time")
+                ->setCallback([self::class, "timeHelper"])
         );
 
-        $bot->eventManager->addEventListener(EventListener::new()
-            ->addCommand("timezone")
-            ->setCallback([self::class, "timezone"])
+        $bot->eventManager->addEventListener(
+            EventListener::new()
+                ->addCommand("timezone")
+                ->setCallback([self::class, "timezone"])
         );
     }
 
@@ -58,10 +61,16 @@ class Localization implements PluginInterface
     {
         $t = $schema->createTable("locale");
         $t->addColumn("user", "bigint", ["unsigned" => true]);
-        $t->addColumn("timezone", "text",
-            ['customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]);
-        $t->addColumn("locale", "text",
-            ['customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]);
+        $t->addColumn(
+            "timezone",
+            "text",
+            ['customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]
+        );
+        $t->addColumn(
+            "locale",
+            "text",
+            ['customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]
+        );
         $t->setPrimaryKey(["user"]);
     }
 
@@ -75,11 +84,17 @@ class Localization implements PluginInterface
                     $zone = new CarbonTimeZone($args[1]);
                     $zone = self::normalizeTZName($zone);
                 } catch (\Throwable $e) {
-                    return self::error($data->message, "Unknown Timezone",
-                        "I couldn't understand that. Please pick a value from [this list](https://www.php.net/manual/en/timezones.php).");
+                    return self::error(
+                        $data->message,
+                        "Unknown Timezone",
+                        "I couldn't understand that. Please pick a value from [this list](https://www.php.net/manual/en/timezones.php)."
+                    );
                 }
-                $query = DatabaseFactory::get()->prepare('INSERT INTO locale (user, timezone) VALUES(?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE timezone=VALUES(timezone);', ['integer', 'string']);
+                $query = DatabaseFactory::get()->prepare(
+                    'INSERT INTO locale (user, timezone) VALUES(?, ?) '
+                    . 'ON DUPLICATE KEY UPDATE timezone=VALUES(timezone);',
+                    ['integer', 'string']
+                );
                 $query->bindValue(1, $data->message->author->id);
                 $query->bindValue(2, $zone->getName());
                 $query->execute();
@@ -89,10 +104,15 @@ class Localization implements PluginInterface
             }
             $tz = new UserLocale($data->message->author);
             $now_tz = $tz->applyTimezone($now);
-            return $data->message->reply(sprintf($string, $tz->timezone ?? "<unset (default UTC)>",
-                $tz->localeSandbox(function () use ($now_tz) {
-                    return $now_tz->toDayDateTimeString();
-                })));
+            return $data->message->reply(
+                sprintf(
+                    $string,
+                    $tz->timezone ?? "<unset (default UTC)>",
+                    $tz->localeSandbox(function () use ($now_tz) {
+                        return $now_tz->toDayDateTimeString();
+                    })
+                )
+            );
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e);
         }
@@ -165,16 +185,21 @@ class Localization implements PluginInterface
             $ntime->setTimezone($tz);
             $lines[] = sprintf("**%s**: %s", $tz, $ntime->toDayDateTimeString());
         }
+        $lines[] = sprintf("<t:%s:F>", $time->getTimestamp());
         $lines = implode(PHP_EOL, $lines);
 
         $embed = new MessageEmbed();
 
         $tzinfo = sprintf("%s (%s)", $time->getTimezone()->toRegionName(), $time->getTimezone()->toOffsetName());
-        $embed->addField("Detected Time",
-            $time->toDayDateTimeString() . PHP_EOL . $tzinfo . PHP_EOL . $time->longRelativeToNowDiffForHumans(2));
+        $embed->addField(
+            "Detected Time",
+            $time->toDayDateTimeString() . PHP_EOL . $tzinfo . PHP_EOL . $time->longRelativeToNowDiffForHumans(2)
+        );
 
-        $times = MessageHelpers::splitMessage($lines,
-            ['maxLength' => 1024]);
+        $times = MessageHelpers::splitMessage(
+            $lines,
+            ['maxLength' => 1024]
+        );
         $firstTime = true;
         foreach ($times as $tblock) {
             $embed->addField($firstTime ? "Times" : "Times (cont.)", $tblock);
@@ -189,8 +214,11 @@ class Localization implements PluginInterface
 
     public static function fetchTimezone(GuildMember $member): ?string
     {
-        $res = DatabaseFactory::get()->executeQuery('SELECT * FROM locale WHERE user=?',
-            [$member->id], ["integer"])->fetchAll();
+        $res = DatabaseFactory::get()->executeQuery(
+            'SELECT * FROM locale WHERE user=?',
+            [$member->id],
+            ["integer"]
+        )->fetchAll();
         foreach ($res as $row) {
             return $row['timezone'] ?? null;
         }
@@ -199,8 +227,11 @@ class Localization implements PluginInterface
 
     public static function fetchTimezones(GuildMemberStorage $members): array
     {
-        $res = DatabaseFactory::get()->executeQuery('SELECT * FROM locale WHERE user IN (?)',
-            [$members->pluck("id")->all()], [Connection::PARAM_INT_ARRAY])->fetchAll();
+        $res = DatabaseFactory::get()->executeQuery(
+            'SELECT * FROM locale WHERE user IN (?)',
+            [$members->pluck("id")->all()],
+            [Connection::PARAM_INT_ARRAY]
+        )->fetchAll();
         return array_unique(array_column($res, "timezone"));
     }
 }
