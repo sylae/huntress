@@ -19,6 +19,9 @@
     "thiagoalessio/tesseract_ocr": "^2.12",
     "ulrichsg/getopt-php": "^3.2"
   },
+  "platform": {
+    "php": "8.0.22"
+  },
   "autoload": {
     "psr-4": {
       "": "src/"
