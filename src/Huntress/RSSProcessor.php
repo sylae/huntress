@@ -215,10 +215,10 @@ class RSSProcessor
     protected function formatItemCallback(RSSItem $item): MessageEmbed
     {
 
-        if (mb_strlen($item->body) > 500) {
+        if (mb_strlen($item->body ?? "") > 500) {
             $item->body = substr($item->body, 0, 500) . "...";
         }
-        if (mb_strlen($item->title) > 250) {
+        if (mb_strlen($item->title ?? "") > 250) {
             $item->body = substr($item->title, 0, 250) . "...";
         }
         $embed = new MessageEmbed();
@@ -232,15 +232,15 @@ class RSSProcessor
             $embed->setColor($item->color);
         }
 
-        if (mb_strlen($item->author) > 0) {
+        if (mb_strlen($item->author ?? "") > 0) {
             $embed->setAuthor($item->author);
         }
 
-        if (mb_strlen($item->category) > 0) {
+        if (mb_strlen($item->category ?? "") > 0) {
             $embed->setFooter($item->category);
         }
 
-        if (mb_strlen($item->image) > 0) {
+        if (mb_strlen($item->image ?? "") > 0) {
             $embed->setImage($item->image);
         }
 

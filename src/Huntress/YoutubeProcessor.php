@@ -48,11 +48,12 @@ class YoutubeProcessor extends RSSProcessor
                 $newest = max($newest, $published);
 
                 $x = $this->getObject();
-                $x->title = $item->find('media:title')->text();
+                $x->title = $item->find('media|title')->text();
                 $x->link = $item->find('link')->attr("href");
                 $x->date = $published;
-                $x->image = $item->find('media:thumbnail')->attr("url");
+                $x->image = $item->find('media|thumbnail')->attr("url");
                 $x->author = $item->find('author > name')->text();
+                $x->body = $item->find('media|description')->text();
                 $x->_authorURL = $item->find('author > uri')->text();
 
                 $newItems[] = $x;
