@@ -2807,12 +2807,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sylae/huntress.git",
-                "reference": "9892e9e5718f37ad125b252f833a1d78c5796cba"
+                "reference": "c8ff824f05072ec081bc46d6e38753356919a889"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sylae/huntress/zipball/9892e9e5718f37ad125b252f833a1d78c5796cba",
-                "reference": "9892e9e5718f37ad125b252f833a1d78c5796cba",
+                "url": "https://api.github.com/repos/sylae/huntress/zipball/c8ff824f05072ec081bc46d6e38753356919a889",
+                "reference": "c8ff824f05072ec081bc46d6e38753356919a889",
                 "shasum": ""
             },
             "require": {
@@ -2849,6 +2849,10 @@
             },
             "funding": [
                 {
+                    "type": "github",
+                    "url": "https://github.com/sylae"
+                },
+                {
                     "type": "patreon",
                     "url": "https://www.patreon.com/MisfitMaid"
                 },
@@ -2857,7 +2861,7 @@
                     "url": "https://paypal.me/MisfitMaid"
                 }
             ],
-            "time": "2022-09-18T12:47:59+00:00"
+            "time": "2023-01-22T11:35:56+00:00"
         },
         {
             "name": "sylae/validator",
