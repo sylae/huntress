@@ -33,6 +33,7 @@ class MisfitDiscord implements PluginInterface
     public const GUILD = 788326497177698315;
 
     public const CHANNEL_VODS_MISFIT = 894404211398291466;
+    public const CHANNEL_VODS_ZED = 896145169483722764;
     public const CHANNEL_VODS_CBC = 1063882052337934436;
 
 
@@ -47,7 +48,7 @@ class MisfitDiscord implements PluginInterface
 
         new YoutubeProcessor($bot, "yt_misfitvods", "UCBzuDs8qZKGmuM8B1JzXLMA", 300, [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
         new YoutubeProcessor($bot, "yt_misfitmain", "UCSsTzqsjWo6xzRaoWlriESw", 300, [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
-        new YoutubeProcessor($bot, "yt_zedmain", "UCelaffPVvQ_NMO0Ut9OqzkA", 300, [self::CHANNEL_VODS_CBC]);
+        new YoutubeProcessor($bot, "yt_zedmain", "UCelaffPVvQ_NMO0Ut9OqzkA", 300, [self::CHANNEL_VODS_ZED, self::CHANNEL_VODS_CBC]);
         new YoutubeProcessor($bot, "yt_nashmain", "UCbduWGOXSML0Y_68gYN6qWQ", 300, [self::CHANNEL_VODS_CBC]);
     }
 
