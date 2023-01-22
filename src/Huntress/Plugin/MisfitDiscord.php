@@ -17,6 +17,8 @@ use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
+use Huntress\RSSProcessor;
+use Huntress\YoutubeProcessor;
 use React\Promise\PromiseInterface;
 use Throwable;
 
@@ -30,6 +32,10 @@ class MisfitDiscord implements PluginInterface
     public const CHANNEL_LOG = 790180678905888799;
     public const GUILD = 788326497177698315;
 
+    public const CHANNEL_VODS_MISFIT = 894404211398291466;
+    public const CHANNEL_VODS_CBC = 1063882052337934436;
+
+
     public static function register(Huntress $bot)
     {
         $bot->eventManager->addEventListener(
@@ -38,6 +44,11 @@ class MisfitDiscord implements PluginInterface
                 "pollActiveCheck",
             ])->setPeriodic(10)
         );
+
+        new YoutubeProcessor($bot, "yt_misfitvods", "UCBzuDs8qZKGmuM8B1JzXLMA", 300, [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
+        new YoutubeProcessor($bot, "yt_misfitmain", "UCSsTzqsjWo6xzRaoWlriESw", 300, [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
+        new YoutubeProcessor($bot, "yt_zedmain", "UCelaffPVvQ_NMO0Ut9OqzkA", 300, [self::CHANNEL_VODS_CBC]);
+        new YoutubeProcessor($bot, "yt_nashmain", "UCbduWGOXSML0Y_68gYN6qWQ", 300, [self::CHANNEL_VODS_CBC]);
     }
 
     public static function pollActiveCheck(Huntress $bot)
