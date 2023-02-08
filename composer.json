@@ -13,7 +13,7 @@
   "require": {
     "php": ">=8.0",
     "sylae/yasmin": "dev-master",
-    "doctrine/dbal": "^2.13",
+    "doctrine/dbal": "^3.6",
     "league/html-to-markdown": "^5.1",
     "monolog/monolog": "^2.3",
     "nesbot/carbon": "^2.53",
