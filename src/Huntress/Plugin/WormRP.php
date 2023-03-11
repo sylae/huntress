@@ -29,7 +29,6 @@ use React\ChildProcess\Process;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use Throwable;
-
 use function React\Promise\all;
 
 /**
@@ -133,6 +132,29 @@ class WormRP implements PluginInterface
                     ]);
                 })
         );
+
+        $bot->eventManager->addEventListener(
+            EventListener::new()->setCallback([self::class, "newMemberHandler"])
+                ->addEvent("guildMemberAdd")->addGuild(118981144464195584)
+        );
+    }
+
+
+    public static function newMemberHandler(EventData $data): PromiseInterface
+    {
+        $ch = $data->guild->channels->get(118981144464195584);
+        $gm = $data->user;
+
+        $message = "%s, **welcome to WormRP!**\n" .
+            "First please take a look through our rules, found in #welcome\n" .
+            "you can find some other helpful resources there as well.\n\n" .
+            "Feel free to head on down to <#118983851975376898>  or <#955640767907520553>\n" .
+            "There you'll find some helpful resources on creating a character in the pinned messages.\n" .
+            "If you have questions about the setting, <#256831745272446978> is likewise helpful in that regard.\n" .
+            "If you have any additional questions, feel free to ask in <#118981144464195584> or <#118981977935183873>\n" .
+            "Apologies for any delays, time zones & busy lives mean sometimes things take time";
+
+        return $ch->send(sprintf($message, $gm));
     }
 
     public static function updateWiki(EventData $data): PromiseInterface
