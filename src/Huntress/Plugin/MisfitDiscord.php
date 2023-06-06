@@ -8,18 +8,12 @@
 namespace Huntress\Plugin;
 
 
-use Carbon\Carbon;
 use CharlotteDunois\Yasmin\Models\GuildMember;
-use CharlotteDunois\Yasmin\Models\Message;
-use Huntress\DatabaseFactory;
-use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
-use Huntress\RSSProcessor;
 use Huntress\YoutubeProcessor;
-use React\Promise\PromiseInterface;
 use Throwable;
 
 class MisfitDiscord implements PluginInterface
@@ -46,10 +40,16 @@ class MisfitDiscord implements PluginInterface
             ])->setPeriodic(10)
         );
 
-        new YoutubeProcessor($bot, "yt_misfitvods", "UCBzuDs8qZKGmuM8B1JzXLMA", 300, [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
-        new YoutubeProcessor($bot, "yt_misfitmain", "UCSsTzqsjWo6xzRaoWlriESw", 300, [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
-        new YoutubeProcessor($bot, "yt_zedmain", "UCelaffPVvQ_NMO0Ut9OqzkA", 300, [self::CHANNEL_VODS_ZED, self::CHANNEL_VODS_CBC]);
+        new YoutubeProcessor($bot, "yt_misfitvods", "UCBzuDs8qZKGmuM8B1JzXLMA", 300,
+            [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
+        new YoutubeProcessor($bot, "yt_misfitmain", "UCSsTzqsjWo6xzRaoWlriESw", 300,
+            [self::CHANNEL_VODS_CBC, self::CHANNEL_VODS_MISFIT]);
+        new YoutubeProcessor($bot, "yt_zedmain", "UCelaffPVvQ_NMO0Ut9OqzkA", 300,
+            [self::CHANNEL_VODS_ZED, self::CHANNEL_VODS_CBC]);
         new YoutubeProcessor($bot, "yt_nashmain", "UCbduWGOXSML0Y_68gYN6qWQ", 300, [self::CHANNEL_VODS_CBC]);
+        new YoutubeProcessor($bot, "yt_drekimain", "UC8nj5ZYVFQG0iUJMWwnoq1A", 300, [self::CHANNEL_VODS_CBC]);
+        new YoutubeProcessor($bot, "yt_xanmain", "UCri1zzLib1g41-rZnS5VdFQ", 300, [self::CHANNEL_VODS_CBC]);
+        new YoutubeProcessor($bot, "yt_xanvods", "UCGsbZ6N0sTC4r2O95lhqWEg", 300, [self::CHANNEL_VODS_CBC]);
     }
 
     public static function pollActiveCheck(Huntress $bot)
