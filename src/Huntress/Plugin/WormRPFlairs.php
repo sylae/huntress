@@ -8,26 +8,18 @@
 
 namespace Huntress\Plugin;
 
-use CharlotteDunois\Yasmin\Models\Guild;
-use CharlotteDunois\Yasmin\Models\GuildMember;
-use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use GetOpt\ArgumentException;
 use GetOpt\GetOpt;
 use GetOpt\Operand;
-use GetOpt\Option;
-use Huntress\DatabaseFactory;
 use Huntress\EventData;
 use Huntress\EventListener;
 use Huntress\Huntress;
 use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Psr\Http\Message\ResponseInterface;
-use React\ChildProcess\Process;
-use React\Promise\Deferred;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
-
 use function React\Promise\reject;
 
 /**
@@ -42,26 +34,6 @@ class WormRPFlairs implements PluginInterface
     public const REP_REGEX = "/(A?[A-F])(!?[?+!-$]?)/i";
     public const TPL_REGEX = "/\\|\\s*?(%s)\\s*?=\\s*?(.*?)[\\n\\|]/im";
 
-    public const FLAIR_CLASSES = [
-        'red',
-        'pink',
-        'orange',
-        'green',
-        'flatgreen',
-        'aqua',
-        'lightblue',
-        'blue',
-        'darkblue',
-        'lightpurple',
-        'purple',
-        'brown',
-        'black',
-        'gray',
-        'keira',
-        'Lasercat77',
-        'lightBlueText'
-    ];
-
     public static function register(Huntress $bot)
     {
         $bot->eventManager->addEventListener(
@@ -71,159 +43,6 @@ class WormRPFlairs implements PluginInterface
                 ->addGuild(118981144464195584)
                 ->setCallback([self::class, "repHandler"])
         );
-        $bot->eventManager->addEventListener(
-            EventListener::new()
-                ->addCommand("flair")
-                ->addGuild(118981144464195584)
-                ->setCallback([self::class, "flairHandler"])
-        );
-    }
-
-    public static function fetchAccount(
-        Guild $guild,
-        string $redditName
-    ): ?GuildMember {
-        $qb = DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("*")->from("wormrp_users")->where('`redditName` = ?')->setParameter(0, $redditName, "string");
-        $res = $qb->execute()->fetchAll();
-        foreach ($res as $data) {
-            return $guild->members->get($data['user']) ?? null;
-        }
-        return null;
-    }
-
-    public static function flairHandler(EventData $data): ?Promise
-    {
-        return $data->message->reply("🔮")->then(function (Message $response) use ($data) {
-            try {
-                $getOpt = new GetOpt();
-                $getOpt->set(GetOpt::SETTING_SCRIPT_NAME, '!flair');
-                $getOpt->set(GetOpt::SETTING_STRICT_OPERANDS, true);
-
-                $getOpt->addOperand(
-                    (new Operand('color', Operand::OPTIONAL))
-                        ->setValidation('is_string')
-                        ->setDescription(
-                            "The color (CSS class) you want your flair to be. Consult the pins in <#118981977935183873> for options."
-                        )
-                );
-                if ($data->message->member->roles->has(456321111945248779)) {
-                    $getOpt->addOption(
-                        (new Option('u', 'user', GetOpt::OPTIONAL_ARGUMENT))
-                            ->setDescription("(Staff) Specify a different user.")
-                    );
-                }
-
-                try {
-                    $args = substr(strstr($data->message->content, " "), 1);
-                    $getOpt->process((string)$args);
-                } catch (ArgumentException $exception) {
-                    return $response->edit($getOpt->getHelpText());
-                }
-
-                $member = $data->message->member;
-                if ($data->message->member->roles->has(456321111945248779) && is_string($getOpt->getOption("user"))) {
-                    $overMember = self::parseGuildUser($data->message->guild, $getOpt->getOption("user"));
-                    if ($overMember instanceof GuildMember) {
-                        $member = $overMember;
-                    } else {
-                        $response->edit("I don't know who that is :(");
-                    }
-                }
-
-                // get the user's flair...
-                $redditUser = self::fetchRedditAccount($member);
-                if (is_null($redditUser)) {
-                    return $response->edit(
-                        "Sorry, I couldn't find your reddit account. Please bug a staff member to run the following command:\n" .
-                        "`!linkAccount your_reddit_name_with_no_/u/_prefix \"{$member->displayName}\"`"
-                    );
-                }
-
-                // get the flair from the wiki!
-                $wikiURL = "https://wormrp.syl.ae/w/api.php?action=parse&format=json&text=%7B%7Bflair%7C%2Fu%2F" . urlencode(
-                        $redditUser
-                    ) . "%7D%7D&contentmodel=wikitext";
-                $chain = URLHelpers::getHTTPClient()->get($wikiURL)->then(function (ResponseInterface $response) {
-                    // get new flair tag
-                    $text = json_decode((string)$response->getBody())->parse->text->{'*'};
-                    $flair = trim(html5qp($text, 'p')->text());
-                    if (mb_strlen($flair) > 64) {
-                        // attempt to shorten it to make it maybe fit.
-                        $flair = str_replace(" | ", " ", $flair);
-                    }
-                    return $flair;
-                });
-
-                // push the flair to the subreddit!
-                $chain = $chain->then(function (string $flair) use ($redditUser, $data, $getOpt) {
-                    $user = escapeshellarg($redditUser);
-                    $flair = escapeshellarg($flair);
-                    if (is_string($getOpt->getOperand("color")) &&
-                        in_array($getOpt->getOperand("color"), self::FLAIR_CLASSES)
-                    ) {
-                        $css = escapeshellarg($getOpt->getOperand("color"));
-                    } else {
-                        $css = "";
-                    }
-                    $cmd = trim("wormrpflair $user $flair $css");
-                    $data->huntress->log->debug("Running $cmd");
-                    if (php_uname('s') == "Windows NT") {
-                        $null = 'nul';
-                    } else {
-                        $null = '/dev/null';
-                    }
-                    $process = new Process($cmd, null, null, [
-                        ['file', $null, 'r'],
-                        $stdout = tmpfile(),
-                        ['file', $null, 'w'],
-                    ]);
-                    $process->start($data->huntress->getLoop());
-                    $prom = new Deferred();
-
-                    $process->on('exit', function (int $exitcode) use ($stdout, $prom, $data) {
-                        $data->huntress->log->debug("flairHandler child exited with code $exitcode.");
-
-                        // todo: use FileHelper filesystem nonsense for this.
-                        rewind($stdout);
-                        $childData = stream_get_contents($stdout);
-                        fclose($stdout);
-
-                        if ($exitcode == 0) {
-                            $data->huntress->log->debug("flairHandler child success!");
-                            $prom->resolve($childData);
-                        } else {
-                            $prom->reject($childData);
-                            $data->huntress->log->debug("flairHandler child failure!");
-                        }
-                    });
-                    return $prom->promise();
-                });
-
-                // send our update
-                $chain = $chain->then(function ($cmd) use ($response) {
-                    return $response->edit($cmd);
-                }, function ($e) use ($data) {
-                    return self::error($data->message, "Editing flair failed!", $e);
-                });
-
-                return $chain;
-            } catch (Throwable $e) {
-                return self::exceptionHandler($data->message, $e);
-            }
-        });
-    }
-
-    public static function fetchRedditAccount(
-        GuildMember $member
-    ): ?string {
-        $qb = DatabaseFactory::get()->createQueryBuilder();
-        $qb->select("*")->from("wormrp_users")->where('`user` = ?')->setParameter(0, $member->id, "integer");
-        $res = $qb->execute()->fetchAll();
-        foreach ($res as $data) {
-            return $data['redditName'];
-        }
-        return null;
     }
 
     public static function repHandler(EventData $data): ?Promise
@@ -255,8 +74,7 @@ class WormRPFlairs implements PluginInterface
                 $getOpt->process((string)$args);
             } catch (ArgumentException $exception) {
                 return $data->message->reply(
-                    $getOpt->getHelpText(
-                    ) . "Note: if you're getting this but everything looks correct, try `!rep -- <character> <rep>` instead."
+                    $getOpt->getHelpText() . "Note: if you're getting this but everything looks correct, try `!rep -- <character> <rep>` instead."
                 );
             }
 
@@ -318,25 +136,6 @@ class WormRPFlairs implements PluginInterface
         })->then(function (array $cd) use ($char) {
             // actually edit
             return self::editPage($cd, $char);
-        })->then(function (array $cd) use ($char) {
-            return URLHelpers::getHTTPClient()->get(
-                "https://wiki.wormrp.com/w/api.php?action=parse&format=json&text=%7B%7Bflair%7C%2Fu%2F" . urlencode(
-                    $cd['reddituser']
-                ) . "%7D%7D&contentmodel=wikitext",
-                ['Cookie' => self::cookieString()]
-            )->then(function (
-                ResponseInterface $response
-            ) use ($cd) {
-                // get new flair tag
-                self::setCookiesIfApplicable($response);
-                $text = json_decode((string)$response->getBody())->parse->text->{'*'};
-                $cd['flair'] = trim(html5qp($text, 'p')->text());
-                if (mb_strlen($cd['flair']) > 64) {
-                    // attempt to shorten it to make it maybe fit.
-                    $cd['flair'] = str_replace(" | ", " ", $cd['flair']);
-                }
-                return $cd;
-            });
         });
         return $chain;
     }

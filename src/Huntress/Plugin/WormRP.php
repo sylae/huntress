@@ -8,14 +8,11 @@
 
 namespace Huntress\Plugin;
 
-use Carbon\Carbon;
 use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Models\Guild;
 use CharlotteDunois\Yasmin\Models\GuildMember;
-use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageEmbed;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
-use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Schema\Schema;
 use Huntress\DatabaseFactory;
 use Huntress\EventData;
@@ -25,8 +22,6 @@ use Huntress\PluginHelperTrait;
 use Huntress\PluginInterface;
 use Huntress\QueueItem;
 use Huntress\RSSProcessor;
-use React\ChildProcess\Process;
-use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 use Throwable;
 use function React\Promise\all;
@@ -40,9 +35,6 @@ class WormRP implements PluginInterface
 {
     use PluginHelperTrait;
 
-    // const APPROVAL_SHEET = '1kXME7JHB5VVa5pMBLy1qxlBBef7dkcs2JlXf3z97xpQ'; // test
-    const APPROVAL_SHEET = '1Crv5q-J_oZ_rGJebqJw6xIFeT3Gdil31dqqSEZL_mBc'; // prod
-
     public static function register(Huntress $bot)
     {
         $bot->eventManager->addEventListener(
@@ -54,18 +46,6 @@ class WormRP implements PluginInterface
         if (self::isTestingClient()) {
             $bot->log->debug("Not adding comments/active checking on testing.");
         } else {
-            $bot->eventManager->addURLEvent(
-                "https://www.reddit.com/r/wormrp/comments.json",
-                30,
-                [self::class, "pollComments"]
-            );
-            $bot->eventManager->addEventListener(
-                EventListener::new()->setCallback([
-                    self::class,
-                    "pollActiveCheck",
-                ])->setPeriodic(10)
-            );
-
             $bot->eventManager->addURLEvent(
                 "https://wormrp.com/api/roles",
                 60,
@@ -82,20 +62,6 @@ class WormRP implements PluginInterface
         }
 
         $bot->eventManager->addEventListener(
-            EventListener::new()->setCallback([
-                self::class,
-                "pollStaffDump",
-            ])->setPeriodic(5)
-        );
-
-        $bot->eventManager->addEventListener(
-            EventListener::new()
-                ->addCommand("linkAccount")
-                ->addCommand("linkaccount")
-                ->addGuild(118981144464195584)
-                ->setCallback([self::class, "accountLinkHandler"])
-        );
-        $bot->eventManager->addEventListener(
             EventListener::new()
                 ->addCommand("character")
                 ->addGuild(118981144464195584)
@@ -106,13 +72,6 @@ class WormRP implements PluginInterface
                 ->addCommand("queue")
                 ->addGuild(118981144464195584)
                 ->setCallback([self::class, "queueHandler"])
-        );
-        $bot->eventManager->addEventListener(
-            EventListener::new()
-                ->addCommand("updateWiki")
-                ->addCommand("updatewiki")
-                ->addGuild(118981144464195584)
-                ->setCallback([self::class, "updateWiki"])
         );
 
         $bot->eventManager->addEventListener(
@@ -157,56 +116,6 @@ class WormRP implements PluginInterface
         return $ch->send(sprintf($message, $gm));
     }
 
-    public static function updateWiki(EventData $data): PromiseInterface
-    {
-        return $data->message->reply("🔮")->then(function (Message $response) use ($data) {
-            try {
-                $cmd = trim("/home/keira/bots/wormrpWikiUpdater/refresh");
-                $data->huntress->log->debug("Running $cmd");
-                if (php_uname('s') == "Windows NT") {
-                    $null = 'nul';
-                    return null;
-                } else {
-                    $null = '/dev/null';
-                }
-                $process = new Process($cmd, null, null, [
-                    ['file', $null, 'r'],
-                    $stdout = tmpfile(),
-                    $stderr = tmpfile(),
-                ]);
-                $process->start($data->huntress->getLoop());
-                $prom = new Deferred();
-
-                $process->on('exit', function (int $exitcode) use ($stdout, $stderr, $prom, $data) {
-                    $data->huntress->log->debug("wikiUpdater child exited with code $exitcode.");
-
-                    // todo: use FileHelper filesystem nonsense for this.
-                    rewind($stdout);
-                    $childData = stream_get_contents($stdout);
-                    fclose($stdout);
-                    rewind($stderr);
-                    $childData .= stream_get_contents($stderr);
-                    fclose($stderr);
-
-                    if ($exitcode == 0) {
-                        $data->huntress->log->debug("flairHandler child success!");
-                        $prom->resolve($childData);
-                    } else {
-                        $prom->reject($childData);
-                        $data->huntress->log->debug("flairHandler child failure!");
-                    }
-                });
-                return $prom->promise()->then(function ($childData) use ($data, $response) {
-                    return $response->edit("```\n$childData\n```");
-                }, function ($e) use ($data) {
-                    return self::error($data->message, "Updating wiki failed!", "```\n$e\n```");
-                });
-            } catch (Throwable $e) {
-                return self::exceptionHandler($data->message, $e);
-            }
-        });
-    }
-
     public static function fetchAccount(
         Guild $guild,
         string $redditName
@@ -226,22 +135,6 @@ class WormRP implements PluginInterface
         $t->addColumn("key", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->addColumn("value", "text", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
         $t->setPrimaryKey(["key"]);
-
-        $t2 = $schema->createTable("wormrp_users");
-        $t2->addColumn("user", "bigint", ["unsigned" => true]);
-        $t2->addColumn("redditName", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
-        $t2->setPrimaryKey(["user"]);
-        $t2->addIndex(["redditName"]);
-
-        $t3 = $schema->createTable("wormrp_activity");
-        $t3->addColumn("redditName", "string", ['customSchemaOptions' => DatabaseFactory::CHARSET]);
-        $t3->addColumn("lastSubActivity", "datetime");
-        $t3->addColumn(
-            "flair",
-            "string",
-            ['customSchemaOptions' => DatabaseFactory::CHARSET, 'notnull' => false]
-        );
-        $t3->setPrimaryKey(["redditName"]);
 
         $t4 = $schema->createTable("wormrp_staff");
         $t4->addColumn("idUser", "bigint", ["unsigned" => true]);
@@ -291,160 +184,6 @@ class WormRP implements PluginInterface
         return all($x);
     }
 
-    public static function pollComments(string $string, Huntress $bot)
-    {
-        try {
-            $items = json_decode($string)->data->children ?? null;
-            if (!is_countable($items)) {
-                return;
-            }
-            $users = [];
-            foreach ($items as $item) {
-                $published = $item->data->created_utc;
-                $users[$item->data->author] = [
-                    max($published, $users[$item->data->author][0] ?? 0),
-                    $item->data->author_flair_text ?? null,
-                ];
-            }
-            $query = $bot->db->prepare(
-                'INSERT INTO wormrp_activity (`redditName`, `lastSubActivity`, `flair`) VALUES(?, ?, ?) '
-                . 'ON DUPLICATE KEY UPDATE `lastSubActivity`=GREATEST(`lastSubActivity`, VALUES(`lastSubActivity`)), `flair`=VALUES(`flair`);',
-                ['string', 'datetime', 'string']
-            );
-            foreach ($users as $name => $data) {
-                $query->bindValue(1, $name);
-                $query->bindValue(2, Carbon::createFromTimestamp($data[0]));
-                $query->bindValue(3, $data[1]);
-                $query->execute();
-            }
-        } catch (Throwable $e) {
-            $bot->log->warning($e->getMessage(), ['exception' => $e]);
-        }
-    }
-
-    public static function pollActiveCheck(Huntress $bot)
-    {
-        if (self::isTestingClient()) {
-            $bot->log->debug("Not firing " . __METHOD__);
-            return;
-        }
-        try {
-            $redd = [];
-            $cutoff = Carbon::now()->addDays(-14);
-            $query = DatabaseFactory::get()->query(
-                'SELECT * from wormrp_activity right join wormrp_users on wormrp_users.redditName = wormrp_activity.redditName where wormrp_users.user is not null'
-            );
-            foreach ($query->fetchAll() as $redditor) {
-                $redd[$redditor['user']] = ((new Carbon($redditor['lastSubActivity'] ?? "1990-01-01")) >= $cutoff);
-            }
-
-            $curr_actives = $bot->guilds->get(118981144464195584)->members->filter(function ($v, $k) {
-                return $v->roles->has(492933723340144640);
-            });
-
-            foreach ($curr_actives as $member) {
-                if (!array_key_exists($member->id, $redd)) {
-                    $member->removeRole(
-                        492933723340144640,
-                        "Active Users role requires a linked reddit account"
-                    )->then(function ($member) {
-                        $member->guild->channels->get(491099441357651969)->send(
-                            "Removed <@{$member->id}> from Active Users due to account linkage. " .
-                            "Please perform `!linkAccount [redditName] {$member->user->tag}`"
-                        );
-                    });
-                } elseif ($redd[$member->id]) {
-                    unset($redd[$member->id]);
-                } else {
-                    $member->removeRole(492933723340144640, "User fell out of Active status (14 days)")->then(function (
-                        $member
-                    ) {
-                        $member->guild->channels->get(491099441357651969)->send(
-                            "Removed <@{$member->id}> from Active Users due to inactivity."
-                        );
-                    });
-                    unset($redd[$member->id]);
-                }
-            }
-            foreach ($redd as $id => $val) {
-                if ($val) {
-                    $member = $bot->guilds->get(118981144464195584)->members->get($id);
-                    if (!is_null($member)) {
-                        $member->addRole(492933723340144640, "User is now active on reddit")->then(function ($member) {
-                            $member->guild->channels->get(491099441357651969)->send(
-                                "Added <@{$member->id}> to Active Users."
-                            );
-                        });
-                    }
-                }
-            }
-        } catch (Throwable $e) {
-            $bot->log->warning($e->getMessage(), ['exception' => $e]);
-        }
-    }
-
-    public static function pollStaffDump(Huntress $bot)
-    {
-        try {
-            $query = $bot->db->prepare("replace into wormrp_staff (`idUser`, `staffRole`) values (?, ?);");
-            $bot->guilds->get(118981144464195584)->members->filter(function (GuildMember $v) {
-                return $v->roles->has(456321111945248779) || $v->roles->has(965849665411121192);
-            })->each(function (GuildMember $v) use ($query) {
-                $query->bindValue(1, $v->id, ParameterType::INTEGER);
-                if ($v->roles->has(456321111945248779)) {
-                    $query->bindValue(2, 456321111945248779, ParameterType::INTEGER);
-                } elseif ($v->roles->has(965849665411121192)) {
-                    $query->bindValue(2, 965849665411121192, ParameterType::INTEGER);
-                } else {
-                    // should not do anything but lets be safe
-                    return null;
-                }
-                $query->executeQuery();
-            });
-            // todo: yeet old staff
-        } catch (Throwable $e) {
-            $bot->log->warning($e->getMessage(), ['exception' => $e]);
-        }
-    }
-
-    public static function accountLinkHandler(EventData $data): ?PromiseInterface
-    {
-        if (!$data->message->member->roles->has(456321111945248779)) {
-            return self::unauthorized($data->message);
-        } else {
-            try {
-                $args = self::_split($data->message->content);
-                if (count($args) < 3) {
-                    return self::error(
-                        $data->message,
-                        "You dipshit :open_mouth:",
-                        "!linkAccount redditName discordName"
-                    );
-                }
-                $user = self::parseGuildUser($data->message->guild, $args[2]);
-
-                if (is_null($user)) {
-                    return self::error($data->message, "Error", "I don't know who the hell {$args[2]} is :(");
-                }
-
-                $query = DatabaseFactory::get()->prepare(
-                    'INSERT INTO wormrp_users (`user`, `redditName`) VALUES(?, ?) '
-                    . 'ON DUPLICATE KEY UPDATE `redditName`=VALUES(`redditName`);',
-                    ['integer', 'string']
-                );
-                $query->bindValue(1, $user->id);
-                $query->bindValue(2, $args[1]);
-                $query->execute();
-
-                return $data->message->reply(
-                    "Added/updated {$user->user->tag} ({$user->id}) to tracker with reddit username /u/{$args[1]}."
-                );
-            } catch (Throwable $e) {
-                return self::exceptionHandler($data->message, $e, true);
-            }
-        }
-    }
-
     public static function lookupHandler(EventData $data): ?PromiseInterface
     {
         try {
@@ -460,11 +199,6 @@ class WormRP implements PluginInterface
                         $char
                     ) . "*]]|?Identity|?Author|?Alignment|?Affiliation|?Status|?Meta%20element%20og-image|limit=5"
                 ),
-                'reddit' => URLHelpers::resolveURLToData(
-                    "https://www.reddit.com/r/wormrp/search.json?q=flair%3ACharacter+" . urlencode(
-                        $char
-                    ) . "&sort=relevance&restrict_sr=on&t=all&include_over_18=on"
-                ),
             ])->then(function ($results) use ($char, $data) {
                 $wiki = self::lookupWiki($results['wiki'], $char);
                 if (count($wiki) > 0) {
@@ -475,12 +209,7 @@ class WormRP implements PluginInterface
                     );
                 }
 
-                $reddit = self::lookupReddit($results['reddit'], $char);
-                if (!is_null($reddit)) {
-                    return $data->message->reply($reddit);
-                }
-
-                return $data->message->reply("I didn't find anything on the wiki or reddit :sob:");
+                return $data->message->reply("I didn't find anything on the wiki :sob:");
             });
         } catch (Throwable $e) {
             return self::exceptionHandler($data->message, $e, true);
@@ -534,17 +263,6 @@ class WormRP implements PluginInterface
             $res[] = $embed;
         }
         return $res;
-    }
-
-    private static function lookupReddit(string $string, string $char): ?string
-    {
-        $items = json_decode($string)->data->children;
-        foreach ($items as $item) {
-            return "I didn't find anything on the WormRP wiki, but reddit gave me this: https://www.reddit.com" . $item->data->permalink .
-                "\n*If this is your character, please port them over to the wiki when you have time with this link: <https://wormrp.com/reports/wikiwizard?name=" .
-                rawurlencode($char) . ">*";
-        }
-        return null;
     }
 
     public static function queueHandler(EventData $data): ?PromiseInterface
