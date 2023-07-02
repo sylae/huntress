@@ -144,6 +144,7 @@ class WormRP implements PluginInterface
 
     public static function wikiRoleHandler(string $string, Huntress $bot)
     {
+        return; // disabled for now
         $x = json_decode($string, true);
         $autoRoles = $x['roles'];
         $data = $x['data'];
