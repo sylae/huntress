@@ -159,7 +159,7 @@ class WormRP implements PluginInterface
             $member = $guild->members->get($id);
             foreach ($autoRoles as $tag => $roleID) {
                 $has = $member->roles->has($roleID);
-                $should = in_array($tag, $roles);
+                $should = in_array($roleID, $roles);
 
                 if ($has && !$should) {
                     $x[] = $member->removeRole($roleID, "Huntress role management")->then(function () use (
