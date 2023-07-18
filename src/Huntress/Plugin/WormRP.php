@@ -157,6 +157,8 @@ class WormRP implements PluginInterface
                 continue;
             }
             $member = $guild->members->get($id);
+
+            // group roles
             foreach ($autoRoles as $tag => $roleID) {
                 $has = $member->roles->has($roleID);
                 $should = in_array($roleID, $roles);
@@ -181,6 +183,37 @@ class WormRP implements PluginInterface
                 }
             }
         }
+
+        /** @var GuildMember $member */
+        foreach ($guild->members as $member) {
+            $isPlayer = array_key_exists($member->id, $data);
+            $isActive = $isPlayer && count($data[$member->id]) > 0;
+
+            // Players role
+            if ($isPlayer && !$member->roles->has(1130980354124169359)) {
+                $member->addRole(1130980354124169359, "Huntress role management")->then(function () use ($modlog, $member) {
+                    return $modlog->send("[HRM Wiki] Added the `Players` role to $member");
+                });
+            }
+            if (!$isPlayer && $member->roles->has(1130980354124169359)) {
+                $member->removeRole(1130980354124169359, "Huntress role management")->then(function () use ($modlog, $member) {
+                    return $modlog->send("[HRM Wiki] Removed the `Players` role to $member");
+                });
+            }
+
+            // Active Players role
+            if ($isActive && !$member->roles->has(1130980439285317663)) {
+                $member->addRole(1130980439285317663, "Huntress role management")->then(function () use ($modlog, $member) {
+                    return $modlog->send("[HRM Wiki] Added the `Active Players` role to $member");
+                });
+            }
+            if (!$isActive && $member->roles->has(1130980439285317663)) {
+                $member->removeRole(1130980439285317663, "Huntress role management")->then(function () use ($modlog, $member) {
+                    return $modlog->send("[HRM Wiki] Removed the `Active Players` role to $member");
+                });
+            }
+        }
+
         return all($x);
     }
 
