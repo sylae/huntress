@@ -160,7 +160,7 @@ class MatchVoting implements PluginInterface
     public static function createMatch(GetOpt $getOpt, Message $message)
     {
         try {
-            if (!$message->member->permissions->has('MANAGE_ROLES') || !in_array($message->author->id,
+            if (!$message->member->permissions->has('MANAGE_ROLES') && !in_array($message->author->id,
                     $message->client->config['evalUsers'])) { // todo: actual permission stuff
                 return self::unauthorized($message);
             }
@@ -193,7 +193,7 @@ class MatchVoting implements PluginInterface
     public static function addCompetitor(GetOpt $getOpt, Message $message)
     {
         try {
-            if (!$message->member->permissions->has('MANAGE_ROLES') || !in_array($message->author->id,
+            if (!$message->member->permissions->has('MANAGE_ROLES') && !in_array($message->author->id,
                     $message->client->config['evalUsers'])) { // todo: actual permission stuff
                 return self::unauthorized($message);
             }
