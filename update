@@ -3,6 +3,3 @@
 git -c color.ui=always pull --recurse-submodules
 composer install --no-progress --ansi
 
-cd musicbox
-npm install
-cd ..
