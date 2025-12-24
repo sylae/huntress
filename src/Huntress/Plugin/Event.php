@@ -56,6 +56,20 @@ class Event implements PluginInterface
         ])->setPeriodic(60));
     }
 
+    private static function addEvent(Message $message, Carbon $time, string $text, int $id)
+    {
+        $time->setTimezone("UTC");
+        $query = $message->client->db->prepare('REPLACE INTO event (`idEvent`, `idMember`, `idGuild`, `time`, `name`) VALUES(?, ?, ?, ?, ?)',
+            ['integer', 'integer', 'integer', 'datetime', 'string']);
+        $query->bindValue(1, $id);
+        $query->bindValue(2, $message->member->id);
+        $query->bindValue(3, $message->guild->id);
+        $query->bindValue(4, $time);
+        $query->bindValue(5, $text);
+        $query->execute();
+
+    }
+
     public static function calendar(EventData $data): ?PromiseInterface
     {
         // get the user's locale first
@@ -169,6 +183,9 @@ class Event implements PluginInterface
             $p = [];
             foreach ($query->fetchAll() as $rem) {
                 $guild = $bot->guilds->get($rem['idGuild']);
+                if (is_null($guild)) {
+                    continue;
+                }
                 $channel = $guild->channels->get($rem['idChannel']);
                 if (!$channel instanceof TextChannel) {
                     $bot->log->debug("event_calendar links to non-text channel {$rem['idChannel']}");
@@ -290,20 +307,6 @@ HELP;
         $query->bindValue(1, $id);
         $query->bindValue(2, $member->id);
         $query->execute();
-    }
-
-    private static function addEvent(Message $message, Carbon $time, string $text, int $id)
-    {
-        $time->setTimezone("UTC");
-        $query = $message->client->db->prepare('REPLACE INTO event (`idEvent`, `idMember`, `idGuild`, `time`, `name`) VALUES(?, ?, ?, ?, ?)',
-            ['integer', 'integer', 'integer', 'datetime', 'string']);
-        $query->bindValue(1, $id);
-        $query->bindValue(2, $message->member->id);
-        $query->bindValue(3, $message->guild->id);
-        $query->bindValue(4, $time);
-        $query->bindValue(5, $text);
-        $query->execute();
-
     }
 }
 
