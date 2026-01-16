@@ -8,167 +8,111 @@
 
 namespace Huntress;
 
-use CharlotteDunois\Yasmin\Client;
-use CharlotteDunois\Yasmin\Models\Message;
+use Discord\Discord;
+use Discord\Parts\Channel\Message;
+use Discord\WebSockets\Event;
+use Discord\WebSockets\Intents;
 use Doctrine\DBAL\Connection;
-use Monolog\ErrorHandler;
-use Monolog\Formatter\LineFormatter;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
-use Monolog\Processor\GitProcessor;
-use Monolog\Processor\IntrospectionProcessor;
-use Monolog\Registry;
-use React\EventLoop\LoopInterface;
 use ReflectionClass;
 use Throwable;
 
 /**
  * This is the main Huntress class, mostly backend stuff tbh.
  *
- * @author Keira Sylae Aro <sylae@calref.net>
+ * @author Keira Dueck <sylae@calref.net>
  */
-class Huntress extends Client
+class Huntress extends Discord
 {
-    /**
-     *
-     * @var Logger
-     */
-    public $log;
+    protected array $config;
+    public EventManager $eventManager;
+    public Connection $db;
 
-    /**
-     *
-     * @var LoopInterface
-     */
-    public $loop;
-
-    /**
-     *
-     * @var array
-     */
-    public $config;
-
-    /**
-     *
-     * @var EventManager
-     */
-    public $eventManager;
-
-    /**
-     *
-     * @var Connection
-     */
-    public $db;
-
-    public function __construct(array $config, LoopInterface $loop)
+    public function __construct(array $config)
     {
         $this->config = $config;
-        $this->log = $this->setupLogger();
+
+        parent::__construct([
+            'token' => $this->config['botToken'],
+            'intents' => Intents::getAllIntents(),
+            'loadAllMembers' => true,
+        ]);
+
         $this->eventManager = new EventManager($this);
         $this->registerBuiltinHooks();
 
-        parent::__construct([], $loop);
-
         $classes = get_declared_classes();
         foreach ($classes as $class) {
-            if ((new ReflectionClass($class))->implementsInterface("Huntress\PluginInterface")) {
-                $this->log->info("Loading plugin $class");
+            if (new ReflectionClass($class)->implementsInterface("Huntress\PluginInterface")) {
+                $this->getLogger()->info("Loading plugin $class");
                 $class::register($this);
             }
         }
 
-        DatabaseFactory::make($this);
+        DatabaseFactory::make($this, $this->config['database']);
         $this->db = DatabaseFactory::get();
 
         // legacy handlers
         $this->once('ready', [$this, 'readyHandler']);
         $this->on('message', [$this, 'messageHandler']);
 
-        $yasminEvents = new ReflectionClass('\CharlotteDunois\Yasmin\ClientEvents');
-        foreach ($yasminEvents->getMethods() as $method) {
-            switch ($method->name) {
+        $dpEvents = new ReflectionClass(Event::class);
+        foreach ($dpEvents->getConstants() as $v) {
+            switch ($v) {
                 case "raw":
                 case "reconnect":
                 case "disconnect":
-                case "presenceUpdate": // jesus god stop spamming this
+                case Event::PRESENCE_UPDATE: // jesus god stop spamming this
                     continue 2;
-                case "error":
-                    $handler = [$this, 'errorHandler'];
-                    break;
-                case "debug":
-                    $handler = function ($msg) {
-                        $this->log->debug("[yasmin] " . $msg);
-                    };
-                    break;
                 default:
-                    $handler = function (...$args) use ($method) {
-                        return $this->eventManager->yasminEventHandler($method->name, $args);
+                    $handler = function (...$args) use ($v) {
+                        $this->eventManager->yasminEventHandler($v, $args);
                     };
                     break;
             }
-            $this->on($method->name, $handler);
+            $this->on($v, $handler);
         }
-    }
-
-    private function setupLogger(): Logger
-    {
-        $l_console = new StreamHandler(STDERR, $this->config['logLevel']);
-        $l_console->setFormatter(new LineFormatter(null, null, true, true));
-        $l_template = new Logger("Bot");
-        $l_template->pushHandler($l_console);
-        ErrorHandler::register($l_template);
-        if ($this->config['logLevel'] == Logger::DEBUG) {
-            $l_template->pushProcessor(new IntrospectionProcessor());
-            $l_template->pushProcessor(new GitProcessor());
-        }
-        Registry::addLogger($l_template);
-        return $l_template;
     }
 
     private function registerBuiltinHooks(): void
     {
-        RSSProcessor::register($this);
-        Permission::register($this);
+        // RSSProcessor::register($this);
+        // Permission::register($this);
     }
 
     public function start(): void
     {
-        $this->login($this->config['botToken']);
-        $this->loop->run();
+        $this->run();
     }
 
     public function readyHandler(): void
     {
-        $this->log->info("Logged in as {$this->user->tag} ({$this->user->id})");
+        $this->getLogger()->info("Logged in as {$this->user->username} ({$this->user->id})");
         $this->eventManager->initializePeriodics();
-        $this->emit(PluginInterface::PLUGINEVENT_READY, $this);
+        $this->emit(PluginInterface::PLUGINEVENT_READY, [$this]);
     }
 
     public function messageHandler(Message $message): void
     {
         $tag = ($message->guild->name ?? false) ? $message->guild->name . " #" . $message->channel->name : "DM";
-        $this->log->info('[' . $tag . '] ' . $message->author->tag . ': ' . $message->content);
+        $this->getLogger()->info('[' . $tag . '] ' . $message->author->username . ': ' . $message->content);
         $preg = "/^!(\w+)(\s|$)/";
         $match = [];
         try {
             try {
-                $this->emit(PluginInterface::PLUGINEVENT_MESSAGE, $this, $message);
+                $this->emit(PluginInterface::PLUGINEVENT_MESSAGE, [$this, $message]);
             } catch (Throwable $e) {
-                $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
+                $this->getLogger()->warning("Uncaught Plugin exception!", ['exception' => $e]);
             }
             if (preg_match($preg, $message->content, $match)) {
                 try {
-                    $this->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], $this, $message);
+                    $this->emit(PluginInterface::PLUGINEVENT_COMMAND_PREFIX . $match[1], [$this, $message]);
                 } catch (Throwable $e) {
-                    $this->log->warning("Uncaught Plugin exception!", ['exception' => $e]);
+                    $this->getLogger()->warning("Uncaught Plugin exception!", ['exception' => $e]);
                 }
             }
         } catch (Throwable $e) {
-            $this->log->warning("Uncaught message processing exception!", ['exception' => $e]);
+            $this->getLogger()->warning("Uncaught message processing exception!", ['exception' => $e]);
         }
     }
 
-    public function errorHandler(Throwable $e): void
-    {
-        $this->log->warning("Uncaught error!", ['exception' => $e]);
-    }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "sylae/huntress",
+  "name": "misfitmaid/huntress",
   "type": "project",
-  "license": "MIT",
+  "license": "MIT Non-AI",
   "authors": [
     {
       "name": "Keira Dueck",
@@ -11,13 +11,13 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=8.0",
-    "sylae/yasmin": "dev-master",
-    "doctrine/dbal": "^2.13",
+    "php": ">=8.4",
+    "doctrine/dbal": "^4.4",
+    "gravitypdf/querypath": "^4.1",
     "league/html-to-markdown": "^5.1",
-    "monolog/monolog": "^2.3",
-    "nesbot/carbon": "^2.53",
-    "querypath/querypath": "^3.0"
+    "monolog/monolog": "^3.10",
+    "nesbot/carbon": "^3.11",
+    "team-reflex/discord-php": "^10.45"
   },
   "autoload": {
     "psr-4": {

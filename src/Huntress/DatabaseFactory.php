@@ -25,86 +25,62 @@ use Throwable;
  */
 class DatabaseFactory
 {
-    const CHARSET = [
+    const array CHARSET = [
         'collation' => 'utf8mb4_unicode_ci',
     ];
 
     /**
      * Our DB object. Sacred is thy name.
-     * @var Connection
      */
-    private static $db = null;
+    private static ?Connection $db = null;
 
     /**
      * Initialize the database. Make sure config is set beforehand or it'll
      * throw shit.
-     *
-     * @param Huntress $bot
-     *
-     * @return void
-     * @throws DBALException
-     * @throws DriverException
-     * @throws Throwable
      */
-    public static function make(Huntress $bot): void
+    public static function make(Huntress $bot, $dbConfig): void
     {
-        $bot->log->info("[DB] Database initialized");
-        self::$db = DriverManager::getConnection(['url' => $bot->config['database']],
-            new Configuration());
+        $bot->getLogger()->info("[DB] Database initialized");
+        self::$db = DriverManager::getConnection($dbConfig, new Configuration());
         self::schema($bot);
     }
 
     /**
      * Pull dbSchema events from HEM and apply them to the database.
-     *
-     * @param Huntress $bot
-     *
-     * @throws DBALException
-     * @throws DriverException
-     * @throws Throwable
      */
     public static function schema(Huntress $bot): void
     {
         $db = self::get();
-        $sm = $db->getSchemaManager();
-        $fromSchema = $sm->createSchema();
+        $sm = $db->createSchemaManager();
+        $fromSchema = $sm->introspectSchema();
 
         // Initialize existing schema database.
         $schema = new Schema();
-        $bot->emit(PluginInterface::PLUGINEVENT_DB_SCHEMA, $schema);
+        $bot->emit(PluginInterface::PLUGINEVENT_DB_SCHEMA, [$schema]);
         $bot->eventManager->fire("dbSchema", $schema);
 
-        $comparator = new Comparator();
-        $schemaDiff = $comparator->compare($fromSchema, $schema);
-        $sql = $schemaDiff->toSaveSql($db->getDatabasePlatform());
-        $total_changes = count($sql);
+        // $statements = $sm->createComparator()->compareSchemas($fromSchema, $schema)->toSql($db->getDatabasePlatform());
+        $statements = [];
+
+        $total_changes = count($statements);
         if ($total_changes > 0) {
-            $bot->log->info("[DB] Schema needs initialization or upgrade", ["statements_to_execute" => $total_changes]);
-            foreach ($sql as $s) {
-                $bot->log->debug($s);
+            $bot->getLogger()->info("[DB] Schema needs initialization or upgrade", ["statements_to_execute" => $total_changes]);
+            foreach ($statements as $s) {
+                $bot->getLogger()->debug($s);
                 if (stripos($s, "DROP FOREIGN KEY") !== false || stripos($s, "DROP INDEX") !== false) {
-                    $bot->log->debug("[DB] skipping foreign key/index dropping - dbal bug!");
+                    $bot->getLogger()->debug("[DB] skipping foreign key/index dropping - dbal bug!");
                     continue;
                 }
-                try {
-                    $db->exec($s);
-                } catch (DriverException $e) {
-                    if ($e->getErrorCode() == 1826) {
-                        $bot->log->debug("[DB] ignoring foreign key duplication error 1826 - dbal bug!");
-                    } else {
-                        throw $e;
-                    }
-                }
+                $db->executeQuery($s);
             }
         } else {
-            $bot->log->info("[DB] Schema up to date", ["statements_to_execute" => $total_changes]);
+            $bot->getLogger()->info("[DB] Schema up to date", ["statements_to_execute" => $total_changes]);
         }
     }
 
     /**
      * Get a reference to the db object. :snug:
      *
-     * @return Connection
      * @throws Exception
      */
     public static function get(): Connection

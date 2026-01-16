@@ -8,13 +8,17 @@
 
 namespace Huntress;
 
-use CharlotteDunois\Collect\Collection;
 use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
 use CharlotteDunois\Yasmin\Models\GuildMember;
 use CharlotteDunois\Yasmin\Models\Message;
 use CharlotteDunois\Yasmin\Models\MessageReaction;
 use CharlotteDunois\Yasmin\Models\Presence;
 use CharlotteDunois\Yasmin\Utils\URLHelpers;
+use Discord\Helpers\Collection;
+use Discord\Parts\Channel\GuildText;
+use Discord\Parts\Channel\Reaction;
+use Discord\Parts\User\Member;
+use Discord\Repository\Guild\MemberRepository;
 use Exception;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
@@ -27,23 +31,15 @@ use function React\Promise\all;
  */
 class EventManager
 {
-    /**
-     *
-     * @var Huntress
-     */
-    private $huntress;
+    private Huntress $huntress;
 
-    /**
-     *
-     * @var Collection
-     */
-    private $events;
+    private Collection $events;
 
     public function __construct(Huntress $huntress)
     {
         $this->huntress = $huntress;
         $this->events = new Collection();
-        $this->huntress->log->info("[HEM] Huntress EventManager initialized");
+        $this->huntress->getLogger()->info("[HEM] Huntress EventManager initialized");
     }
 
     public function addURLEvent(string $url, int $interval, callable $callable): int
@@ -57,11 +53,11 @@ class EventManager
                     try {
                         return $callable($data, $bot);
                     } catch (Throwable $e) {
-                        $bot->log->warning($e->getMessage(), ['exception' => $e]);
+                        $bot->getLogger()->warning($e->getMessage(), ['exception' => $e]);
                     }
                 });
             } catch (Throwable $e) {
-                $bot->log->warning($e->getMessage(), ['exception' => $e]);
+                $bot->getLogger()->warning($e->getMessage(), ['exception' => $e]);
             }
         })->setPeriodic($interval));
     }
@@ -70,7 +66,7 @@ class EventManager
     {
         $id = $this->getEventID();
         $this->events->set($id, $listener);
-        $this->huntress->log->debug("[HEM] Added event $id");
+        $this->huntress->getLogger()->debug("[HEM] Added event $id");
         return $id;
     }
 
@@ -95,14 +91,14 @@ class EventManager
         });
         foreach ($periodics as $interval => $events) {
             $timing = $interval / count($events);
-            $this->huntress->log->debug("[HEM] Periodic interval {$interval}s has " . count($events) . " slots.");
+            $this->huntress->getLogger()->debug("[HEM] Periodic interval {$interval}s has " . count($events) . " slots.");
             $this->huntress->loop->addPeriodicTimer($timing, function () use ($interval, $events) {
                 static $phase = [];
                 if (!array_key_exists($interval, $phase)) {
                     $phase[$interval] = 0;
                 }
                 $fire = $phase[$interval] % count($events);
-                $this->huntress->log->debug("[HEM] Firing periodic {$interval}s phase $fire/" . count($events));
+                $this->huntress->getLogger()->debug("[HEM] Firing periodic {$interval}s phase $fire/" . count($events));
                 $events[$fire]->getCallback()($this->huntress);
                 $phase[$interval]++;
             });
@@ -119,7 +115,7 @@ class EventManager
                 // provides: ?guild channel
                 $data = new EventData;
                 $data->channel = $args[0];
-                if ($data->channel instanceof GuildChannelInterface) {
+                if ($data->channel instanceof GuildText) {
                     $data->guild = $args[0]->getGuild();
                 }
                 break;
@@ -138,9 +134,9 @@ class EventManager
             case "messageUpdate":
                 // provides: guild channel user message command
                 $data = new EventData;
-                if ($args[0] instanceof MessageReaction) {
+                if ($args[0] instanceof Reaction) {
                     $message = $args[0]->message;
-                } elseif ($args[0] instanceof Message) {
+                } elseif ($args[0] instanceof \Discord\Parts\Channel\Message) {
                     $message = $args[0];
                 } else {
                     throw new Exception("Unknown argument type passed to eventHandler");
@@ -162,7 +158,7 @@ class EventManager
             case "guildMemberUpdate":
                 // provides: guild user
                 $data = new EventData;
-                if ($args[0] instanceof GuildMember) {
+                if ($args[0] instanceof Member) {
                     $data->user = $args[0];
                     $data->guild = $args[0]->guild;
                 } else {
@@ -178,15 +174,10 @@ class EventManager
                 $data = new EventData;
                 $data->guild = $args[0];
                 break;
-            case "presenceUpdate":
             case "userUpdate":
                 // provides: user
                 $data = new EventData;
-                if ($args[0] instanceof Presence) {
-                    $data->user = $args[0]->user;
-                } else {
-                    $data->user = $args[0];
-                }
+                $data->user = $args[0];
                 break;
             case "voiceStateUpdate";
                 $data = new EventData;
@@ -203,7 +194,7 @@ class EventManager
         if ($data instanceof EventData) {
             $data->huntress = $this->huntress;
         }
-        $this->huntress->log->debug("[HEM] Received event $yasminType", ['data' => $data]);
+        $this->huntress->getLogger()->debug("[HEM] Received event $yasminType", ['data' => $data]);
         $this->fire($yasminType, $data);
     }
 
@@ -214,7 +205,7 @@ class EventManager
         } else {
             $events = $this->returnMatchingEvents($type);
         }
-        $this->huntress->log->debug("[HEM] Found " . $events->count() . " matching events.");
+        $this->huntress->getLogger()->debug("[HEM] Found " . $events->count() . " matching events.");
         $values = $events->map(function (EventListener $v, int $k) use ($data) {
             if (is_null($data)) {
                 $data = $this->huntress;

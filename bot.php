@@ -8,7 +8,6 @@
 
 namespace Huntress;
 
-use React\EventLoop\Factory;
 use Throwable;
 
 if (PHP_SAPI != "cli") {
@@ -51,6 +50,6 @@ register_shutdown_function(function () {
     }
 });
 
-$bot = new Huntress($config, Factory::create());
-$bot->log->info('Connecting to discord...');
+$bot = new Huntress($config);
+$bot->getLogger()->info('Connecting to discord...');
 $bot->start();
