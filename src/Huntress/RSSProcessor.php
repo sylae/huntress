@@ -1,106 +1,49 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
 use Carbon\Carbon;
-use CharlotteDunois\Collect\Collection;
-use CharlotteDunois\Yasmin\Models\AnnouncementChannel;
-use CharlotteDunois\Yasmin\Models\Message;
-use CharlotteDunois\Yasmin\Models\MessageEmbed;
-use CharlotteDunois\Yasmin\Models\TextChannel;
-use Doctrine\DBAL\Schema\Schema;
+use Discord\Helpers\Collection;
+use Discord\Parts\Channel\GuildAnnouncement;
+use Discord\Parts\Channel\Message;
+use Discord\Parts\Embed\Embed;
 use League\HTMLToMarkdown\HtmlConverter;
 use Throwable;
 use function qp;
 
 /**
  * Unified class for handling RSS and other syndication systems.
- *
- * @author Keira Dueck <sylae@calref.net>
  */
 class RSSProcessor
 {
-    /**
-     *
-     * @var Huntress
-     */
-    public $huntress;
+    public ?int $itemColor;
+    public bool $showBody = true;
+    public bool $crosspost = true;
 
-    /**
-     *
-     * @var string
-     */
-    public $id;
-
-    /**
-     *
-     * @var int
-     */
-    public $interval;
-
-    /**
-     *
-     * @var string
-     */
-    public $url;
-
-    /**
-     *
-     * @var int[]
-     */
-    public $channels;
-
-    /**
-     *
-     * @var int
-     */
-    public $itemColor;
-
-    /**
-     * @var bool
-     */
-    public $showBody = true;
-
-    /**
-     * @var bool
-     */
-    public $crosspost = true;
-
-    public function __construct(Huntress $bot, string $id, string $url, int $interval, array $channels)
-    {
-        $this->huntress = $bot;
-        $this->id = $id;
-        $this->url = $url;
-        $this->interval = $interval;
-        $this->channels = $channels;
-
+    public function __construct(
+        public Huntress $huntress,
+        public string $id,
+        public string $url,
+        public int $interval,
+        public array $channels
+    ) {
         $this->huntress->eventManager->addURLEvent($this->url, $this->interval, [$this, 'eventManagerCallback']);
-    }
-
-    public static function db(Schema $schema): void
-    {
-        $t = $schema->createTable("rss");
-        $t->addColumn("id", "string", ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET]);
-        $t->addColumn("lastUpdate", "datetime");
-        $t->setPrimaryKey(["id"]);
     }
 
     public static function register(Huntress $bot)
     {
-        $dbEv = EventListener::new()->addEvent("dbSchema")->setCallback([self::class, 'db']);
-        $bot->eventManager->addEventListener($dbEv);
     }
 
     public function eventManagerCallback(string $string, Huntress $bot)
     {
-        $collect = $this->dataProcessingCallback($string)->sortCustom([$this, 'sortObjects']);
-        $this->huntress->log->debug("[RSS] {$this->id} - There are " . $collect->count() . " items to post.");
+        $collect = $this->dataProcessingCallback($string)->sort([$this, 'sortObjects']);
+        $this->huntress->getLogger()->debug("[RSS] {$this->id} - There are " . $collect->count() . " items to post.");
 
         /** @var RSSItem $item */
         foreach ($collect as $item) {
@@ -108,7 +51,13 @@ class RSSProcessor
             $this->dataPublishingCallback($item);
         }
         if ($collect->count() > 0) {
-            $this->setLastRSS($collect->max('date'));
+            $time = $collect->reduce(function ($carry, RSSItem $v) {
+                if ($v->date > $carry) {
+                    return $v->date;
+                }
+                return $carry;
+            });
+            $this->setLastRSS($time->first());
         }
     }
 
@@ -135,13 +84,13 @@ class RSSProcessor
                 $x->link = $item->find('link')->text();
                 $x->date = $published;
                 $x->category = $item->find('category')->text();
-                $x->body = (new HtmlConverter(['strip_tags' => true]))->convert($item->find('description')->text());
+                $x->body = new HtmlConverter(['strip_tags' => true])->convert($item->find('description')->text());
 
                 $newItems[] = $x;
             }
             return new Collection($newItems);
         } catch (Throwable $e) {
-            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->getLogger()->warning($e->getMessage(), ['exception' => $e]);
             return new Collection();
         }
     }
@@ -150,7 +99,7 @@ class RSSProcessor
     {
         $qb = $this->huntress->db->createQueryBuilder();
         $qb->select("*")->from("rss")->where('`id` = ?')->setParameter(0, $this->id, "string");
-        $res = $qb->execute()->fetchAll();
+        $res = $qb->executeQuery()->fetchAllAssociative();
         foreach ($res as $data) {
             return new Carbon($data['lastUpdate']);
         }
@@ -176,7 +125,7 @@ class RSSProcessor
      * Override this method to customize which channel data goes to.
      *
      * @param RSSItem $item
-     * @param array   $channels
+     * @param array $channels
      *
      * @return array the new array of channels to send to
      */
@@ -191,15 +140,14 @@ class RSSProcessor
             $embed = $this->formatItemCallback($item);
 
             foreach ($item->channels as $channel) {
-                /** @var TextChannel $ch */
-                $ch = $this->huntress->channels->get($channel);
-                $prom = $ch->send("", ['embed' => $embed]);
-                if ($ch instanceof AnnouncementChannel && $this->crosspost) {
+                $ch = $this->huntress->getChannel($channel);
+                $prom = $ch->sendMessage("", false, $embed);
+                if ($ch instanceof GuildAnnouncement && $this->crosspost) {
                     $prom->then(fn(Message $m) => $m->crosspost());
                 }
             }
         } catch (Throwable $e) {
-            $this->huntress->log->warning($e->getMessage(), ['exception' => $e]);
+            $this->huntress->getLogger()->warning($e->getMessage(), ['exception' => $e]);
             return false;
         }
         return true;
@@ -207,12 +155,8 @@ class RSSProcessor
 
     /**
      * Override to perform any modifications to the MessageEmbed
-     *
-     * @param RSSItem $item
-     *
-     * @return MessageEmbed
      */
-    protected function formatItemCallback(RSSItem $item): MessageEmbed
+    protected function formatItemCallback(RSSItem $item): Embed
     {
 
         if (mb_strlen($item->body ?? "") > 500) {
@@ -221,7 +165,7 @@ class RSSProcessor
         if (mb_strlen($item->title ?? "") > 250) {
             $item->body = substr($item->title, 0, 250) . "...";
         }
-        $embed = new MessageEmbed();
+        $embed = new Embed($this->huntress);
         $embed->setTitle($item->title)->setURL($item->link)->setTimestamp($item->date->timestamp);
 
         if ($this->showBody) {
@@ -247,7 +191,7 @@ class RSSProcessor
         return $embed;
     }
 
-    protected function setLastRSS(Carbon $time)
+    protected function setLastRSS(Carbon $time): void
     {
         if ($this->getLastRSS() >= $time) {
             return;
@@ -257,7 +201,7 @@ class RSSProcessor
         ', ['string', 'datetime']);
         $query->bindValue(1, $this->id);
         $query->bindValue(2, $time);
-        $query->execute();
+        $query->executeStatement();
     }
 
     public function sortObjects($a, $b): int

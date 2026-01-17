@@ -1,27 +1,21 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
-use CharlotteDunois\Yasmin\Interfaces\ChannelInterface;
-use CharlotteDunois\Yasmin\Models\Guild;
-use CharlotteDunois\Yasmin\Models\GuildMember;
-use CharlotteDunois\Yasmin\Models\Message;
-use CharlotteDunois\Yasmin\Models\RoleStorage;
-use CharlotteDunois\Yasmin\Models\User;
+use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Message;
+use Discord\Parts\Guild\Guild;
+use Discord\Parts\User\Member;
+use Discord\Parts\User\User;
 use Exception;
 use InvalidArgumentException;
 
-/**
- * Description of EventListener
- *
- * @author Keira Dueck <sylae@calref.net>
- */
 class EventListener
 {
     /**
@@ -202,7 +196,7 @@ class EventListener
             }
         }
         if (count($this->channels) > 0) {
-            if ($data->channel instanceof ChannelInterface) {
+            if ($data->channel instanceof Channel) {
                 if (!$this->pass($data->channel->id, $this->channels)) {
                     return false;
                 }
@@ -223,14 +217,14 @@ class EventListener
             }
         }
         if (count($this->users) > 0) {
-            if ($data->user instanceof User || $data->user instanceof GuildMember) {
+            if ($data->user instanceof User || $data->user instanceof Member) {
                 if (!$this->pass($data->user->id, $this->users)) {
                     return false;
                 }
             }
         }
         if (count($this->roles) > 0) {
-            if ($data->user instanceof GuildMember) {
+            if ($data->user instanceof Member) {
                 if (!$this->passRoles($data->user->roles, $this->roles)) {
                     return false;
                 }
@@ -250,7 +244,7 @@ class EventListener
         return false;
     }
 
-    private function passRoles(RoleStorage $needles, array $haystack): bool
+    private function passRoles(Role $needles, array $haystack): bool
     {
         if (in_array("*", $haystack) || count($haystack) == 0) {
             return true;

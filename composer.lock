@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9eb2a0c1ca5bec2c15449ccbf72119ae",
+    "content-hash": "624f8eb4e05b60090bb005488ff27cd2",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -295,16 +295,16 @@
         },
         {
             "name": "doctrine/dbal",
-            "version": "4.4.1",
+            "version": "4.5.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/dbal.git",
-                "reference": "3d544473fb93f5c25b483ea4f4ce99f8c4d9d44c"
+                "reference": "207d910bfabd11012cc8f22b0eaaa5ce549a9858"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/dbal/zipball/3d544473fb93f5c25b483ea4f4ce99f8c4d9d44c",
-                "reference": "3d544473fb93f5c25b483ea4f4ce99f8c4d9d44c",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/207d910bfabd11012cc8f22b0eaaa5ce549a9858",
+                "reference": "207d910bfabd11012cc8f22b0eaaa5ce549a9858",
                 "shasum": ""
             },
             "require": {
@@ -381,7 +381,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/dbal/issues",
-                "source": "https://github.com/doctrine/dbal/tree/4.4.1"
+                "source": "https://github.com/doctrine/dbal/tree/4.5.x"
             },
             "funding": [
                 {
@@ -397,7 +397,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-12-04T10:11:03+00:00"
+            "time": "2026-01-02T18:35:17+00:00"
         },
         {
             "name": "doctrine/deprecations",
@@ -2891,21 +2891,21 @@
         },
         {
             "name": "team-reflex/discord-php",
-            "version": "v10.45.8",
+            "version": "v10.45.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/discord-php/DiscordPHP.git",
-                "reference": "6ba6b6256eede393108516f128d8210a50bbad94"
+                "reference": "5e5cabb1f734f6f1e730e4d6cef9fcf26e7f4ef7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/discord-php/DiscordPHP/zipball/6ba6b6256eede393108516f128d8210a50bbad94",
-                "reference": "6ba6b6256eede393108516f128d8210a50bbad94",
+                "url": "https://api.github.com/repos/discord-php/DiscordPHP/zipball/5e5cabb1f734f6f1e730e4d6cef9fcf26e7f4ef7",
+                "reference": "5e5cabb1f734f6f1e730e4d6cef9fcf26e7f4ef7",
                 "shasum": ""
             },
             "require": {
                 "discord-php-helpers/collection": "^8.0",
-                "discord-php-helpers/voice": "^8.0",
+                "discord-php-helpers/voice": "^8.0 || dev-main",
                 "discord-php/http": "^10.1.7",
                 "discord/interactions": "^2.2",
                 "ext-zlib": "*",
@@ -2969,7 +2969,7 @@
                 "chat": "https://discord.gg/dphp",
                 "docs": "https://discord-php.github.io/DiscordPHP/",
                 "issues": "https://github.com/discord-php/DiscordPHP/issues",
-                "source": "https://github.com/discord-php/DiscordPHP/tree/v10.45.8",
+                "source": "https://github.com/discord-php/DiscordPHP/tree/v10.45.9",
                 "wiki": "https://github.com/discord-php/DiscordPHP/wiki"
             },
             "funding": [
@@ -2990,7 +2990,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-01-15T10:12:25+00:00"
+            "time": "2026-01-16T20:10:04+00:00"
         },
         {
             "name": "trafficcophp/bytebuffer",

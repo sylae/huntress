@@ -85,7 +85,7 @@ class Permission
     {
         $t = $schema->createTable("permissions");
         $t->addColumn("title", "string",
-            ['length' => 255, 'customSchemaOptions' => DatabaseFactory::CHARSET]);
+            ['length' => 255]);
         $t->addColumn("value", "boolean", ['default' => true]);
         $t->addColumn("settingType", "smallint", ["unsigned" => true]);
         $t->addColumn("setting", "bigint", ["unsigned" => true]);

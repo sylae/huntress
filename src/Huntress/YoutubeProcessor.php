@@ -1,25 +1,18 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
 use Carbon\Carbon;
-use CharlotteDunois\Collect\Collection;
-use CharlotteDunois\Yasmin\Models\MessageEmbed;
-use CharlotteDunois\Yasmin\Utils\DataHelpers;
-use League\HTMLToMarkdown\HtmlConverter;
+use Discord\Helpers\Collection;
+use Discord\Parts\Embed\Embed;
 use Throwable;
 
-/**
- * Description of RedditProcessor
- *
- * @author Keira Dueck <sylae@calref.net>
- */
 class YoutubeProcessor extends RSSProcessor
 {
 
@@ -65,7 +58,7 @@ class YoutubeProcessor extends RSSProcessor
         }
     }
 
-    protected function formatItemCallback(RSSItem $item): MessageEmbed
+    protected function formatItemCallback(RSSItem $item): Embed
     {
         $embed = parent::formatItemCallback($item);
         $embed->setAuthor($item->author, '', $item->_authorURL);

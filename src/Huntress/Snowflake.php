@@ -1,21 +1,17 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
+use Huntress\Legacy\YasminSnowflake;
 use InvalidArgumentException;
 
-/**
- * Description of HuntressSnowflake
- *
- * @author Keira
- */
-class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
+class Snowflake extends YasminSnowflake
 {
     /**
      * Time since UNIX epoch to Huntress epoch. (1 Jan 2019)
@@ -33,14 +29,14 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
     public function __construct($snowflake)
     {
 
-        $snowflake = (int) $snowflake;
+        $snowflake = (int)$snowflake;
         $this->value = $snowflake;
 
         $this->binary = str_pad(decbin($snowflake), 64, 0, STR_PAD_LEFT);
 
-        $time = (string) ($snowflake >> 2);
+        $time = (string)($snowflake >> 2);
 
-        $this->timestamp = (int) $time + self::EPOCH;
+        $this->timestamp = (int)$time + self::EPOCH;
         $this->increment = ($snowflake & 0x3);
 
 
@@ -56,7 +52,7 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
 
     public static function parse(string $snow): int
     {
-        return (int) base_convert($snow, 36, 10);
+        return (int)base_convert($snow, 36, 10);
     }
 
     /**
@@ -74,7 +70,7 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
     /**
      * Generates a new snowflake.
      *
-     * @param int $workerID  Valid values are in the range of 0-31.
+     * @param int $workerID Valid values are in the range of 0-31.
      * @param int $processID Valid values are in the range of 0-31.
      *
      * @return int
@@ -98,10 +94,10 @@ class Snowflake extends \CharlotteDunois\Yasmin\Utils\Snowflake
             self::$incrementTime = $time;
         }
 
-        $time = (string) $time - self::EPOCH;
+        $time = (string)$time - self::EPOCH;
 
-        $binary = str_pad(decbin(((int) $time)), 62, 0, STR_PAD_LEFT) . str_pad(decbin(self::$incrementIndex), 2, 0,
+        $binary = str_pad(decbin(((int)$time)), 62, 0, STR_PAD_LEFT) . str_pad(decbin(self::$incrementIndex), 2, 0,
                 STR_PAD_LEFT);
-        return (int) bindec($binary);
+        return (int)bindec($binary);
     }
 }

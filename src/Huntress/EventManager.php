@@ -1,34 +1,24 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
-use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
-use CharlotteDunois\Yasmin\Models\GuildMember;
-use CharlotteDunois\Yasmin\Models\Message;
-use CharlotteDunois\Yasmin\Models\MessageReaction;
-use CharlotteDunois\Yasmin\Models\Presence;
-use CharlotteDunois\Yasmin\Utils\URLHelpers;
 use Discord\Helpers\Collection;
+use Discord\Http\Request;
 use Discord\Parts\Channel\GuildText;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Channel\Reaction;
 use Discord\Parts\User\Member;
-use Discord\Repository\Guild\MemberRepository;
 use Exception;
 use React\Promise\PromiseInterface as Promise;
 use Throwable;
 use function React\Promise\all;
 
-/**
- * Description of EventManager
- *
- * @author Keira Dueck <sylae@calref.net>
- */
 class EventManager
 {
     private Huntress $huntress;
@@ -49,9 +39,12 @@ class EventManager
             $callable
         ) {
             try {
-                return URLHelpers::resolveURLToData($url)->then(function (string $data) use ($bot, $callable) {
+                return $this->huntress->getHttpClient()->get($url)->then(function (Request $data) use (
+                    $bot,
+                    $callable
+                ) {
                     try {
-                        return $callable($data, $bot);
+                        return $callable($data->getContent(), $bot);
                     } catch (Throwable $e) {
                         $bot->getLogger()->warning($e->getMessage(), ['exception' => $e]);
                     }
@@ -84,15 +77,23 @@ class EventManager
 
     public function initializePeriodics()
     {
-        $periodics = $this->events->filter(function ($v, $k) {
-            return ($v->getPeriodic() > 0);
-        })->groupBy(function ($v, $k) {
-            return $v->getPeriodic();
-        });
+        $periodics = [];
+        /** @var EventListener $event */
+        foreach ($this->events as $id => $event) {
+            $p = $event->getPeriodic();
+            if ($p <= 0) {
+                continue;
+            }
+
+            if (!array_key_exists($p, $periodics)) {
+                $periodics[$p] = [];
+            }
+            $periodics[$p][$id] = $event;
+        }
         foreach ($periodics as $interval => $events) {
             $timing = $interval / count($events);
             $this->huntress->getLogger()->debug("[HEM] Periodic interval {$interval}s has " . count($events) . " slots.");
-            $this->huntress->loop->addPeriodicTimer($timing, function () use ($interval, $events) {
+            $this->huntress->getLoop()->addPeriodicTimer($timing, function () use ($interval, $events) {
                 static $phase = [];
                 if (!array_key_exists($interval, $phase)) {
                     $phase[$interval] = 0;
@@ -136,7 +137,7 @@ class EventManager
                 $data = new EventData;
                 if ($args[0] instanceof Reaction) {
                     $message = $args[0]->message;
-                } elseif ($args[0] instanceof \Discord\Parts\Channel\Message) {
+                } elseif ($args[0] instanceof Message) {
                     $message = $args[0];
                 } else {
                     throw new Exception("Unknown argument type passed to eventHandler");
@@ -206,7 +207,7 @@ class EventManager
             $events = $this->returnMatchingEvents($type);
         }
         $this->huntress->getLogger()->debug("[HEM] Found " . $events->count() . " matching events.");
-        $values = $events->map(function (EventListener $v, int $k) use ($data) {
+        $values = $events->map(function (EventListener $v) use ($data) {
             if (is_null($data)) {
                 $data = $this->huntress;
             }
@@ -217,7 +218,7 @@ class EventManager
 
     private function returnMatchingEvents(string $type, EventData $data = null): Collection
     {
-        return $this->events->filter(function ($v, $k) use ($type, $data) {
+        return $this->events->filter(function ($v) use ($type, $data) {
             return $v->match($type, $data);
         });
     }

@@ -1,36 +1,26 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
 use Carbon\Carbon;
-use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
-use CharlotteDunois\Yasmin\Interfaces\TextChannelInterface;
-use CharlotteDunois\Yasmin\Models\Guild;
-use CharlotteDunois\Yasmin\Models\GuildMember;
-use CharlotteDunois\Yasmin\Models\GuildMemberStorage;
-use CharlotteDunois\Yasmin\Models\Message;
-use CharlotteDunois\Yasmin\Models\MessageEmbed;
-use CharlotteDunois\Yasmin\Models\Permissions;
-use CharlotteDunois\Yasmin\Models\Role;
-use CharlotteDunois\Yasmin\Models\TextChannel;
+use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Message;
+use Discord\Parts\Embed\Embed;
+use Discord\Parts\Guild\Guild;
+use Discord\Parts\Guild\Role;
+use Discord\Parts\User\Member;
 use Exception;
 use InvalidArgumentException;
 use League\HTMLToMarkdown\HtmlConverter;
-use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
-use React\Promise\RejectedPromise;
 use Throwable;
 
-/**
- *
- * @author Keira Sylae Aro <sylae@calref.net>
- */
 trait PluginHelperTrait
 {
 
@@ -43,7 +33,7 @@ trait PluginHelperTrait
         Message $message,
         Throwable $e,
         bool $showTrace = false
-    ): ExtendedPromiseInterface {
+    ): PromiseInterface {
         $msg = $e->getFile() . ":" . $e->getLine() . PHP_EOL . PHP_EOL . $e->getMessage();
         if ($showTrace) {
             $msg .= PHP_EOL;
@@ -61,37 +51,37 @@ trait PluginHelperTrait
         Message $message,
         string $title,
         string $msg
-    ): ExtendedPromiseInterface {
+    ): PromiseInterface {
         $embed = self::easyEmbed($message);
         $embed->setTitle("Error - " . $title)->setDescription(substr($msg, 0, 2048))->setColor(0xff8040);
         return self::send($message->channel, "", ['embed' => $embed]);
     }
 
     public static function easyEmbed(Message $message
-    ): MessageEmbed {
-        $embed = new MessageEmbed();
+    ): Embed {
+        $embed = new Embed($message->getDiscord());
         return $embed->setTimestamp(time())
-            ->setAuthor($message->guild->me->nickname ?? $message->client->user->username,
-                $message->client->user->getDisplayAvatarURL());
+            ->setAuthor($message->guild->me->nickname ?? $message->getDiscord()->user->username,
+                $message->getDiscord()->user->getAvatarAttribute());
     }
 
     public static function send(
-        TextChannelInterface $channel,
+        Channel $channel,
         string $msg = "",
         array $opts = []
-    ): ExtendedPromiseInterface {
-        return $channel->send($msg, $opts);
+    ): PromiseInterface {
+        return $channel->sendMessage($msg, $opts);
     }
 
     public static function unauthorized(Message $message
-    ): ExtendedPromiseInterface {
+    ): PromiseInterface {
         return self::error($message, "Unauthorized!", "You are not permitted to use this command!");
     }
 
     public static function parseGuildUser(
         Guild $guild,
         string $string
-    ): ?GuildMember {
+    ): ?Member {
         $string = trim($string);
         if (mb_strlen($string) == 0) {
             return null;
@@ -179,9 +169,9 @@ trait PluginHelperTrait
     }
 
     public static function dump(
-        TextChannelInterface $channel,
+        Channel $channel,
         $msg
-    ): ExtendedPromiseInterface {
+    ): PromiseInterface {
         $pre = "```json" . PHP_EOL . json_encode($msg, JSON_PRETTY_PRINT) . PHP_EOL . "```";
         return self::send($channel, $pre, ['split' => ['before' => '```json' . PHP_EOL, 'after' => '```']]);
     }
@@ -258,37 +248,6 @@ trait PluginHelperTrait
             return $time;
         } else {
             throw new Exception("Could not parse relative time.");
-        }
-    }
-
-    public static function getMembersWithPermission(
-        GuildChannelInterface $channel,
-        int $permission = Permissions::PERMISSIONS['VIEW_CHANNEL']
-    ): GuildMemberStorage {
-        return $channel->getGuild()->members->filter(function (GuildMember $v) use ($channel, $permission) {
-            return $v->permissionsIn($channel)->has($permission);
-        });
-    }
-
-    public static function fetchMessage(Huntress $bot, string $url): PromiseInterface
-    {
-        $match = [];
-        preg_match('/https:\/\/.*?discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)/i', $url, $match);
-
-        if (is_numeric($match[1]) && is_numeric($match[2]) && is_numeric($match[3])) {
-            $guild = $bot->guilds->get($match[1]);
-            if (is_null($guild)) {
-                return new RejectedPromise("Unknown Guild");
-            }
-
-            /** @var TextChannel $channel */
-            $channel = $guild->channels->get($match[2]);
-            if (is_null($channel)) {
-                return new RejectedPromise("Unknown Channel");
-            }
-            return $channel->fetchMessage($match[3]);
-        } else {
-            return new RejectedPromise("Invalid URL");
         }
     }
 

@@ -1,9 +1,9 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
@@ -13,19 +13,21 @@ use Discord\Parts\Channel\Message;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
 use Doctrine\DBAL\Connection;
+use Monolog\ErrorHandler;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+use Monolog\Processor\IntrospectionProcessor;
+use Monolog\Registry;
 use ReflectionClass;
 use Throwable;
 
-/**
- * This is the main Huntress class, mostly backend stuff tbh.
- *
- * @author Keira Dueck <sylae@calref.net>
- */
 class Huntress extends Discord
 {
-    protected array $config;
     public EventManager $eventManager;
     public Connection $db;
+    protected array $config;
 
     public function __construct(array $config)
     {
@@ -35,6 +37,10 @@ class Huntress extends Discord
             'token' => $this->config['botToken'],
             'intents' => Intents::getAllIntents(),
             'loadAllMembers' => true,
+            'storeMessages' => true,
+            'retrieveBans' => true,
+
+            'logger' => $this->setupLogger(),
         ]);
 
         $this->eventManager = new EventManager($this);
@@ -44,6 +50,8 @@ class Huntress extends Discord
         foreach ($classes as $class) {
             if (new ReflectionClass($class)->implementsInterface("Huntress\PluginInterface")) {
                 $this->getLogger()->info("Loading plugin $class");
+
+                /** @var PluginInterface $class */
                 $class::register($this);
             }
         }
@@ -52,7 +60,7 @@ class Huntress extends Discord
         $this->db = DatabaseFactory::get();
 
         // legacy handlers
-        $this->once('ready', [$this, 'readyHandler']);
+        $this->once('init', [$this, 'readyHandler']);
         $this->on('message', [$this, 'messageHandler']);
 
         $dpEvents = new ReflectionClass(Event::class);
@@ -73,10 +81,25 @@ class Huntress extends Discord
         }
     }
 
+    private function setupLogger(): Logger
+    {
+        $l_console = new StreamHandler(STDOUT, $this->config['logLevel']);
+        $l_console->setFormatter(new LineFormatter(null, null, true, true));
+        $l_template = new Logger("Bot");
+        $l_template->pushHandler($l_console);
+        ErrorHandler::register($l_template);
+        if ($this->config['logLevel'] == Level::Debug) {
+            $l_template->pushProcessor(new IntrospectionProcessor());
+            // $l_template->pushProcessor(new GitProcessor());
+        }
+        Registry::addLogger($l_template);
+        return $l_template;
+    }
+
     private function registerBuiltinHooks(): void
     {
-        // RSSProcessor::register($this);
-        // Permission::register($this);
+        RSSProcessor::register($this);
+        Permission::register($this);
     }
 
     public function start(): void

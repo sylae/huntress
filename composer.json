@@ -12,7 +12,7 @@
   "prefer-stable": true,
   "require": {
     "php": ">=8.4",
-    "doctrine/dbal": "^4.4",
+    "doctrine/dbal": "^4.5",
     "gravitypdf/querypath": "^4.1",
     "league/html-to-markdown": "^5.1",
     "monolog/monolog": "^3.10",

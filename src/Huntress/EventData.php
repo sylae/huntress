@@ -1,26 +1,15 @@
 <?php
 
-/**
- * Copyright (c) 2019 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+/*
+ * Copyright (c) 2019-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
-use CharlotteDunois\Yasmin\Interfaces\GuildChannelInterface;
-use CharlotteDunois\Yasmin\Models\Guild;
-use CharlotteDunois\Yasmin\Models\GuildMember;
-use CharlotteDunois\Yasmin\Models\Message;
-use CharlotteDunois\Yasmin\Models\Role;
-use CharlotteDunois\Yasmin\Models\User;
 use JsonSerializable;
 
-/**
- * Description of EventData
- *
- * @author Keira Dueck <sylae@calref.net>
- */
 class EventData implements JsonSerializable
 {
     /**

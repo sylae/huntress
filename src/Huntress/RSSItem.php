@@ -1,60 +1,37 @@
 <?php
 /*
- * Copyright (c) 2021 Keira Dueck <sylae@calref.net>
- * Use of this source code is governed by the MIT license, which
- * can be found in the LICENSE file.
+ * Copyright (c) 2021-2026 MisfitMaid and contributors.
+ *
+ * Use of this source code is governed by the MIT Non-AI license, which can be found in the LICENSE file.
  */
 
 namespace Huntress;
 
 
+use AllowDynamicProperties;
 use Carbon\Carbon;
-use CharlotteDunois\Yasmin\Models\TextChannel;
+use Discord\Parts\Channel\Channel;
 
+#[AllowDynamicProperties]
 class RSSItem
 {
-    /**
-     * @var string
-     */
-    public $title;
+    public ?string $title;
+
+    public ?string $link;
+
+    public ?Carbon $date;
+
+    public ?string $category;
+
+    public ?string $body;
+
+    public ?string $author;
+
+    public ?int $color;
+    public ?string $image;
 
     /**
-     * @var string
+     * @var Channel[]
      */
-    public $link;
-
-    /**
-     * @var Carbon
-     */
-    public $date;
-
-    /**
-     * @var string
-     */
-    public $category;
-
-    /**
-     * @var string
-     */
-    public $body;
-
-    /**
-     * @var string
-     */
-    public $author;
-
-    /**
-     * @var int
-     */
-    public $color;
-
-    /**
-     * @var string
-     */
-    public $image;
-
-    /**
-     * @var TextChannel[]
-     */
-    public $channels;
+    public ?array $channels;
 }
